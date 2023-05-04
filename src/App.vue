@@ -1,0 +1,52 @@
+<template>
+  <div class="wrapper">
+    <div class="header">
+      <Header />
+    </div>
+    <div class="content">
+      <RouterView />
+    </div>
+    <div class="">
+      <Footer />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import Header from "@/components/layout/Header.vue";
+import Footer from "./components/layout/Footer.vue";
+</script>
+
+<style lang="scss" scoped>
+.wrapper{
+  overflow: hidden;
+  height: 100vh; 
+  display: flex;
+  flex-direction: column;
+  /* 背景模糊 */
+  // background-image: url("@/assets/main-bg.png");
+  // background-size: cover;
+  // background-repeat: no-repeat;
+}
+
+.content{
+  overflow-y: scroll;
+  overflow-x: hidden;
+  padding-top: 64px;
+  flex: 1;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+.header{
+  position: fixed;
+  top:0px;
+  left:0px;
+  right: 0px;
+  height: 64px;
+  background: radial-gradient(transparent, rgb(255, 255, 255) 1px);
+  background-size: 2px 2px;
+  backdrop-filter: saturate(180%) blur(50px);
+  z-index: 9000;
+}
+</style>
