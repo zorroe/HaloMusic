@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 <style lang="scss" scoped>
 .ea-button {
-  @apply flex items-center justify-center py-1 px-2 rounded-md gap-1 cursor-pointer w-fit transition-all duration-300 hover:scale-105 active:scale-95;
+  @apply flex items-center justify-center mb-1 py-1 px-2 rounded-md gap-1 cursor-pointer w-fit transition-all duration-300 hover:scale-105 active:scale-95;
 }
 
 /* 按钮类型 */
@@ -39,19 +39,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 /* 按钮大小 */
 .small {
-  min-width: 80px;
+  min-width: 60px;
   height: 32px;
   font-size: 14px;
 }
 
 .normal {
-  min-width: 100px;
+  min-width: 80px;
   height: 40px;
   font-size: 16px;
 }
 
 .large {
-  min-width: 120px;
+  min-width: 100px;
   height: 48px;
   font-size: 18px;
 }

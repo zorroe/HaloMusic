@@ -3,6 +3,7 @@
     <div
       v-for="item in props.data"
       class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 px-2 gap-4 group"
+      @dblclick="playerStore.play(item.id)"
     >
       <lmg
         :src="item.picUrl"
@@ -45,6 +46,10 @@ import { MusicBaseInfo } from "@/types/musicRel";
 import { openUrl, saveLikeMusicIds } from "@/utils/common";
 import { Like } from "@icon-park/vue-next";
 import { ref } from "vue";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store"
+
+const playerStore = usePlayerStore(pinia);
 
 /* 歌单封面图组件 */
 interface Props {
