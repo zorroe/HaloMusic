@@ -33,17 +33,16 @@
           {{ playListDetail.description }}
         </div>
         <div class="flex flex-grow gap-4 items-end">
-          <div class="ea-btn-primary">
-            <icon-park
+          <ea-button
+            ><icon-park
               :icon="PlayOne"
               theme="filled"
               :size="20"
               class="rounded-full p-1"
             />
-            <div class="text-lg font-bold">播放</div>
-          </div>
-          <div
-            class="ea-btn-primary"
+            <div class="text-lg font-bold">播放</div></ea-button
+          >
+          <ea-button
             v-if="playListDetail.userId != user.userId"
             @click="handleSubscribePlayList"
           >
@@ -53,8 +52,8 @@
               :size="20"
               class="rounded-full p-1"
             />
-          </div>
-          <div class="ea-btn-primary" v-else @click="handleDeletePlayList">
+          </ea-button>
+          <ea-button for="delete-modal" type="danger" v-else>
             <icon-park
               :icon="Delete"
               theme="outline"
@@ -62,19 +61,20 @@
               class="rounded-full p-1"
             />
             <div class="text-lg font-bold">删除</div>
-          </div>
+          </ea-button>
         </div>
       </div>
     </div>
     <music-table :data="musicTableData"></music-table>
   </div>
+  <ea-modal id="delete-modal" msg="确定删除歌单吗？" @confirm="handleDeletePlayList"></ea-modal>
 </template>
 
 <script setup lang="ts">
 import dayjs from "dayjs";
 import router from "@/router";
 import {
-deletePlayListApi,
+  deletePlayListApi,
   getPlayListAllApi,
   getPlayListDetailApi,
   subscribePlayListApi,
@@ -99,10 +99,10 @@ const getPlayListDetail = async (params: any) => {
   playListDetail.value = res.playlist;
 };
 
-const handleDeletePlayList = async()=>{
-  await deletePlayListApi({id:playListId.value})
-  router.push('/me')
-}
+const handleDeletePlayList = async () => {
+  await deletePlayListApi({ id: playListId.value });
+  router.push("/me");
+};
 
 const handleSubscribePlayList = async () => {
   // 判断是否已经订阅
@@ -154,5 +154,4 @@ onMounted(async () => {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-
 </style>

@@ -79,7 +79,8 @@
     <div v-show="activeTab == '5'">
       <div><music-table :data="musicHistoryData"></music-table></div>
     </div>
-    <div class="ea-btn-primary mx-auto mb-2" @click="doLogout">
+    <div class="flex w-full justify-center mb-4">
+      <ea-button for="logout-modal">
       <icon-park
         :icon="Logout"
         theme="filled"
@@ -87,8 +88,10 @@
         class="rounded-full p-1"
       />
       <div class="text-lg font-bold">退出</div>
+    </ea-button>
     </div>
   </div>
+  <ea-modal id="logout-modal" msg="确定退出登录？" buttonType="danger" @confirm="doLogout"></ea-modal>
 </template>
 
 <script setup lang="ts">

@@ -12,6 +12,8 @@ import AlbumCover from "@/components/common/AlbumCover.vue";
 import TopListCover from "@/components/common/TopListCover.vue";
 import MusicTable from "@/components/common/MusicTable.vue";
 import MvCover from "@/components/common/MvCover.vue";
+import EaButton from "@/components/common/EaButton.vue";
+import EaModal from "@/components/common/EaModal.vue";
 
 createApp(App)
   .component("icon-park", IconPark)
@@ -22,6 +24,8 @@ createApp(App)
   .component("music-table", MusicTable)
   .component("mv-cover", MvCover)
   .component("lmg", Image)
+  .component("ea-button",EaButton)
+  .component("ea-modal",EaModal)
   .use(router)
   .mount("#app")
   .$nextTick(() => {
