@@ -10,17 +10,19 @@
       <Footer />
     </div>
   </div>
+  
 </template>
 
 <script setup lang="ts">
 import Header from "@/components/layout/Header.vue";
 import Footer from "./components/layout/Footer.vue";
+import { doLogout } from "@/utils/common";
 </script>
 
 <style lang="scss" scoped>
-.wrapper{
+.wrapper {
   overflow: hidden;
-  height: 100vh; 
+  height: 100vh;
   display: flex;
   flex-direction: column;
   /* 背景模糊 */
@@ -29,7 +31,7 @@ import Footer from "./components/layout/Footer.vue";
   // background-repeat: no-repeat;
 }
 
-.content{
+.content {
   overflow-y: scroll;
   overflow-x: hidden;
   padding-top: 64px;
@@ -38,10 +40,10 @@ import Footer from "./components/layout/Footer.vue";
   padding-right: 40px;
 }
 
-.header{
+.header {
   position: fixed;
-  top:0px;
-  left:0px;
+  top: 0px;
+  left: 0px;
   right: 0px;
   height: 64px;
   background: radial-gradient(transparent, rgb(255, 255, 255) 1px);

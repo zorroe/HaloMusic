@@ -35,9 +35,9 @@ export const removeCookie = (key: string) => {
   Cookies.remove(key);
 };
 
-export const clearLocalStorage = ()=>{
-  localStorage.clear()
-}
+export const clearLocalStorage = () => {
+  localStorage.clear();
+};
 
 export const checkLoginStatus = async () => {
   const res: any = await loginStatusApi();
@@ -46,17 +46,17 @@ export const checkLoginStatus = async () => {
     userInfoStore.setUserInfo(res.data.profile);
   } else {
     localStorage.removeItem("user");
-    userInfoStore.setUserInfo({} as UserProfile)
+    userInfoStore.setUserInfo({} as UserProfile);
     routeTo("/login");
   }
 };
 
-
 export const doLogout = async () => {
+  if (!confirm("确定要退出登录吗？")) return;
   await logoutApi();
   removeCookie("MUSIC_U");
   removeCookie("__csrf");
-  clearLocalStorage()
+  clearLocalStorage();
   await checkLoginStatus();
 };
 

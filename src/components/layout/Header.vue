@@ -42,25 +42,45 @@
           </button>
         </div>
       </div>
-      <div class="avatar">
-        <div class="w-8 rounded-full cursor-pointer border-2 border-blue-200">
-          <img v-if="avatar" @click="routeTo('/me')" :src="avatar" />
-          <img
-            v-else
-            src="http://s4.music.126.net/style/web2/img/default/default_avatar.jpg?param=60y60"
-            @click="routeTo('/login')"
-          />
-        </div>
+      <div
+        v-if="avatar"
+        tabindex="0"
+        class="dropdown dropdown-bottom dropdown-end"
+      >
+        <img
+          :src="avatar"
+          class="w-8 rounded-full cursor-pointer border-2 border-blue-200"
+        />
+        <ul tabindex="0" class="dropdown-content p-1 shadow rounded-xl w-32 bg-white">
+          <li>
+            <label @click="doLogout" class="avatar-dropdown">
+              <icon-park
+                :icon="Logout"
+                theme="filled"
+                :size="16"
+                class="rounded-full p-1"
+              />
+              <div class="text-base font-bold">退出</div>
+            </label>
+          </li>
+        </ul>
       </div>
+      <img
+        v-else
+        src="http://s4.music.126.net/style/web2/img/default/default_avatar.jpg?param=60y60"
+        @click="routeTo('/login')"
+        class="rounded-full w-8 h-8"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { checkLoginStatus, routeTo } from "@/utils/common";
+import { checkLoginStatus, routeTo, doLogout } from "@/utils/common";
 import { Left, Right } from "@icon-park/vue-next";
 import { computed, onMounted } from "vue";
 import pinia from "@/store/store";
+import { Logout } from "@icon-park/vue-next";
 import { useUserInfoStore } from "@/store/index";
 import router from "@/router";
 
@@ -90,4 +110,18 @@ onMounted(async () => {
 });
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.avatar-dropdown {
+  &:hover {
+    background-color: rgb(234, 239, 253);
+    color: rgb(51, 94, 234);
+  }
+  transition: all 300ms;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  border-radius: 0.75rem;
+  padding-top: 0.5rem /* 8px */;
+  padding-bottom: 0.5rem /* 8px */;
+}
+</style>
