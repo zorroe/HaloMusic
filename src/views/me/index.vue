@@ -69,10 +69,12 @@
       <div>专辑</div>
     </div>
     <div v-show="activeTab == '3'">
-      <div>艺人</div>
+      <div class="grid-cols-6 grid place-items-center gap-3">
+        <artist-cover v-for="item in artistSubList" :data="item"></artist-cover>
+      </div>
     </div>
     <div v-show="activeTab == '4'">
-      <div>MV</div>
+      <div><mv-cover v-for="item in mvSubList" :data="item"></mv-cover></div>
     </div>
     <div v-show="activeTab == '5'">
       <div><music-table :data="musicHistoryData"></music-table></div>
@@ -93,8 +95,10 @@
 import { Logout, PlayOne } from "@icon-park/vue-next";
 import { onBeforeMount, onMounted, ref } from "vue";
 import {
+  getArtistSubListApi,
   getLikeListApi,
   getListenHistoryApi,
+  getMvSubListApi,
   getPlayListByUidApi,
 } from "./api";
 import { openUrl, routeTo, doLogout } from "@/utils/common";
@@ -102,7 +106,9 @@ import { PlayListBaseInfo } from "@/types/playListRel";
 import { MusicBaseInfo } from "@/types/musicRel";
 import { getPlayListAllApi } from "@/api/playList";
 import { getLyricApi } from "@/api/music";
+import { ArtistBaseInfo } from "@/types/artistRel";
 import dayjs from "dayjs";
+import { MvBaseInfo } from "@/types/mvRel";
 
 const user = ref();
 const isLoaded = ref(false);
@@ -118,8 +124,20 @@ const activeTab = ref("1");
 const tabs = [
   { id: "1", name: "全部歌单", do: () => {} },
   { id: "2", name: "专辑", do: () => {} },
-  { id: "3", name: "艺人", do: () => {} },
-  { id: "4", name: "MV", do: () => {} },
+  {
+    id: "3",
+    name: "艺人",
+    do: () => {
+      getArtistSubList();
+    },
+  },
+  {
+    id: "4",
+    name: "MV",
+    do: () => {
+      getMvSubList();
+    },
+  },
   {
     id: "5",
     name: "听歌排行",
@@ -138,6 +156,8 @@ const randomLyric = ref<string>("");
 
 // 我喜欢的音乐也是一个歌单，这个歌单的id
 const likePlayListId = localStorage.getItem("likePlayListId");
+const artistSubList = ref<ArtistBaseInfo[]>([]);
+const mvSubList = ref<MvBaseInfo[]>([]);
 
 const getPlayListByUid = async () => {
   const res: any = await getPlayListByUidApi({
@@ -197,13 +217,53 @@ const getLikeList = async () => {
   likeCount.value = res.ids.length;
 };
 
+const getArtistSubList = async () => {
+  const { data, hasMore } = await getArtistSubListApi({
+    offset: artistSubList.value.length,
+  });
+  data.forEach((item: any) => {
+    artistSubList.value.push({
+      id: item.id,
+      name: item.name,
+      picUrl: item.img1v1Url,
+    });
+  });
+  if (hasMore) {
+    getArtistSubList();
+  }
+};
+
+const getMvSubList = async () => {
+  const { data, hasMore } = await getMvSubListApi({
+    offset: mvSubList.value.length,
+  });
+  data.forEach((item: any) => {
+    console.log(item);
+
+    mvSubList.value.push({
+      id: item.vid,
+      name: item.title,
+      picUrl: item.coverUrl,
+      creators: item.creator.map((item: any) => {
+        return {
+          id: item.userId,
+          name: item.userName,
+        };
+      }),
+    });
+  });
+  if (hasMore) {
+    getMvSubList();
+  }
+};
+
 const getListenHistory = async (type: 1 | 0) => {
   const { weekData, allData } = await getListenHistoryApi({
     uid: user.value.userId,
     type,
   });
   if (type === 1) {
-    musicHistoryData.value =  weekData.map(({song}: any) => {
+    musicHistoryData.value = weekData.map(({ song }: any) => {
       return {
         id: song.id,
         name: song.name,
@@ -219,7 +279,6 @@ const getListenHistory = async (type: 1 | 0) => {
           name: song.al.name,
         },
         duration: dayjs(song.dt).format("mm:ss"),
-        
       };
     });
   }

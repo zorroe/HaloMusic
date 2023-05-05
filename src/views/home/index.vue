@@ -17,7 +17,7 @@
     </div>
     <div class="text-lv1">排行榜</div>
     <div class="grid-cols-5 grid place-items-center gap-4">
-      <top-list-cover v-for="item in topList" :data="item"></top-list-cover>
+      <top-list-cover v-for="item in topList" :data="item" @click="routeTo(`/playlist/${item.id}`)"></top-list-cover>
     </div>
   </div>
 </template>
@@ -30,7 +30,7 @@ import { AlbumBaseInfo } from "@/types/albumRel";
 import { ArtistBaseInfo } from "@/types/artistRel";
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { onMounted, ref } from "vue";
-import { saveLikeMusicIds } from "@/utils/common";
+import { routeTo, saveLikeMusicIds } from "@/utils/common";
 
 const isLoaded = ref(false);
 const recommendPlayList = ref<PlayListBaseInfo[]>([]);

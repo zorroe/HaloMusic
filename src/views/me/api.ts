@@ -8,9 +8,25 @@ export const getPlayListByUidApi = (params: any) => {
   return http.get("/user/playlist", { params });
 };
 
-export const getListenHistoryApi:any = (params: any) => {
+export const getListenHistoryApi: any = (params: any) => {
   return http({
     url: "/user/record",
+    method: "get",
+    params,
+  });
+};
+
+export const getArtistSubListApi: any = (params: any) => {
+  return http({
+    url: "/artist/sublist",
+    method: "get",
+    params,
+  });
+};
+
+export const getMvSubListApi: any = (params: any) => {
+  return http({
+    url: "/mv/sublist",
     method: "get",
     params,
   });
