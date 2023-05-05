@@ -1,6 +1,5 @@
 import "@/style.scss";
 import "@/assets/css/global.scss";
-import "@/samples/node-api";
 import { createApp } from "vue";
 import App from "@/App.vue";
 import router from "@/router/index";
