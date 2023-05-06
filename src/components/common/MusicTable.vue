@@ -29,7 +29,7 @@
         :icon="Like"
         :theme="likeMusicIds.indexOf(item.id) == -1 ? 'outline' : 'filled'"
         :size="16"
-        class="subscribe-icon"
+        class="subscribe-icon btn-animation"
         :class="{ 'no-liked': likeMusicIds.indexOf(item.id) == -1 }"
         @click="handleLikeMusic(item)"
       />
@@ -77,7 +77,7 @@ const handleLikeMusic = async (music: MusicBaseInfo) => {
 <style lang="scss" scoped>
 .subscribe-icon {
   color: rgb(51, 94, 234);
-  @apply hover:scale-110 rounded-full p-1 active:scale-95 transition-all duration-300;
+  @apply rounded-full p-1;
 }
 
 .no-liked {

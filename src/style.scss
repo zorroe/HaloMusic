@@ -69,3 +69,15 @@
     scale: 0.95;
   }
 }
+
+.btn-animation{
+  transition: all 300ms;
+
+  &:hover {
+    scale: 1.05;
+  }
+
+  &:active {
+    scale: 0.95;
+  }
+}

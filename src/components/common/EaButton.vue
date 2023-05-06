@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 <style lang="scss" scoped>
 .ea-button {
-  @apply flex items-center justify-center mb-1 py-1 px-2 rounded-md gap-1 cursor-pointer w-fit transition-all duration-300 hover:scale-105 active:scale-95;
+  @apply flex items-center justify-center mb-1 py-1 px-2 rounded-md gap-1 cursor-pointer w-fit;
 }
 
 /* 按钮类型 */

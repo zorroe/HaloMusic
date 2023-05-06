@@ -31,7 +31,7 @@ const routes = [
   {
     path:"/recommendMusic",
     name: "recommendMusic",
-    component: () => import("@/views/playList/recommendMusic.vue"),
+    component: () => import("@/views/playlist/recommendMusic.vue"),
   }
 ];
 export const router = createRouter({

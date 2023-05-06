@@ -41,10 +41,10 @@
         :icon="playModeIcon"
         :size="20"
         @click="playerStore.toggleLoop"
-        class="footer-icon"
+        class="footer-icon btn-animation "
       ></icon-park>
-      <icon-park class="footer-icon" :icon="MusicList" :size="20"></icon-park>
-      <icon-park class="footer-icon" :icon="Up" :size="20"></icon-park>
+      <icon-park class="footer-icon btn-animation " :icon="MusicList" :size="20"></icon-park>
+      <icon-park class="footer-icon btn-animation " :icon="Up" :size="20"></icon-park>
     </div>
   </div>
 </template>
@@ -130,6 +130,6 @@ const handleVolumnChange = (event: any) => {
 }
 
 .footer-icon{
-  @apply p-1 rounded transition-all hover:bg-gray-100 duration-300 hover:scale-110 active:scale-90 
+  @apply p-1 rounded hover:bg-gray-100
 }
 </style>

@@ -8,9 +8,10 @@
       ></play-list-cover>
     </div>
     <div class="text-lv1 flex items-center pr-4">
-      <div>每日推荐歌曲</div>
-      <div class="flex-grow text-xs font-bold text-right ea-link" @click="routeTo('/recommendMusic')">
-        查看全部
+      <div>每日推荐</div>
+      <div class="flex flex-grow  items-center justify-end gap-4">
+        <icon-park :icon="PlayOne" :size="16" class="rounded-full border-black border-2 btn-animation"></icon-park>
+        <div class="ea-link text-xs font-bold" @click="routeTo('/recommendMusic')">查看全部</div>
       </div>
     </div>
     <div>
@@ -48,6 +49,7 @@ import { routeTo, saveLikeMusicIds } from "@/utils/common";
 import { getRecommendSongsApi} from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
+import { PlayOne } from "@icon-park/vue-next";
 
 const isLoaded = ref(false);
 const recommendPlayList = ref<PlayListBaseInfo[]>([]);
