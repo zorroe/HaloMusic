@@ -1,6 +1,6 @@
 import http from "@/utils/request";
 
-export const getRecommandPlayListApi: any = (params: any = { limit: 10 }) => {
+export const getrecommendPlayListApi: any = (params: any = { limit: 10 }) => {
   return http({
     url: "/personalized",
     method: "get",

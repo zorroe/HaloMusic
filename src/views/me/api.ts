@@ -31,3 +31,11 @@ export const getMvSubListApi: any = (params: any) => {
     params,
   });
 };
+
+export const getAlbumSubListApi: any = (params:any)=>{
+  return http({
+    url: "/album/sublist",
+    method: "get",
+    params
+  })
+}

@@ -7,6 +7,16 @@
         :data="item"
       ></play-list-cover>
     </div>
+    <div class="text-lv1 flex items-center pr-4">
+      <div>每日推荐歌曲</div>
+      <div class="flex-grow text-xs font-bold text-right ea-link" @click="routeTo('/recommendMusic')">
+        查看全部
+      </div>
+    </div>
+    <div>
+      <!-- 每日推荐歌曲列表的随机5首 -->
+      <music-table :data="recommendSongList.slice(0, 5)"></music-table>
+    </div>
     <div class="text-lv1">推荐歌手</div>
     <div class="grid-cols-6 grid place-items-center gap-3">
       <artist-cover v-for="item in recommendArtist" :data="item"></artist-cover>
@@ -17,30 +27,38 @@
     </div>
     <div class="text-lv1">排行榜</div>
     <div class="grid-cols-5 grid place-items-center gap-4">
-      <top-list-cover v-for="item in topList" :data="item" @click="routeTo(`/playlist/${item.id}`)"></top-list-cover>
+      <top-list-cover
+        v-for="item in topList"
+        :data="item"
+        @click="routeTo(`/playlist/${item.id}`)"
+      ></top-list-cover>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { getNewAlbumApi } from "@/api/album";
-import { getRecommandArtistApi } from "@/api/artist";
-import { getRecommandPlayListApi, getTopListApi } from "@/api/playList";
+import { getrecommendArtistApi } from "@/api/artist";
+import { getrecommendPlayListApi, getTopListApi } from "@/api/playList";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { ArtistBaseInfo } from "@/types/artistRel";
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { onMounted, ref } from "vue";
 import { routeTo, saveLikeMusicIds } from "@/utils/common";
+import { getRecommendSongsApi} from "@/api/music";
+import { MusicBaseInfo } from "@/types/musicRel";
+import dayjs from "dayjs";
 
 const isLoaded = ref(false);
 const recommendPlayList = ref<PlayListBaseInfo[]>([]);
 const recommendArtist = ref<ArtistBaseInfo[]>([]);
 const albumNewest = ref<AlbumBaseInfo[]>([]);
 const topList = ref<PlayListBaseInfo[]>([]);
+const recommendSongList = ref<MusicBaseInfo[]>([]);
 
 const getRecommendPlayList = async () => {
-  const res = await getRecommandPlayListApi();
-  res.result.forEach((item: any) => {
+  const { result } = await getrecommendPlayListApi();
+  result.forEach((item: any) => {
     recommendPlayList.value.push({
       id: item.id,
       name: item.name,
@@ -50,11 +68,11 @@ const getRecommendPlayList = async () => {
   });
 };
 
-const getRecommandArtist = async () => {
-  const res = await getRecommandArtistApi();
+const getrecommendArtist = async () => {
+  const { list } = await getrecommendArtistApi();
   // 随机6个
-  res.list.artists.sort(() => Math.random() - 0.5);
-  res.list.artists.splice(0, 6).forEach((item: any) => {
+  list.artists.sort(() => Math.random() - 0.5);
+  list.artists.splice(0, 6).forEach((item: any) => {
     recommendArtist.value.push({
       id: item.id,
       name: item.name,
@@ -64,9 +82,9 @@ const getRecommandArtist = async () => {
 };
 
 const getAlbumNewest = async () => {
-  const res = await getNewAlbumApi();
-  res.albums.sort(() => Math.random() - 0.5);
-  res.albums.splice(0, 10).forEach((item: any) => {
+  const { albums } = await getNewAlbumApi();
+  albums.sort(() => Math.random() - 0.5);
+  albums.splice(0, 10).forEach((item: any) => {
     albumNewest.value.push({
       id: item.id,
       name: item.name,
@@ -83,8 +101,8 @@ const getAlbumNewest = async () => {
 };
 
 const getTopList = async () => {
-  const res = await getTopListApi();
-  res.list.splice(0, 5).forEach((item: any) => {
+  const { list } = await getTopListApi();
+  list.splice(0, 5).forEach((item: any) => {
     topList.value.push({
       id: item.id,
       name: item.name,
@@ -94,11 +112,35 @@ const getTopList = async () => {
   });
 };
 
+const getRecommendSongs = async () => {
+  const { data } = await getRecommendSongsApi();
+  data.dailySongs.forEach((item: any) => {
+    recommendSongList.value.push({
+      id: item.id,
+      name: item.name,
+      picUrl: item.al.picUrl,
+      singers: item.ar.map((item: any) => {
+        return {
+          id: item.id,
+          name: item.name,
+          picUrl: "",
+        };
+      }),
+      duration: dayjs(item.dt).format("mm:ss"),
+      album: {
+        id: item.al.id,
+        name: item.al.name,
+      },
+    });
+  });
+};
+
 onMounted(async () => {
   await getRecommendPlayList();
-  await getRecommandArtist();
-  await getAlbumNewest();
-  await getTopList();
+  await getrecommendArtist();
+  await getRecommendSongs();
+  getTopList();
+  getAlbumNewest();
   isLoaded.value = true;
   setTimeout(() => {
     saveLikeMusicIds();

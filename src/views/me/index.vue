@@ -66,7 +66,9 @@
       ></play-list-cover>
     </div>
     <div v-show="activeTab == '2'">
-      <div>专辑</div>
+      <div class="grid-cols-5 grid place-items-center gap-4">
+      <album-cover v-for="item in albumSubList" :data="item"></album-cover>
+    </div>
     </div>
     <div v-show="activeTab == '3'">
       <div class="grid-cols-6 grid place-items-center gap-3">
@@ -79,15 +81,14 @@
     <div v-show="activeTab == '5'">
       <div><music-table :data="musicHistoryData"></music-table></div>
     </div>
-    
   </div>
-  
 </template>
 
 <script setup lang="ts">
 import { Logout, PlayOne } from "@icon-park/vue-next";
 import { onBeforeMount, onMounted, ref } from "vue";
 import {
+  getAlbumSubListApi,
   getArtistSubListApi,
   getLikeListApi,
   getListenHistoryApi,
@@ -102,6 +103,7 @@ import { getLyricApi } from "@/api/music";
 import { ArtistBaseInfo } from "@/types/artistRel";
 import dayjs from "dayjs";
 import { MvBaseInfo } from "@/types/mvRel";
+import { AlbumBaseInfo } from "@/types/albumRel";
 
 const user = ref();
 const isLoaded = ref(false);
@@ -116,7 +118,13 @@ const activeTab = ref("1");
 
 const tabs = [
   { id: "1", name: "全部歌单", do: () => {} },
-  { id: "2", name: "专辑", do: () => {} },
+  {
+    id: "2",
+    name: "专辑",
+    do: () => {
+      getAlbumSubList();
+    },
+  },
   {
     id: "3",
     name: "艺人",
@@ -151,6 +159,7 @@ const randomLyric = ref<string>("");
 const likePlayListId = localStorage.getItem("likePlayListId");
 const artistSubList = ref<ArtistBaseInfo[]>([]);
 const mvSubList = ref<MvBaseInfo[]>([]);
+const albumSubList = ref<AlbumBaseInfo[]>([]);
 
 const getPlayListByUid = async () => {
   const res: any = await getPlayListByUidApi({
@@ -223,6 +232,30 @@ const getArtistSubList = async () => {
   });
   if (hasMore) {
     getArtistSubList();
+  }
+};
+
+const getAlbumSubList = async () => {
+  const { data, hasMore } = await getAlbumSubListApi({
+    offset: albumSubList.value.length,
+  });
+  console.log(data);
+
+  data.forEach((item: any) => {
+    albumSubList.value.push({
+      id: item.id,
+      name: item.name,
+      picUrl: item.picUrl,
+      artists: item.artists.map((item: any) => {
+        return {
+          id: item.id,
+          name: item.name,
+        };
+      }),
+    });
+  });
+  if (hasMore) {
+    getAlbumSubList();
   }
 };
 

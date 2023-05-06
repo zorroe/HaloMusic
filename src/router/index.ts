@@ -27,6 +27,11 @@ const routes = [
     path: "/playlist/:id",
     name: "playlist",
     component: () => import("@/views/playlist/index.vue"),
+  },
+  {
+    path:"/recommendMusic",
+    name: "recommendMusic",
+    component: () => import("@/views/playList/recommendMusic.vue"),
   }
 ];
 export const router = createRouter({

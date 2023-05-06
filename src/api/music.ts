@@ -65,3 +65,10 @@ export const getMusicDetail = async (musicId: string | number) => {
     },
   };
 };
+
+export const getRecommendSongsApi = async () => {
+  return http({
+    url: "/recommend/songs",
+    method: "get",
+  });
+};
