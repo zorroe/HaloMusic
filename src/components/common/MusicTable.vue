@@ -22,8 +22,8 @@
           >
         </div>
       </div>
-      <div class="w-1/3 text-base cursor-pointer hover:underline">
-        {{ item.album.name }}
+      <div class="w-1/3 text-base cursor-pointer">
+        <span class="hover:underline" @click="routeTo(`/album/${item.album.id}`)">{{ item.album.name }}</span>
       </div>
       <icon-park
         :icon="Like"
@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { likeMusicApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { openUrl, saveLikeMusicIds } from "@/utils/common";
+import { openUrl, saveLikeMusicIds,routeTo } from "@/utils/common";
 import { Like } from "@icon-park/vue-next";
 import { ref } from "vue";
 import { usePlayerStore } from "@/store";

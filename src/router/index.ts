@@ -29,10 +29,15 @@ const routes = [
     component: () => import("@/views/playlist/index.vue"),
   },
   {
-    path:"/recommendMusic",
+    path: "/recommendMusic",
     name: "recommendMusic",
     component: () => import("@/views/playlist/recommendMusic.vue"),
-  }
+  },
+  {
+    path: "/album/:id",
+    name: "album",
+    component: () => import("@/views/album/index.vue"),
+  },
 ];
 export const router = createRouter({
   history: createWebHashHistory(),
