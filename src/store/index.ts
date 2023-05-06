@@ -1,4 +1,5 @@
 import { getMusicDetail, getMusicUrl } from "@/api/music";
+import { MusicBaseInfo } from "@/types/musicRel";
 import { UserProfile } from "@/types/userRel";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
@@ -27,12 +28,12 @@ export const usePlayerStore = defineStore({
     audio: new Audio(),
     loopType: 1, //循环模式 0 单曲循环 1 列表循环 2随机播放
     volume: 60, //音量
-    playList: [] as any[], //播放列表,
+    playList: [] as MusicBaseInfo[], //播放列表,
     showPlayList: false,
     id: 0,
     url: "",
-    songUrl: {} as any,
-    song: {} as any,
+    songUrl: {} as string,
+    song: {} as MusicBaseInfo,
     isPlaying: false, //是否播放中
     isPause: false, //是否暂停
     sliderInput: false, //是否正在拖动进度条
@@ -110,7 +111,6 @@ export const usePlayerStore = defineStore({
       if (id == this.id) return;
       this.isPlaying = false;
       const url = await getMusicUrl(id);
-      console.log(url);
       if (url == "") {
         // ElMessage.error("播放失败");
         // this.randomPlay();
@@ -119,12 +119,12 @@ export const usePlayerStore = defineStore({
       this.audio.src = url;
       this.audio
         .play()
-        .then((res) => {
+        .then(async (res) => {
           this.isPlaying = true;
           this.songUrl = url;
           this.url = url;
           this.id = id;
-          this.songDetail();
+          await this.songDetail();
           this.interval();
         })
         .catch((res) => {});
@@ -145,17 +145,7 @@ export const usePlayerStore = defineStore({
     },
     async songDetail() {
       this.song = await getMusicDetail(this.id);
-      const playListItem = {
-        id: this.song.id,
-        name: this.song.name,
-        picUrl: this.song.al.picUrl,
-        singers: this.song.ar.map((item: any) => {
-          return { name: item.name, id: item.id };
-        }),
-        duration: this.song.dt,
-      };
-
-      this.pushPlayList(false, playListItem);
+      this.pushPlayList(false, this.song);
     },
     //重新播放
     rePlay() {
@@ -250,4 +240,3 @@ export const usePlayerStore = defineStore({
     },
   },
 });
-

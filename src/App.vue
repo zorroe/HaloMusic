@@ -10,13 +10,13 @@
       <Footer />
     </div>
   </div>
-  
+  <Modals/>
 </template>
 
 <script setup lang="ts">
 import Header from "@/components/layout/Header.vue";
-import Footer from "./components/layout/Footer.vue";
-import { doLogout } from "@/utils/common";
+import Footer from "@/components/layout/Footer.vue";
+import Modals from "@/components/layout/Modals.vue";
 </script>
 
 <style lang="scss" scoped>

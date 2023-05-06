@@ -53,7 +53,7 @@
         />
         <ul tabindex="0" class="dropdown-content p-1 shadow rounded-xl w-32 bg-white">
           <li>
-            <label @click="doLogout" class="avatar-dropdown">
+            <label for="logout-modal" class="avatar-dropdown">
               <icon-park
                 :icon="Logout"
                 theme="filled"

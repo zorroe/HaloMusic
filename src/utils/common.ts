@@ -52,7 +52,6 @@ export const checkLoginStatus = async () => {
 };
 
 export const doLogout = async () => {
-  if (!confirm("确定要退出登录吗？")) return;
   await logoutApi();
   removeCookie("MUSIC_U");
   removeCookie("__csrf");

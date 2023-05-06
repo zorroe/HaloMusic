@@ -1,6 +1,6 @@
 <template>
   <input type="checkbox" :id="props.id" class="modal-toggle" />
-  <div class="modal absolute pos-center">
+  <div class="modal">
     <div class="modal-box">
       <h3 class="font-bold text-lg">{{ props.msg }}</h3>
       <div class="modal-action gap-2">
@@ -43,13 +43,8 @@ const handleConfirm = () => {
 </script>
 
 <style lang="scss" scoped>
-.modal {
-  z-index: 9200;
+.modal{
+  z-index: 9300;
 }
 
-.pos-center {
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%); //与方法二不同处
-}
 </style>
