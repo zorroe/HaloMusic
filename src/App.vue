@@ -7,11 +7,10 @@
       <RouterView />
     </div>
     <div v-show="playerStore.song.id">
-    <!-- <div> -->
       <Footer />
     </div>
   </div>
-  <Modals/>
+  <Modals />
 </template>
 
 <script setup lang="ts">

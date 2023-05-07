@@ -3,6 +3,7 @@
     <div
       v-for="item in props.data"
       class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 px-2 gap-4 group"
+      :class="{ playing: item.id == curMusicId }"
       @dblclick="playOne(item.id)"
     >
       <lmg
@@ -23,7 +24,11 @@
         </div>
       </div>
       <div class="w-1/3 text-base cursor-pointer">
-        <span class="hover:underline" @click="routeTo(`/album/${item.album.id}`)">{{ item.album.name }}</span>
+        <span
+          class="hover:underline"
+          @click="routeTo(`/album/${item.album.id}`)"
+          >{{ item.album.name }}</span
+        >
       </div>
       <icon-park
         :icon="Like"
@@ -43,13 +48,15 @@
 <script setup lang="ts">
 import { likeMusicApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { openUrl, saveLikeMusicIds,routeTo,playOne } from "@/utils/common";
+import { openUrl, saveLikeMusicIds, routeTo, playOne } from "@/utils/common";
 import { Like } from "@icon-park/vue-next";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { usePlayerStore } from "@/store";
-import pinia from "@/store/store"
+import pinia from "@/store/store";
 
 const playerStore = usePlayerStore(pinia);
+
+const curMusicId = computed(() => playerStore.song.id);
 
 /* 歌单封面图组件 */
 interface Props {
@@ -82,5 +89,10 @@ const handleLikeMusic = async (music: MusicBaseInfo) => {
 
 .no-liked {
   @apply invisible group-hover:visible;
+}
+
+.playing {
+  background-color: rgb(234, 239, 253);
+  color: rgb(51, 94, 234);
 }
 </style>

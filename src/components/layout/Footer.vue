@@ -16,10 +16,7 @@
   <div class="ea-footer">
     <div class="flex items-center">
       <div class="w-10 h-10 mr-4">
-        <img
-          :src="curMusic.picUrl"
-          class="rounded-full w-10 h-10"
-        />
+        <img :src="curMusic.picUrl" class="rounded-full w-10 h-10" />
       </div>
       <div class="flex flex-col justify-center items-center w-36">
         <div class="text-sm font-bold w-full truncate">
@@ -38,29 +35,29 @@
     </div>
     <div class="flex justify-center items-center flex-grow gap-4">
       <icon-park
-          :icon="LeftOne"
-          :size="20"
-          theme="filled"
-          fill="black"
-          class="footer-icon btn-animation"
-          @click="playerStore.prev"
-        ></icon-park>
-        <icon-park
-          :icon="playIcon"
-          :size="36"
-          theme="filled"
-          fill="black"
-          class="footer-icon btn-animation"
-          @click="playerStore.togglePlay"
-        ></icon-park>
-        <icon-park
-          :icon="RightOne"
-          :size="20"
-          theme="filled"
-          fill="black"
-          class="footer-icon btn-animation"
-          @click="playerStore.next"
-        ></icon-park>
+        :icon="LeftOne"
+        :size="20"
+        theme="filled"
+        fill="black"
+        class="footer-icon btn-animation"
+        @click="playerStore.prev"
+      ></icon-park>
+      <icon-park
+        :icon="playIcon"
+        :size="36"
+        theme="filled"
+        fill="black"
+        class="footer-icon btn-animation"
+        @click="playerStore.togglePlay"
+      ></icon-park>
+      <icon-park
+        :icon="RightOne"
+        :size="20"
+        theme="filled"
+        fill="black"
+        class="footer-icon btn-animation"
+        @click="playerStore.next"
+      ></icon-park>
     </div>
     <div class="flex items-center gap-4">
       <icon-park
@@ -73,6 +70,7 @@
         class="footer-icon btn-animation"
         :icon="MusicList"
         :size="20"
+        @click="routeTo('/curPlayList')"
       ></icon-park>
       <div class="flex justify-center items-center gap-2 w-32">
         <icon-park
@@ -117,13 +115,14 @@ import {
   Up,
   PlayOne,
   Pause,
-LeftOne,
-RightOne
+  LeftOne,
+  RightOne,
 } from "@icon-park/vue-next";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
 import { computed, watch } from "vue";
-import { openUrl,formatTrackTime } from "@/utils/common";
+import { openUrl, formatTrackTime } from "@/utils/common";
+import { routeTo } from "@/utils/common";
 
 const playerStore = usePlayerStore(pinia);
 const curMusic = computed(() => playerStore.song);
@@ -145,10 +144,10 @@ const curMusicCurrentTime = computed({
 
 // 播放完毕之后自动播放下一首
 watch(curMusicCurrentTime, () => {
-    if (curMusicCurrentTime.value === curMusicDuration.value) {
-        playerStore.playEnd()
-    }
-})
+  if (curMusicCurrentTime.value === curMusicDuration.value) {
+    playerStore.playEnd();
+  }
+});
 
 // 播放图标
 const playIcon = computed(() => {
@@ -158,7 +157,6 @@ const playIcon = computed(() => {
     return PlayOne;
   }
 });
-
 
 // 音量图标
 const volumnIcon = computed(() => {

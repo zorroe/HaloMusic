@@ -108,18 +108,8 @@ export const usePlayerStore = defineStore({
       }, 100);
     },
     async play(id: number) {
-      // if (id == this.id) {
-      //   console.log("播放同一首歌曲");
-        
-      //   return; 
-      // }
       this.isPlaying = false;
       const url = await getMusicUrl(id);
-      if (url == "") {
-        // ElMessage.error("播放失败");
-        // this.randomPlay();
-        return;
-      }
       this.audio.src = url;
       this.audio
         .play()

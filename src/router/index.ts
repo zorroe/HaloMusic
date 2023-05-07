@@ -38,6 +38,11 @@ const routes = [
     name: "album",
     component: () => import("@/views/album/index.vue"),
   },
+  {
+    path:"/curPlayList",
+    name:"curPlayList",
+    component:()=>import("@/components/common/CurPlayList.vue")
+  }
 ];
 export const router = createRouter({
   history: createWebHashHistory(),
