@@ -33,7 +33,7 @@
           {{ playListDetail.description }}
         </div>
         <div class="flex flex-grow gap-4 items-end">
-          <ea-button
+          <ea-button @click="playAll(playListDetail.id)"
             ><icon-park
               :icon="PlayOne"
               theme="filled"
@@ -83,6 +83,7 @@ import { onBeforeMount, onMounted, ref } from "vue";
 import { Delete, Like, PlayOne } from "@icon-park/vue-next";
 import { openUrl } from "@/utils/common";
 import { MusicBaseInfo } from "@/types/musicRel";
+import { playAll } from "@/utils/common";
 
 const loaded = ref(false);
 const user = ref();
