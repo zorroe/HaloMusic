@@ -3,7 +3,7 @@
     <div
       v-for="item in props.data"
       class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 px-2 gap-4 group"
-      @dblclick="playerStore.play(item.id)"
+      @dblclick="playOne(item.id)"
     >
       <lmg
         :src="item.picUrl"
@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { likeMusicApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { openUrl, saveLikeMusicIds,routeTo } from "@/utils/common";
+import { openUrl, saveLikeMusicIds,routeTo,playOne } from "@/utils/common";
 import { Like } from "@icon-park/vue-next";
 import { ref } from "vue";
 import { usePlayerStore } from "@/store";

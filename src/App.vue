@@ -6,8 +6,8 @@
     <div class="content">
       <RouterView />
     </div>
-    <!-- <div v-show="playerStore.song.id"> -->
-    <div>
+    <div v-show="playerStore.song.id">
+    <!-- <div> -->
       <Footer />
     </div>
   </div>

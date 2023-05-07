@@ -3,7 +3,7 @@
     <vue-slider
       v-model="curMusicCurrentTime"
       :min="0"
-      :max="curMusicDuration"
+      :max="curMusicDuration || 30"
       :interval="1"
       :drag-on-click="true"
       :duration="0"
@@ -43,6 +43,7 @@
           theme="filled"
           fill="black"
           class="footer-icon btn-animation"
+          @click="playerStore.prev"
         ></icon-park>
         <icon-park
           :icon="playIcon"
@@ -58,9 +59,21 @@
           theme="filled"
           fill="black"
           class="footer-icon btn-animation"
+          @click="playerStore.next"
         ></icon-park>
     </div>
     <div class="flex items-center gap-4">
+      <icon-park
+        :icon="playModeIcon"
+        :size="20"
+        @click="playerStore.toggleLoop"
+        class="footer-icon btn-animation"
+      ></icon-park>
+      <icon-park
+        class="footer-icon btn-animation"
+        :icon="MusicList"
+        :size="20"
+      ></icon-park>
       <div class="flex justify-center items-center gap-2 w-32">
         <icon-park
           :icon="volumnIcon"
@@ -82,21 +95,7 @@
           >
           </vue-slider>
         </div>
-        <span class="w-8 range text-sm text-center">
-          {{ volume }}
-        </span>
       </div>
-      <icon-park
-        :icon="playModeIcon"
-        :size="20"
-        @click="playerStore.toggleLoop"
-        class="footer-icon btn-animation"
-      ></icon-park>
-      <icon-park
-        class="footer-icon btn-animation"
-        :icon="MusicList"
-        :size="20"
-      ></icon-park>
       <icon-park
         class="footer-icon btn-animation"
         :icon="Up"
@@ -123,7 +122,7 @@ RightOne
 } from "@icon-park/vue-next";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { openUrl,formatTrackTime } from "@/utils/common";
 
 const playerStore = usePlayerStore(pinia);
@@ -143,6 +142,13 @@ const curMusicCurrentTime = computed({
     playerStore.onSliderChange(val);
   },
 });
+
+// 播放完毕之后自动播放下一首
+watch(curMusicCurrentTime, () => {
+    if (curMusicCurrentTime.value === curMusicDuration.value) {
+        playerStore.playEnd()
+    }
+})
 
 // 播放图标
 const playIcon = computed(() => {

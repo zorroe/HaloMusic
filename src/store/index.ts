@@ -78,7 +78,7 @@ export const usePlayerStore = defineStore({
       this.audio.volume = this.volume / 100;
     },
     //播放列表里面添加音乐
-    pushPlayList(replace: boolean, ...list: any[]) {
+    pushPlayList(replace: boolean, ...list: MusicBaseInfo[]) {
       if (replace) {
         this.playList = list;
         return;
@@ -105,10 +105,14 @@ export const usePlayerStore = defineStore({
       this.audio.load();
       setTimeout(() => {
         this.duration = 0;
-      }, 500);
+      }, 100);
     },
     async play(id: number) {
-      if (id == this.id) return;
+      // if (id == this.id) {
+      //   console.log("播放同一首歌曲");
+        
+      //   return; 
+      // }
       this.isPlaying = false;
       const url = await getMusicUrl(id);
       if (url == "") {
@@ -159,7 +163,7 @@ export const usePlayerStore = defineStore({
       if (this.loopType == 2) {
         this.randomPlay();
       } else if (this.loopType == 0) {
-        this.rePlay();
+        this.play(this.id)
       } else {
         this.play(this.nextSongId);
       }
