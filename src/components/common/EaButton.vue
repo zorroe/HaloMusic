@@ -1,5 +1,5 @@
 <template>
-  <label class="ea-button" :class="[props.type, props.size]">
+  <label class="ea-button btn-animation" :class="[props.type, props.size]">
     <slot></slot>
   </label>
 </template>
