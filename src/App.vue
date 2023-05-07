@@ -6,7 +6,8 @@
     <div class="content">
       <RouterView />
     </div>
-    <div class="">
+    <!-- <div v-show="playerStore.song.id"> -->
+    <div>
       <Footer />
     </div>
   </div>
@@ -17,6 +18,10 @@
 import Header from "@/components/layout/Header.vue";
 import Footer from "@/components/layout/Footer.vue";
 import Modals from "@/components/layout/Modals.vue";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store";
+
+const playerStore = usePlayerStore(pinia);
 </script>
 
 <style lang="scss" scoped>

@@ -72,3 +72,10 @@ export const saveLikeMusicIds = async () => {
   });
   localStorage.setItem("likeMusicIds", JSON.stringify(ids));
 };
+
+export function formatTrackTime(value:number) {
+  if (!value) return '';
+  let min = ~~(value / 60);
+  let sec = (~~(value % 60)).toString().padStart(2, '0');
+  return `${min}:${sec}`;
+}

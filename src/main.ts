@@ -1,5 +1,6 @@
 import "@/style.scss";
 import "@/assets/css/global.scss";
+import "@/assets/css/slider.css"
 import { createApp } from "vue";
 import App from "@/App.vue";
 import router from "@/router/index";
@@ -13,6 +14,7 @@ import MusicTable from "@/components/common/MusicTable.vue";
 import MvCover from "@/components/common/MvCover.vue";
 import EaButton from "@/components/common/EaButton.vue";
 import EaModal from "@/components/common/EaModal.vue";
+import VueSlider from 'vue-slider-component'
 
 createApp(App)
   .component("icon-park", IconPark)
@@ -25,6 +27,7 @@ createApp(App)
   .component("lmg", Image)
   .component("ea-button",EaButton)
   .component("ea-modal",EaModal)
+  .component("vue-slider",VueSlider)
   .use(router)
   .mount("#app")
   .$nextTick(() => {

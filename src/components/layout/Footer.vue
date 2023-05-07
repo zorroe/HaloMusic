@@ -1,10 +1,26 @@
 <template>
+  <div class="progress-bar">
+    <vue-slider
+      v-model="curMusicCurrentTime"
+      :min="0"
+      :max="curMusicDuration"
+      :interval="1"
+      :drag-on-click="true"
+      :duration="0"
+      :tooltip-formatter="formatTrackTime"
+      :height="2"
+      :dot-size="12"
+    >
+    </vue-slider>
+  </div>
   <div class="ea-footer">
     <div class="flex items-center">
-      <img
-        src="https://p1.music.126.net/qOnH7nPxRZaOP0riFwOaMQ==/943380976686808.jpg"
-        class="rounded-full w-10 h-10 mr-4"
-      />
+      <div class="w-10 h-10 mr-4">
+        <img
+          :src="curMusic.picUrl"
+          class="rounded-full w-10 h-10"
+        />
+      </div>
       <div class="flex flex-col justify-center items-center w-36">
         <div class="text-sm font-bold w-full truncate">
           {{ curMusic.name }}
@@ -20,31 +36,72 @@
         </div>
       </div>
     </div>
-    <div class="flex justify-center items-center flex-grow">
-      进度条和播放按钮区域
+    <div class="flex justify-center items-center flex-grow gap-4">
+      <icon-park
+          :icon="LeftOne"
+          :size="20"
+          theme="filled"
+          fill="black"
+          class="footer-icon btn-animation"
+        ></icon-park>
+        <icon-park
+          :icon="playIcon"
+          :size="36"
+          theme="filled"
+          fill="black"
+          class="footer-icon btn-animation"
+          @click="playerStore.togglePlay"
+        ></icon-park>
+        <icon-park
+          :icon="RightOne"
+          :size="20"
+          theme="filled"
+          fill="black"
+          class="footer-icon btn-animation"
+        ></icon-park>
     </div>
     <div class="flex items-center gap-4">
-      <div class="flex justify-center items-center gap-2">
-        <icon-park :icon="volumnIcon" :size="20" @click="handleClickVolumn"></icon-park>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          :value="playerStore.volume"
-          step="1"
-          @input="handleVolumnChange"
-          class="range range-xs"
-        />
-        <div class="w-10 text-sm text-end">{{ playerStore.volume }}</div>
+      <div class="flex justify-center items-center gap-2 w-32">
+        <icon-park
+          :icon="volumnIcon"
+          :size="18"
+          theme="filled"
+          fill="black"
+          @click="handleClickVolumn"
+        ></icon-park>
+        <div class="volume-bar">
+          <vue-slider
+            v-model="volume"
+            :min="0"
+            :max="100"
+            :interval="1"
+            :drag-on-click="true"
+            :duration="0"
+            tooltip="none"
+            :dot-size="12"
+          >
+          </vue-slider>
+        </div>
+        <span class="w-8 range text-sm text-center">
+          {{ volume }}
+        </span>
       </div>
       <icon-park
         :icon="playModeIcon"
         :size="20"
         @click="playerStore.toggleLoop"
-        class="footer-icon btn-animation "
+        class="footer-icon btn-animation"
       ></icon-park>
-      <icon-park class="footer-icon btn-animation " :icon="MusicList" :size="20"></icon-park>
-      <icon-park class="footer-icon btn-animation " :icon="Up" :size="20"></icon-park>
+      <icon-park
+        class="footer-icon btn-animation"
+        :icon="MusicList"
+        :size="20"
+      ></icon-park>
+      <icon-park
+        class="footer-icon btn-animation"
+        :icon="Up"
+        :size="20"
+      ></icon-park>
     </div>
   </div>
 </template>
@@ -59,15 +116,43 @@ import {
   PlayCycle,
   PlayOnce,
   Up,
+  PlayOne,
+  Pause,
+LeftOne,
+RightOne
 } from "@icon-park/vue-next";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
 import { computed } from "vue";
-import { openUrl } from "@/utils/common";
+import { openUrl,formatTrackTime } from "@/utils/common";
 
 const playerStore = usePlayerStore(pinia);
 const curMusic = computed(() => playerStore.song);
-const volume = computed(() => playerStore.volume);
+const volume = computed({
+  get: () => playerStore.volume,
+  set: (val) => {
+    playerStore.setVolume(val);
+  },
+});
+
+const curMusicDuration = computed(() => playerStore.duration);
+
+const curMusicCurrentTime = computed({
+  get: () => playerStore.currentTime,
+  set: (val) => {
+    playerStore.onSliderChange(val);
+  },
+});
+
+// 播放图标
+const playIcon = computed(() => {
+  if (playerStore.isPlaying) {
+    return Pause;
+  } else {
+    return PlayOne;
+  }
+});
+
 
 // 音量图标
 const volumnIcon = computed(() => {
@@ -91,45 +176,31 @@ const playModeIcon = computed(() => {
   }
 });
 
-const handleClickVolumn = ()=>{
+const handleClickVolumn = () => {
   if (playerStore.volume == 0) {
     playerStore.setVolume(60);
   } else {
     playerStore.setVolume(0);
   }
-}
-
-const handleVolumnChange = (event: any) => {
-  playerStore.setVolume(event.target.value);
 };
 </script>
 
 <style lang="scss" scoped>
+.progress-bar {
+  margin-top: -6px;
+  margin-bottom: -6px;
+  @apply w-full;
+}
+
 .ea-footer {
-  @apply h-16 rounded-b px-8 w-full flex justify-around border-t-2 border-gray-400 items-center;
+  @apply h-16 rounded-b px-8 w-full flex justify-around items-center;
 }
 
-.range-xs {
-  height: 0.5rem /* 16px */;
-}
-.range-xs::-webkit-slider-runnable-track {
-  height: 0.25rem /* 4px */;
-}
-.range-xs::-moz-range-track {
-  height: 0.1rem /* 4px */;
-}
-.range-xs::-webkit-slider-thumb {
-  height: 0.5rem /* 16px */;
-  width: 0.5rem /* 16px */;
-  --filler-offset: 0.1rem /* 6.4px */;
-}
-.range-xs::-moz-range-thumb {
-  height: 1rem /* 16px */;
-  width: 1rem /* 16px */;
-  --filler-offset: 0.4rem /* 6.4px */;
+.volume-bar {
+  width: 84px;
 }
 
-.footer-icon{
-  @apply p-1 rounded hover:bg-gray-100
+.footer-icon {
+  @apply p-1 rounded hover:bg-gray-100;
 }
 </style>
