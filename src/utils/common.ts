@@ -17,6 +17,16 @@ export const routeTo = (path: string) => {
   router.push(path);
 };
 
+export const go = (where:String)=>{
+  if(where === "forward"){
+    router.go(1)
+  }else if(where === "back"){
+    router.go(-1)
+  }else{
+    router.go(0)
+  }
+}
+
 export const openUrl = (url: string) => {
   ipcRenderer.send("open-url", url);
 };

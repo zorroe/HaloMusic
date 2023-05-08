@@ -1,8 +1,8 @@
 <template>
   <div class="h-full w-full rounded-xl flex justify-around p-8 z-50">
     <div class="flex w-1/3 gap-2 items-center">
-      <icon-park class="button-primary" :icon="Left" :size="24" />
-      <icon-park class="button-primary" :icon="Right" :size="24" />
+      <icon-park class="button-primary" :icon="Left" :size="24"  @click="go('back')"/>
+      <icon-park class="button-primary" :icon="Right" :size="24" @click="go('forward')"/>
     </div>
     <div class="flex w-1/3 gap-4 items-center justify-center font-bold">
       <div
@@ -76,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { checkLoginStatus, routeTo, doLogout } from "@/utils/common";
+import { checkLoginStatus, routeTo, go } from "@/utils/common";
 import { Left, Right } from "@icon-park/vue-next";
 import { computed, onMounted } from "vue";
 import pinia from "@/store/store";

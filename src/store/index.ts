@@ -1,4 +1,7 @@
-import { getAudioSourceFromNetease, getMusicDetail, getMusicUrl } from "@/api/music";
+import {
+  getAudioSourceFromNetease,
+  getMusicDetail,
+} from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
 import { UserProfile } from "@/types/userRel";
 import { defineStore } from "pinia";
@@ -22,7 +25,7 @@ export const useUserInfoStore = defineStore("userInfo", () => {
   };
 });
 
-export const usePlayerStore = defineStore("player",{
+export const usePlayerStore = defineStore("player", {
   state: () => ({
     audio: new Audio(),
     loopType: 1, //循环模式 0 单曲循环 1 列表循环 2随机播放
@@ -108,17 +111,17 @@ export const usePlayerStore = defineStore("player",{
       this.id = id;
       this.isPlaying = false;
       const url = await getAudioSourceFromNetease(id);
-      if (!url){
+      if (!url) {
         // 播放下一首
-        this.getErrorCount++
-        if(this.getErrorCount > 8){
-          this.clearPlayList()
-        }else{
-          this.next()
+        this.getErrorCount++;
+        if (this.getErrorCount > 8) {
+          this.clearPlayList();
+        } else {
+          this.next();
         }
-        return
-      };
-      this.getErrorCount = 0
+        return;
+      }
+      this.getErrorCount = 0;
       this.audio.src = url;
       this.audio
         .play()
@@ -146,8 +149,7 @@ export const usePlayerStore = defineStore("player",{
       }
     },
     // 停止播放
-    async playStop(){
-    },
+    async playStop() {},
     async songDetail() {
       this.song = await getMusicDetail(this.id);
       this.pushPlayList(false, this.song);
@@ -164,7 +166,7 @@ export const usePlayerStore = defineStore("player",{
       if (this.loopType == 2) {
         this.randomPlay();
       } else if (this.loopType == 0) {
-        this.play(this.id)
+        this.play(this.id);
       } else {
         this.play(this.nextSongId);
       }
