@@ -7,3 +7,11 @@ export const getrecommendArtistApi: any = (params: { type: 1 | 2 | 3 | 4 }) => {
     params,
   });
 };
+
+export const getArtistDetailApi:any = (params:any)=>{
+  return http({
+    url: "/artist/detail",
+    method:"get",
+    params
+  })
+}

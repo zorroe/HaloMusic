@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col w-40 h-52">
-    <div class="cover group cursor-pointer" @click="routeTo('/artist')">
+    <div class="cover group cursor-pointer" @click="routeTo(`/artist/${props.data.id}`)">
       <lmg
         :src="picUrl"
         :width="300"
@@ -17,7 +17,7 @@
     </div>
     <div
       class="text-center cursor-pointer mt-2 text-base font-bold hover:decoration-black hover:underline truncate"
-      @click="routeTo('/artist')"
+      @click="routeTo(`/artist/${props.data.id}`)"
     >
       {{ props.data.name }}
     </div>
