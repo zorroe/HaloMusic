@@ -66,7 +66,8 @@ async function createWindow() {
   // win.setMenu(null)  
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
     // win.loadURL(url)
-    win.loadURL('http://localhost:17777')
+    // win.loadURL('http://localhost:17777')
+    win.loadURL(url)
     // Open devTool if the app is not packaged
     // win.webContents.openDevTools()
   } else {
