@@ -3,6 +3,7 @@ import "@/assets/css/global.scss";
 import "@/assets/css/slider.css"
 import { createApp } from "vue";
 import App from "@/App.vue";
+import pinia from "./store/store";
 import router from "@/router/index";
 import Image from "@/components/common/Image.vue";
 import IconPark from "@/components/common/IconPark.vue";
@@ -29,6 +30,7 @@ createApp(App)
   .component("ea-modal",EaModal)
   .component("vue-slider",VueSlider)
   .use(router)
+  .use(pinia)
   .mount("#app")
   .$nextTick(() => {
     postMessage({ payload: "removeLoading" }, "*");

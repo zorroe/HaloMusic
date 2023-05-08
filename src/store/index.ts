@@ -1,4 +1,4 @@
-import { getMusicDetail, getMusicUrl } from "@/api/music";
+import { getAudioSourceFromNetease, getMusicDetail, getMusicUrl } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
 import { UserProfile } from "@/types/userRel";
 import { defineStore } from "pinia";
@@ -22,8 +22,7 @@ export const useUserInfoStore = defineStore("userInfo", () => {
   };
 });
 
-export const usePlayerStore = defineStore({
-  id: "player",
+export const usePlayerStore = defineStore("player",{
   state: () => ({
     audio: new Audio(),
     loopType: 1, //循环模式 0 单曲循环 1 列表循环 2随机播放
@@ -41,18 +40,16 @@ export const usePlayerStore = defineStore({
     muted: false, //是否静音
     currentTime: 0, //当前播放时间
     duration: 0, //总播放时长
+    // 获取无法播放的歌曲的次数
+    getErrorCount: 0,
   }),
   getters: {
     playListCount: (state) => {
       return state.playList.length;
     },
     thisIndex: (state) => {
-      for (let i = 0; i < state.playList.length; i++) {
-        if (state.playList[i].id == state.id) {
-          return i;
-        }
-      }
-      return -1;
+      // 当前播放歌曲在播放列表中的索引
+      return state.playList.findIndex((item) => item.id == state.id);
     },
     nextSongId(state): any {
       const { thisIndex, playListCount } = this;
@@ -108,16 +105,27 @@ export const usePlayerStore = defineStore({
       }, 100);
     },
     async play(id: number) {
+      this.id = id;
       this.isPlaying = false;
-      const url = await getMusicUrl(id);
+      const url = await getAudioSourceFromNetease(id);
+      if (!url){
+        // 播放下一首
+        this.getErrorCount++
+        if(this.getErrorCount > 8){
+          this.clearPlayList()
+        }else{
+          this.next()
+        }
+        return
+      };
+      this.getErrorCount = 0
       this.audio.src = url;
       this.audio
         .play()
-        .then(async (res) => {
+        .then(async () => {
           this.isPlaying = true;
           this.songUrl = url;
           this.url = url;
-          this.id = id;
           await this.songDetail();
           this.interval();
         })
@@ -136,6 +144,9 @@ export const usePlayerStore = defineStore({
           this.randomPlay();
           break;
       }
+    },
+    // 停止播放
+    async playStop(){
     },
     async songDetail() {
       this.song = await getMusicDetail(this.id);
