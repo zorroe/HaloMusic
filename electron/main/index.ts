@@ -2,7 +2,10 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import clc from 'cli-color'
+import express from 'express'
+import expressProxy from 'express-http-proxy'
 const server = require('NeteaseCloudMusicApi')
+
 
 // The built directory structure
 //
@@ -62,11 +65,13 @@ async function createWindow() {
 
   // win.setMenu(null)  
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
-    win.loadURL(url)
+    // win.loadURL(url)
+    win.loadURL('http://localhost:17777')
     // Open devTool if the app is not packaged
     // win.webContents.openDevTools()
   } else {
-    win.loadFile(indexHtml)
+    win.loadURL('http://localhost:17777')
+    // win.loadFile(indexHtml)
   }
 
   // Test actively push message to the Electron-Renderer
@@ -92,7 +97,17 @@ async function startNeteaseMusicApi() {
   });
 }
 
-app.whenReady().then(createWindow).then(startNeteaseMusicApi)
+function createExpressApp(){
+  const expressApp = express()
+  expressApp.use('/',express.static(process.env.DIST))
+  expressApp.use('/api',expressProxy('http://localhost:16666'))
+  expressApp.listen(17777)
+}
+
+app.whenReady()
+.then(createExpressApp)
+.then(createWindow)
+.then(startNeteaseMusicApi)
 
 app.on('window-all-closed', () => {
   win = null

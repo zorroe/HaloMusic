@@ -4,9 +4,11 @@ import { handleLogin } from "@/utils/common";
 
 // 配置Contenttype
 axios.defaults.headers.post["Content-Type"] = "application/json;charset=UTF-8";
+axios.defaults.withCredentials=true;
 
 // var url = "https://service-0g03ogpy-1254067389.gz.apigw.tencentcs.com/release";
-const url = "http://localhost:16666";
+// const url = "http://localhost:16666";
+const url = "/api";
 
 const http = axios.create({
   // axios中请求配置有baseURL选项，表示请求URL公共部分
