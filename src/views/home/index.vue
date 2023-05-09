@@ -9,9 +9,18 @@
     </div>
     <div class="text-lv1 flex items-center pr-4">
       <div>每日推荐</div>
-      <div class="flex flex-grow  items-center justify-end gap-4">
-        <icon-park :icon="PlayOne" :size="16" class="rounded-full border-black border-2 btn-animation"></icon-park>
-        <div class="ea-link text-xs font-bold" @click="routeTo('/recommendMusic')">查看全部</div>
+      <div class="flex flex-grow items-center justify-end gap-4">
+        <icon-park
+          :icon="PlayOne"
+          :size="16"
+          class="rounded-full border-black border-2 btn-animation"
+        ></icon-park>
+        <div
+          class="ea-link text-xs font-bold"
+          @click="routeTo('/recommendMusic')"
+        >
+          查看全部
+        </div>
       </div>
     </div>
     <div>
@@ -46,7 +55,7 @@ import { ArtistBaseInfo } from "@/types/artistRel";
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { onMounted, ref } from "vue";
 import { routeTo, saveLikeMusicIds } from "@/utils/common";
-import { getRecommendSongsApi} from "@/api/music";
+import { getRecommendSongsApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
 import { PlayOne } from "@icon-park/vue-next";
@@ -59,15 +68,22 @@ const topList = ref<PlayListBaseInfo[]>([]);
 const recommendSongList = ref<MusicBaseInfo[]>([]);
 
 const getRecommendPlayList = async () => {
-  const { result } = await getrecommendPlayListApi();
-  result.forEach((item: any) => {
+  const { recommend } = await getrecommendPlayListApi();
+  recommend.forEach((item: any) => {
     recommendPlayList.value.push({
       id: item.id,
       name: item.name,
       picUrl: item.picUrl,
-      playCount: item.playCount,
+      playCount: item.playcount,
     });
   });
+  // 长度大于10截取10个，长度大于5截取5个
+  recommendPlayList.value =
+    recommendPlayList.value.length > 10
+      ? recommendPlayList.value.slice(0, 10)
+      : recommendPlayList.value.length > 5
+      ? recommendPlayList.value.slice(0, 5)
+      : recommendPlayList.value;
 };
 
 const getrecommendArtist = async () => {

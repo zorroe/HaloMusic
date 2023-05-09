@@ -2,7 +2,7 @@ import http from "@/utils/request";
 
 export const getrecommendPlayListApi: any = (params: any = { limit: 10 }) => {
   return http({
-    url: "/personalized",
+    url: "/recommend/resource",
     method: "get",
     params,
   });
