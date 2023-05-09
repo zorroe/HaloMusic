@@ -40,7 +40,6 @@ const login = async () => {
 
   timer = setInterval(async () => {
     const statusRes = (await checkStatus(res.data.unikey)) as any;
-    console.log(statusRes.code);
     if (statusRes.code === 800) {
       login();
       clearInterval(timer);

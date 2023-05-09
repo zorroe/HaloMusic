@@ -32,7 +32,7 @@ export const openUrl = (url: string) => {
 };
 
 export const handleLogin = () => {
-  console.log("handleLogin");
+  routeTo("/login")
 };
 
 export const setCookie = (key: string, value: string) => {

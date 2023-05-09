@@ -239,7 +239,6 @@ const getAlbumSubList = async () => {
   const { data, hasMore } = await getAlbumSubListApi({
     offset: albumSubList.value.length,
   });
-  console.log(data);
 
   data.forEach((item: any) => {
     albumSubList.value.push({
@@ -264,8 +263,6 @@ const getMvSubList = async () => {
     offset: mvSubList.value.length,
   });
   data.forEach((item: any) => {
-    console.log(item);
-
     mvSubList.value.push({
       id: item.vid,
       name: item.title,
