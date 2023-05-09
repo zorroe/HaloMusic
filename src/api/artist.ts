@@ -15,3 +15,27 @@ export const getArtistDetailApi:any = (params:any)=>{
     params
   })
 }
+
+export const getSongsByArtistIdApi:any = (params:any)=>{
+  return http({
+    url: "/artist/songs",
+    method:"get",
+    params
+  })
+}
+
+export const getArtistAlbumApi:any = (params:any)=>{
+  return http({
+    url: "/artist/album",
+    method:"get",
+    params
+  })
+}
+
+export const getArtistMvApi:any = (params:any)=>{
+  return http({
+    url: "/artist/mv",
+    method:"get",
+    params
+  })
+}

@@ -3,8 +3,8 @@
     <div class="group cover justify-center cursor-pointer">
         <lmg
         :src="props.data.picUrl"
-        :width="400"
-        :height="200"
+        :width="320"
+        :height="180"
         class="w-60 h-32 rounded-lg"
       ></lmg>
       <icon-park

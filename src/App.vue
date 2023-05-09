@@ -4,9 +4,8 @@
       <Header />
     </div>
     <div class="content">
-      <KeepAlive>
+      
         <RouterView />
-      </KeepAlive>
     </div>
     <div v-show="playerStore.song.id">
       <Footer />

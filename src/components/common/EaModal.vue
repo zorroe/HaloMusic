@@ -1,9 +1,11 @@
 <template>
   <input type="checkbox" :id="props.id" class="modal-toggle" />
-  <div class="modal">
-    <div class="modal-box">
-      <h3 class="font-bold text-lg">{{ props.msg }}</h3>
-      <div class="modal-action gap-2">
+  <label :for="props.id" class="modal">
+    <label class="modal-box relative" for="">
+      <div>
+        <slot></slot>
+      </div>
+      <div class="modal-action gap-2" v-if="props.showBtn">
         <ea-button
           :for="props.id"
           :type="props.buttonType"
@@ -15,24 +17,22 @@
           >取消</ea-button
         >
       </div>
-    </div>
-  </div>
+    </label>
+  </label>
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
-  msg: {
-    type: String,
-    default: "确定删除吗？",
-  },
-  buttonType: {
-    type: String,
-    default: "danger",
-  },
+
+interface Props {
+  id: string;
+  buttonType: string;
+  showBtn: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  id: "",
+  buttonType: "danger",
+  showBtn: true
 });
 
 const emit = defineEmits(["confirm"]);
@@ -43,8 +43,7 @@ const handleConfirm = () => {
 </script>
 
 <style lang="scss" scoped>
-.modal{
+.modal {
   z-index: 9300;
 }
-
 </style>
