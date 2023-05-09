@@ -65,8 +65,16 @@ const addCls = (e: Event) => {
   // 添加一个类
   target.classList.add("gradual-appear");
 };
+
+const getLoginStatus = async()=>{
+  if(localStorage.getItem("user")){
+    routeTo("/")
+  }
+}
+
 onMounted(() => {
   login();
+  getLoginStatus()
 });
 
 onUnmounted(() => {
