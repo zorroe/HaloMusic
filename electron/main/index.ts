@@ -60,19 +60,17 @@ async function createWindow() {
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
       nodeIntegration: true,
       contextIsolation: false,
+      
     },
   })
 
   // win.setMenu(null)  
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
-    // win.loadURL(url)
-    // win.loadURL('http://localhost:17777')
     win.loadURL(url)
     // Open devTool if the app is not packaged
     // win.webContents.openDevTools()
   } else {
     win.loadURL('http://localhost:17777')
-    // win.loadFile(indexHtml)
   }
 
   // Test actively push message to the Electron-Renderer
