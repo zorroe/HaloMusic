@@ -2,7 +2,7 @@
   <div class="flex flex-col w-full">
     <div
       v-for="item in props.data"
-      class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 px-2 gap-4 group"
+      class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 gap-4 group"
       :class="{ playing: item.id == curMusicId }"
       @dblclick="playOne(item.id)"
     >
@@ -11,6 +11,7 @@
         :width="100"
         :height="100"
         class="w-12 h-12 rounded"
+        v-if="props.showCover"
       ></lmg>
       <div class="flex flex-col flex-grow justify-center px-2">
         <div class="font-bold cursor-default">{{ item.name }}</div>
@@ -61,10 +62,12 @@ const curMusicId = computed(() => playerStore.song.id);
 /* 歌单封面图组件 */
 interface Props {
   data: MusicBaseInfo[];
+  showCover?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   data: () => [],
+  showCover: true,
 });
 
 const likeMusicIds = ref(

@@ -1,5 +1,5 @@
 <template>
-  <div v-show="isLoaded" class="flex flex-col">
+  <div v-show="loaded" class="flex flex-col">
     <div class="text-lv1">推荐歌单</div>
     <div class="grid-cols-5 grid place-items-center gap-4">
       <play-list-cover
@@ -54,7 +54,7 @@ import { AlbumBaseInfo } from "@/types/albumRel";
 import { ArtistBaseInfo } from "@/types/artistRel";
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { onMounted, ref } from "vue";
-import { routeTo, saveLikeMusicIds } from "@/utils/common";
+import { routeTo, saveLikeMusicIds, saveSubAlbumIds } from "@/utils/common";
 import { getRecommendSongsApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
@@ -64,7 +64,7 @@ defineOptions({
   name: 'home',
 })
 
-const isLoaded = ref(false);
+const loaded = ref(false);
 const recommendPlayList = ref<PlayListBaseInfo[]>([]);
 const recommendArtist = ref<ArtistBaseInfo[]>([]);
 const albumNewest = ref<AlbumBaseInfo[]>([]);
@@ -163,9 +163,10 @@ onMounted(async () => {
   await getRecommendSongs();
   getTopList();
   getAlbumNewest();
-  isLoaded.value = true;
+  loaded.value = true;
   setTimeout(() => {
     saveLikeMusicIds();
+    saveSubAlbumIds()
   }, 0);
   console.log("Home组件onMounted");
   

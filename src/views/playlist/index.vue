@@ -67,7 +67,9 @@
     </div>
     <music-table :data="musicTableData"></music-table>
   </div>
-  <ea-modal id="delete-modal" msg="确定删除歌单吗？" @confirm="handleDeletePlayList"></ea-modal>
+  <ea-modal id="delete-modal" @confirm="handleDeletePlayList">
+    <div class="font-bold">确定删除此歌单吗？</div>
+  </ea-modal>
 </template>
 
 <script setup lang="ts">

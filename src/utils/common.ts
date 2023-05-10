@@ -9,6 +9,7 @@ import { getPlayListAllApi } from "@/api/playList";
 import { UserProfile } from "@/types/userRel";
 import dayjs from "dayjs";
 import { getMusicDetailApi } from "@/api/music";
+import { getSubAlbumlistApi } from "@/api/album";
 
 const userInfoStore = useUserInfoStore(pinia);
 const playerStore = usePlayerStore(pinia);
@@ -17,22 +18,22 @@ export const routeTo = (path: string) => {
   router.push(path);
 };
 
-export const go = (where:String)=>{
-  if(where === "forward"){
-    router.go(1)
-  }else if(where === "back"){
-    router.go(-1)
-  }else{
-    router.go(0)
+export const go = (where: String) => {
+  if (where === "forward") {
+    router.go(1);
+  } else if (where === "back") {
+    router.go(-1);
+  } else {
+    router.go(0);
   }
-}
+};
 
 export const openUrl = (url: string) => {
   ipcRenderer.send("open-url", url);
 };
 
 export const handleLogin = () => {
-  routeTo("/login")
+  routeTo("/login");
 };
 
 export const setCookie = (key: string, value: string) => {
@@ -86,6 +87,19 @@ export const saveLikeMusicIds = async () => {
   localStorage.setItem("likeMusicIds", JSON.stringify(ids));
 };
 
+export const saveSubAlbumIds = async () => {
+  const params = {
+    offset: 0,
+    limit: 999,
+  };
+  const ids: number[] = [];
+  const { data } = await getSubAlbumlistApi(params);
+  data.forEach((item: any) => {
+    ids.push(item.id);
+  });
+  localStorage.setItem("subAlbumIds", JSON.stringify(ids));
+};
+
 export function formatTrackTime(value: number) {
   if (!value) return "";
   let min = ~~(value / 60);
@@ -126,7 +140,7 @@ export async function playOne(id: number) {
   const isExist = playerStore.playList.some((song) => {
     return song.id === id;
   });
-  if(isExist) {
+  if (isExist) {
     playerStore.play(id);
     return;
   }

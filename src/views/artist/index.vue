@@ -1,5 +1,5 @@
 <template>
-  <div v-if="loaded" class="flex flex-col w-full px-4 h-64 gap-8 mb-4">
+  <div v-if="loaded" class="flex flex-col w-full px-4 h-64 gap-8 my-4">
     <div class="flex my-4 gap-4">
       <lmg
         :src="artistInfo.artist.cover"
