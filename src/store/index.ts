@@ -4,6 +4,7 @@ import {
 } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
 import { UserProfile } from "@/types/userRel";
+import { sleep } from "@/utils/common";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
@@ -109,12 +110,13 @@ export const usePlayerStore = defineStore("player", {
     },
     async play(id: number) {
       this.id = id;
-      this.isPlaying = false;
       const url = await getAudioSourceFromNetease(id);
       if (!url) {
         // 播放下一首
+        sleep(3000)
+        console.log(this.getErrorCount,this.playListCount);
         this.getErrorCount++;
-        if (this.getErrorCount > 8) {
+        if (this.getErrorCount == this.playListCount) {
           this.clearPlayList();
         } else {
           this.next();
@@ -122,6 +124,7 @@ export const usePlayerStore = defineStore("player", {
         return;
       }
       this.getErrorCount = 0;
+      this.isPlaying = false;
       this.audio.src = url;
       this.audio
         .play()
