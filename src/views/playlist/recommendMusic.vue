@@ -12,6 +12,10 @@ import { MusicBaseInfo } from '@/types/musicRel';
 import dayjs from 'dayjs';
 import { onMounted, ref } from 'vue';
 
+defineOptions({
+  name: 'recommendMusic',
+})
+
 /* 每日推荐歌曲页面 */
 const recommendSongList = ref<MusicBaseInfo[]>([]);
 

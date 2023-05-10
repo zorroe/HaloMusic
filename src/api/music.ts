@@ -76,7 +76,6 @@ export const getAudioSourceFromNetease = async(id:number)=>{
   if(!res.data[0])  return null;
   if (!res.data[0].url) return null;
   if (res.data[0].freeTrialInfo !== null) {
-    console.log("只能试听，跳过");
     return null;
   }
   const source = res.data[0].url.replace(/^http:/, 'https:');

@@ -26,7 +26,7 @@
           <span
             v-for="singer in curMusic.singers"
             class="ea-link"
-            @click="openUrl(`https://music.163.com/#/artist?id=${singer.id}`)"
+            @click="`/artist/${singer.id}`"
           >
             {{ singer.name }}
           </span>
@@ -121,7 +121,7 @@ import {
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
 import { computed, watch } from "vue";
-import { openUrl, formatTrackTime } from "@/utils/common";
+import { formatTrackTime } from "@/utils/common";
 import { routeTo } from "@/utils/common";
 
 const playerStore = usePlayerStore(pinia);

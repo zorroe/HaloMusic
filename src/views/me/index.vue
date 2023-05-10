@@ -40,7 +40,7 @@
               <span
                 v-for="ar in item.singers"
                 class="hover:underline"
-                @click="openUrl(`https://music.163.com/#/artist?id=${ar.id}`)"
+                @click="routeTo(`/artist/${ar.id}`)"
               >
                 {{ ar.name }}</span
               >
@@ -85,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { Logout, PlayOne } from "@icon-park/vue-next";
+import { PlayOne } from "@icon-park/vue-next";
 import { onBeforeMount, onMounted, ref } from "vue";
 import {
   getAlbumSubListApi,
@@ -95,7 +95,7 @@ import {
   getMvSubListApi,
   getPlayListByUidApi,
 } from "./api";
-import { openUrl, routeTo, doLogout } from "@/utils/common";
+import { routeTo } from "@/utils/common";
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { MusicBaseInfo } from "@/types/musicRel";
 import { getPlayListAllApi } from "@/api/playList";
@@ -109,6 +109,10 @@ const user = ref();
 const isLoaded = ref(false);
 const historyType = ref<0 | 1>(1);
 const musicHistoryData = ref<MusicBaseInfo[]>([]);
+
+defineOptions({
+  name: 'me',
+})
 
 const init = () => {
   user.value = JSON.parse(localStorage.getItem("user") || "");
@@ -239,7 +243,6 @@ const getAlbumSubList = async () => {
   const { data, hasMore } = await getAlbumSubListApi({
     offset: albumSubList.value.length,
   });
-  console.log(data);
 
   data.forEach((item: any) => {
     albumSubList.value.push({
@@ -264,8 +267,6 @@ const getMvSubList = async () => {
     offset: mvSubList.value.length,
   });
   data.forEach((item: any) => {
-    console.log(item);
-
     mvSubList.value.push({
       id: item.vid,
       name: item.title,
@@ -328,6 +329,7 @@ onMounted(async () => {
   await getPlayListByUid();
   await getLikeList();
   isLoaded.value = true;
+  console.log("Me组件onMounted");
 });
 </script>
 
