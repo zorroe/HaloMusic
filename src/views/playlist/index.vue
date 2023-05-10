@@ -85,6 +85,10 @@ import { openUrl } from "@/utils/common";
 import { MusicBaseInfo } from "@/types/musicRel";
 import { playAll } from "@/utils/common";
 
+defineOptions({
+  name: 'playlist',
+})
+
 const loaded = ref(false);
 const user = ref();
 const musicTableData = ref<MusicBaseInfo[]>([]);

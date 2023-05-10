@@ -99,6 +99,10 @@ import { getMusicDetailApi } from "@/api/music";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { MvBaseInfo } from "@/types/mvRel";
 
+defineOptions({
+  name: 'artist',
+})
+
 const artistId = ref<string>();
 
 const artistInfo = ref<ArtistInfo>({} as ArtistInfo);

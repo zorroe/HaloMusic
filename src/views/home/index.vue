@@ -60,6 +60,10 @@ import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
 import { PlayOne } from "@icon-park/vue-next";
 
+defineOptions({
+  name: 'home',
+})
+
 const isLoaded = ref(false);
 const recommendPlayList = ref<PlayListBaseInfo[]>([]);
 const recommendArtist = ref<ArtistBaseInfo[]>([]);
@@ -163,6 +167,8 @@ onMounted(async () => {
   setTimeout(() => {
     saveLikeMusicIds();
   }, 0);
+  console.log("Home组件onMounted");
+  
 });
 </script>
 

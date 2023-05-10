@@ -6,6 +6,10 @@
 
 <script setup lang="ts">
 
+defineOptions({
+  name: 'album',
+})
+
 </script>
 
 <style scoped>

@@ -18,7 +18,7 @@
           <span
             class="ea-link"
             v-for="singer in item.singers"
-            @click="openUrl(`https://music.163.com/#/artist?id=${singer.id}`)"
+            @click="routeTo(`/artist/${singer.id}`)"
             >{{ singer.name }}</span
           >
         </div>
@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { likeMusicApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { openUrl, saveLikeMusicIds, routeTo, playOne } from "@/utils/common";
+import { saveLikeMusicIds, routeTo, playOne } from "@/utils/common";
 import { Like } from "@icon-park/vue-next";
 import { computed, ref } from "vue";
 import { usePlayerStore } from "@/store";

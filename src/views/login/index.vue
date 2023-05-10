@@ -21,6 +21,10 @@ import { routeTo, openUrl, setCookie, checkLoginStatus } from "@/utils/common";
 import { onMounted, onUnmounted, ref } from "vue";
 import { qrStatusApi, qrKeyApi, qrImgApi } from "./api";
 
+defineOptions({
+  name: 'login',
+})
+
 const imgSrc = ref<string>("");
 let timer: string | number | NodeJS.Timer | undefined;
 

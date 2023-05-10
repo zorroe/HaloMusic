@@ -4,8 +4,16 @@
       <Header />
     </div>
     <div class="content">
-      
-        <RouterView />
+      <router-view v-slot="{ Component }">
+        <keep-alive :max="10" :exclude="excludes">
+          <component :is="Component"/>
+        </keep-alive>
+      </router-view>
+
+      <!-- <RouterView v-if="!$route.meta.keepAlive"/>
+      <keep-alive>
+        <RouterView v-if="$route.meta.keepAlive"/>
+      </keep-alive> -->
     </div>
     <div v-show="playerStore.song.id">
       <Footer />
@@ -22,6 +30,9 @@ import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
 
 const playerStore = usePlayerStore(pinia);
+
+const excludes = ['artist','playlist']
+
 </script>
 
 <style lang="scss" scoped>
@@ -30,10 +41,6 @@ const playerStore = usePlayerStore(pinia);
   height: 100vh;
   display: flex;
   flex-direction: column;
-  /* 背景模糊 */
-  // background-image: url("@/assets/main-bg.png");
-  // background-size: cover;
-  // background-repeat: no-repeat;
 }
 
 .content {
