@@ -14,6 +14,7 @@
           :icon="PlayOne"
           :size="16"
           class="rounded-full border-black border-2 btn-animation"
+          @click="handlePlayMultiRecommend"
         ></icon-park>
         <div
           class="ea-link text-xs font-bold"
@@ -37,10 +38,7 @@
     </div>
     <div class="text-lv1">排行榜</div>
     <div class="grid-cols-5 grid place-items-center gap-4">
-      <top-list-cover
-        v-for="item in topList"
-        :data="item"
-      ></top-list-cover>
+      <top-list-cover v-for="item in topList" :data="item"></top-list-cover>
     </div>
   </div>
 </template>
@@ -58,10 +56,14 @@ import { getRecommendSongsApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
 import { PlayOne } from "@icon-park/vue-next";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store";
+
+const playerStore = usePlayerStore(pinia);
 
 defineOptions({
-  name: 'home',
-})
+  name: "home",
+});
 
 const loaded = ref(false);
 const recommendPlayList = ref<PlayListBaseInfo[]>([]);
@@ -156,6 +158,11 @@ const getRecommendSongs = async () => {
   });
 };
 
+const handlePlayMultiRecommend = () => {
+  const ids = recommendSongList.value.map((item) => item.id);
+  playerStore.playMulti(ids);
+};
+
 onMounted(async () => {
   await getRecommendPlayList();
   await getrecommendArtist();
@@ -165,10 +172,9 @@ onMounted(async () => {
   loaded.value = true;
   setTimeout(() => {
     saveLikeMusicIds();
-    saveSubAlbumIds()
+    saveSubAlbumIds();
   }, 0);
   console.log("Home组件onMounted");
-  
 });
 </script>
 
