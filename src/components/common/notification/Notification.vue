@@ -9,9 +9,6 @@
     @mouseenter="clearTimer"
     @mouseleave="startTimer"
   >
-    <div class="ea-notify-title text-lg font-bold" v-show="props.title">
-      {{ props.title }}
-    </div>
     <div class="ea-notify-body">
       <component :is="iconCom.component" :fill="iconCom.color" :size="24"/>
       <div class="ea-notify-content">
@@ -29,10 +26,6 @@ const visible = ref(true);
 const notifyRef = ref();
 
 const props = defineProps({
-  title: {
-    type: String,
-    default: "",
-  },
   message: {
     type: String,
     default: "",
@@ -100,6 +93,7 @@ onMounted(() => {
   box-shadow: rgb(0 0 0 / 10%) 0px 0px 16px 0px;
   animation: fade-in 200ms ease-in-out;
   padding: 0px 16px;
+  font-weight: 700;
 
   @keyframes fade-in {
     0% {
