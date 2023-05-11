@@ -21,7 +21,5 @@ const notify = (options:any) => {
   render(vm, container.appendChild(document.createElement("div")));
 };
 
-(window as any).notify = notify;
-
 
 export default notify;

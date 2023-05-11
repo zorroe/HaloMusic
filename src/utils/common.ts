@@ -118,71 +118,7 @@ export function formatTrackTime(value: number) {
   return `${min}:${sec}`;
 }
 
-// 根据歌单id往播放列表里面添加歌曲
-// 播放整个歌单的时候，会清空原有歌曲列表，然后添加新的歌曲列表
-// export async function playAll(id: number) {
-//   const { songs } = await getPlayListAllApi({ id });
-//   playerStore.clearPlayList();
-//   songs.forEach((song: any) => {
-//     playerStore.pushPlayList(false, {
-//       id: song.id,
-//       name: song.name,
-//       picUrl: song.al.picUrl,
-//       singers: song.ar.map((ar: any) => {
-//         return {
-//           id: ar.id,
-//           name: ar.name,
-//         };
-//       }),
-//       duration: dayjs(song.dt).format("mm:ss"),
-//       album: {
-//         id: song.al.id,
-//         name: song.al.name,
-//       },
-//     });
-//   });
-//   playOne(playerStore.playList[0].id);
-// }
-
-// 点击单首歌曲时，往播放列表里面添加歌曲
-// 播放单首歌曲的时候，不会清空原有歌曲列表，只会添加一首歌曲
-
 export const checkMusic:any = async (id: number) => {
   const res = await checkMusicApi(id);
   return res;
 };
-
-// export const playOne = async(id: number)=> {
-//   // 判断当前的播放列表中是否已经存在该歌曲
-//   const {success,message} = await checkMusic(id);
-//   if (!success) {
-//     notify({ message: message, type: "warning" });
-//     return;
-//   }
-//   const isExist = playerStore.playList.some((song) => {
-//     return song.id === id;
-//   });
-//   if (isExist) {
-//     playerStore.play(id);
-//     return;
-//   }
-//   const { songs } = await getMusicDetailApi(id);
-//   const song = songs[0];
-//   playerStore.playList.splice(playerStore.thisIndex + 1, 0, {
-//     id: song.id,
-//     name: song.name,
-//     picUrl: song.al.picUrl,
-//     singers: song.ar.map((ar: any) => {
-//       return {
-//         id: ar.id,
-//         name: ar.name,
-//       };
-//     }),
-//     duration: dayjs(song.dt).format("mm:ss"),
-//     album: {
-//       id: song.al.id,
-//       name: song.al.name,
-//     },
-//   });
-//   playerStore.play(id);
-// }

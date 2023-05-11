@@ -40,7 +40,6 @@
       <top-list-cover
         v-for="item in topList"
         :data="item"
-        @click="routeTo(`/playlist/${item.id}`)"
       ></top-list-cover>
     </div>
   </div>
