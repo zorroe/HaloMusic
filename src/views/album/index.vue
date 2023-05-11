@@ -37,7 +37,7 @@
           <ea-button>
             <icon-park
               :icon="Like"
-              :theme="isSub ? 'outline' : 'filled'"
+              :theme="isSub ? 'filled':'outline'"
               :size="20"
               class="rounded-full p-1"
             />

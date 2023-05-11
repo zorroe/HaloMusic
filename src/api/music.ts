@@ -16,11 +16,11 @@ export const likeMusicApi = (params: any) => {
   });
 };
 
-const getMusicUrlApi: any = (params:any) => {
+const getMusicUrlApi: any = (params: any) => {
   return http({
     url: "/song/url/v1",
     method: "get",
-    params
+    params,
   });
 };
 
@@ -48,17 +48,19 @@ export const getMusicDetailApi: any = async (musicId: string | number) => {
 
 export const getMusicDetail = async (musicId: string | number) => {
   const { songs } = await getMusicDetailApi(musicId);
+  const song = songs[0]
+  
   return {
-    id: songs[0].id,
-    name: songs[0].name,
-    picUrl: songs[0].al.picUrl,
-    singers: songs[0].ar.map((item: any) => {
+    id: song.id,
+    name: song.name,
+    picUrl: song.al.picUrl,
+    singers: song.ar.map((item: any) => {
       return { name: item.name, id: item.id };
     }),
-    duration: dayjs(songs[0].dt).format("mm:ss"),
+    duration: dayjs(song.dt).format("mm:ss"),
     album: {
-      id: songs[0].al.id,
-      name: songs[0].al.name,
+      id: song.al.id,
+      name: song.al.name,
     },
   };
 };
@@ -70,14 +72,22 @@ export const getRecommendSongsApi = async () => {
   });
 };
 
+// 检查歌曲是否可用
+export const checkMusicApi = async (id: number) => {
+  return http({
+    url: "/check/music",
+    method: "get",
+    params: {
+      id,
+    },
+  });
+};
+
 // 获取歌曲资源
-export const getAudioSourceFromNetease = async(id:number)=>{
-  const res = await getMusicUrlApi({id,level:'exhigh'})
-  if(!res.data[0])  return null;
+export const getAudioSourceFromNetease = async (id: number) => {
+  const res = await getMusicUrlApi({ id, level: "exhigh" });
+  if (!res.data[0]) return null;
   if (!res.data[0].url) return null;
-  if (res.data[0].freeTrialInfo !== null) {
-    return null;
-  }
-  const source = res.data[0].url.replace(/^http:/, 'https:');
+  const source = res.data[0].url.replace(/^http:/, "https:");
   return source;
-}
+};

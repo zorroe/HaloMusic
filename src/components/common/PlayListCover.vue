@@ -14,7 +14,7 @@
         theme="filled"
         :size="24"
         class="cover-play group-hover:opacity-100"
-        @click="playAll(props.data.id)"
+        @click="playAllByPlayListId(props.data.id)"
       ></icon-park>
     </div>
     <div class="flex items-center justify-end px-1">
@@ -56,7 +56,8 @@
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { PlayOne } from "@icon-park/vue-next";
 import { computed } from "vue";
-import { openUrl, routeTo,playAll } from "@/utils/common";
+import { openUrl, routeTo } from "@/utils/common";
+import {playAllByPlayListId} from "@/api/playList";
 
 /* 歌单封面图组件 */
 interface Props {

@@ -33,7 +33,7 @@
           {{ playListDetail.description }}
         </div>
         <div class="flex flex-grow gap-4 items-end">
-          <ea-button @click="playAll(playListDetail.id)"
+          <ea-button @click="handlePlayAll"
             ><icon-park
               :icon="PlayOne"
               theme="filled"
@@ -85,11 +85,14 @@ import { onBeforeMount, onMounted, ref } from "vue";
 import { Delete, Like, PlayOne } from "@icon-park/vue-next";
 import { openUrl } from "@/utils/common";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { playAll } from "@/utils/common";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store";
+
+const playerStore = usePlayerStore(pinia);
 
 defineOptions({
-  name: 'playlist',
-})
+  name: "playlist",
+});
 
 const loaded = ref(false);
 const user = ref();
@@ -137,6 +140,11 @@ const getPlayListMusic = async () => {
       album: { id: song.al.id, name: song.al.name },
     });
   });
+};
+
+const handlePlayAll = () => {
+  const ids = musicTableData.value.map((music) => music.id);
+  playerStore.playMulti(ids);
 };
 
 onBeforeMount(() => {

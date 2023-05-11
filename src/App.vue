@@ -50,6 +50,7 @@ const excludes = ['artist','playlist','album']
   flex: 1;
   padding-left: 40px;
   padding-right: 40px;
+  padding-bottom: 10px;
 }
 
 .header {
