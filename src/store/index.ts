@@ -1,12 +1,9 @@
-import {
-  getAudioSourceFromNetease,
-  getMusicDetail,
-} from "@/api/music";
-import { MusicBaseInfo } from "@/types/musicRel";
-import { UserProfile } from "@/types/userRel";
-import { sleep } from "@/utils/common";
+import type { UserProfile } from "@/types/userRel";
+import type { MusicBaseInfo } from "@/types/musicRel";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
+import { getAudioSourceFromNetease, getMusicDetail } from "@/api/music";
+import notify from "@/components/common/notification/notify";
 
 export const useUserInfoStore = defineStore("userInfo", () => {
   const userInfo = ref<UserProfile>();
@@ -31,11 +28,11 @@ export const usePlayerStore = defineStore("player", {
     audio: new Audio(),
     loopType: 1, //循环模式 0 单曲循环 1 列表循环 2随机播放
     volume: 60, //音量
-    playList: [] as MusicBaseInfo[], //播放列表,
+    playList: [] as readonly MusicBaseInfo[], //播放列表,
     showPlayList: false,
     id: 0,
     url: "",
-    songUrl: {} as string,
+    songUrl: "" as string,
     song: {} as MusicBaseInfo,
     isPlaying: false, //是否播放中
     isPause: false, //是否暂停
@@ -53,11 +50,11 @@ export const usePlayerStore = defineStore("player", {
     },
     thisIndex: (state) => {
       // 当前播放歌曲在播放列表中的索引
-      return state.playList.findIndex((item) => item.id == state.id);
+      return state.playList.findIndex((item) => item.id === state.id);
     },
     nextSongId(state): any {
       const { thisIndex, playListCount } = this;
-      if (thisIndex == playListCount - 1) {
+      if (thisIndex === playListCount - 1) {
         return state.playList[0]?.id;
       } else {
         const nextIndex: number = thisIndex + 1;
@@ -66,7 +63,7 @@ export const usePlayerStore = defineStore("player", {
     },
     prevSongId(state): any {
       const { thisIndex } = this;
-      if (thisIndex == 0) {
+      if (thisIndex === 0) {
         return state.playList[state.playList.length - 1]?.id;
       } else {
         const prevIndex: number = thisIndex - 1;
@@ -75,7 +72,7 @@ export const usePlayerStore = defineStore("player", {
     },
   },
   actions: {
-    init() {
+    async init() {
       this.audio.volume = this.volume / 100;
     },
     //播放列表里面添加音乐
@@ -85,23 +82,23 @@ export const usePlayerStore = defineStore("player", {
         return;
       }
       list.forEach((song) => {
-        if (this.playList.filter((s) => s.id == song.id).length <= 0) {
-          this.playList.push(song);
+        if (!this.playList.some((s) => s.id === song.id)) {
+          this.playList = [...this.playList, song];
         }
       });
     },
     clearPlayList() {
-      this.songUrl = {} as any;
+      this.songUrl = "";
       this.url = "";
       this.id = 0;
-      this.song = {} as any;
+      this.song = {} as MusicBaseInfo;
       this.isPlaying = false;
       this.isPause = false;
       this.sliderInput = false;
       this.ended = false;
       this.muted = false;
       this.currentTime = 0;
-      this.playList = [] as any[];
+      this.playList = [] as readonly MusicBaseInfo[];
       this.showPlayList = false;
       this.audio.load();
       setTimeout(() => {
@@ -110,32 +107,41 @@ export const usePlayerStore = defineStore("player", {
     },
     async play(id: number) {
       this.id = id;
-      const url = await getAudioSourceFromNetease(id);
-      if (!url) {
-        // 播放下一首
-        sleep(3000)
-        console.log(this.getErrorCount,this.playListCount);
-        this.getErrorCount++;
-        if (this.getErrorCount == this.playListCount) {
-          this.clearPlayList();
-        } else {
-          this.next();
+      try {
+        const [url, song] = await Promise.all([
+          getAudioSourceFromNetease(id),
+          getMusicDetail(id),
+        ]);
+        if (!url) {
+          this.handleError("无法播放该歌曲");
+          return;
         }
-        return;
+        this.getErrorCount = 0;
+        this.isPlaying = false;
+        this.audio.src = url;
+        await this.audio.play();
+        this.isPlaying = true;
+        this.songUrl = url;
+        this.url = url;
+        this.song = song;
+        this.interval();
+      } catch (error: any) {
+        this.handleError(error.message);
       }
-      this.getErrorCount = 0;
-      this.isPlaying = false;
+    },
+
+    handleError(message: string) {
+      notify({ message,type: "error" });
+      if (++this.getErrorCount >= this.playListCount) {
+        this.clearPlayList();
+      } else {
+        this.next();
+      }
+    },
+
+    async playAudio(url: string) {
       this.audio.src = url;
-      this.audio
-        .play()
-        .then(async () => {
-          this.isPlaying = true;
-          this.songUrl = url;
-          this.url = url;
-          await this.songDetail();
-          this.interval();
-        })
-        .catch((res) => {});
+      await this.audio.play();
     },
     //播放结束
     playEnd() {
@@ -166,9 +172,9 @@ export const usePlayerStore = defineStore("player", {
     },
     //下一曲
     next() {
-      if (this.loopType == 2) {
+      if (this.loopType === 2) {
         this.randomPlay();
-      } else if (this.loopType == 0) {
+      } else if (this.loopType === 0) {
         this.play(this.id);
       } else {
         this.play(this.nextSongId);
@@ -210,7 +216,7 @@ export const usePlayerStore = defineStore("player", {
     },
     //切换循环类型
     toggleLoop() {
-      if (this.loopType == 2) {
+      if (this.loopType === 2) {
         this.loopType = 0;
       } else {
         this.loopType++;
