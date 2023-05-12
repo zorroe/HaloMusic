@@ -9,11 +9,6 @@
           <component :is="Component"/>
         </keep-alive>
       </router-view>
-
-      <!-- <RouterView v-if="!$route.meta.keepAlive"/>
-      <keep-alive>
-        <RouterView v-if="$route.meta.keepAlive"/>
-      </keep-alive> -->
     </div>
     <div v-show="playerStore.song.id">
       <Footer />

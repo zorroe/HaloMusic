@@ -7,10 +7,8 @@ import { useUserInfoStore, usePlayerStore } from "@/store/index";
 import { getPlayListByUidApi } from "@/views/me/api";
 import { getPlayListAllApi } from "@/api/playList";
 import { UserProfile } from "@/types/userRel";
-import dayjs from "dayjs";
-import { checkMusicApi, getMusicDetailApi } from "@/api/music";
+import { checkMusicApi, getMusicUrlApi } from "@/api/music";
 import { getSubAlbumlistApi } from "@/api/album";
-import notify from "@/components/common/notification/notify";
 
 const userInfoStore = useUserInfoStore(pinia);
 const playerStore = usePlayerStore(pinia);
@@ -83,7 +81,6 @@ export const doLogout = async () => {
   await checkLoginStatus();
 };
 
-
 export const saveLikeMusicIds = async () => {
   const user = JSON.parse(localStorage.getItem("user") || "");
   const res: any = await getPlayListByUidApi({
@@ -118,7 +115,15 @@ export function formatTrackTime(value: number) {
   return `${min}:${sec}`;
 }
 
-export const checkMusic:any = async (id: number) => {
-  const res = await checkMusicApi(id);
-  return res;
+export const checkMusic: any = async (id: number) => {
+  const checkStatus = await checkMusicApi(id);
+  const musicUrl = await getMusicUrlApi({ id, level: "exhigh" });
+  if (
+    !musicUrl.data[0] ||
+    !musicUrl.data[0].url ||
+    musicUrl.data[0].freeTrialInfo !== null
+  ) {
+    return { success: false, message: "暂无资源" };
+  }
+  return checkStatus;
 };

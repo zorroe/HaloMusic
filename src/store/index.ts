@@ -30,7 +30,6 @@ export const usePlayerStore = defineStore("player", {
     loopType: 1, //循环模式 0 单曲循环 1 列表循环 2随机播放
     volume: 60, //音量
     playList: [] as number[], //播放列表,
-    songInfoList: [] as MusicBaseInfo[],
     id: 0,
     song: {} as MusicBaseInfo,
     isPlaying: false, //是否播放中
@@ -126,11 +125,6 @@ export const usePlayerStore = defineStore("player", {
       this.clearPlayList();
       this.pushPlayList(ids);
       await this.play(ids[0]);
-      setTimeout(() => {
-        ids.forEach((id: number) => {
-          this.getSongDetail(id);
-        });
-      }, 0);
     },
 
     async playAudio(url: string) {
@@ -158,12 +152,7 @@ export const usePlayerStore = defineStore("player", {
         this.playList.splice(index, 1);
       }
     },
-
-    async getSongDetail(id: number) {
-      const song = await getMusicDetail(id);
-      this.songInfoList.push(song);
-    },
-    //重新播放
+     //重新播放
     rePlay() {
       setTimeout(() => {
         this.currentTime = 0;
@@ -171,18 +160,14 @@ export const usePlayerStore = defineStore("player", {
       }, 1000);
     },
     //下一曲
-    next() {
-      console.log("调用");
+    async next() {
+      if(this.nextSongId === this.id) return
+      
       if (this.loopType === 2) {
-        console.log("随机播放");
         this.randomPlay();
       } else if (this.loopType === 0) {
-        console.log("单曲循环");
         this.rePlay();
       } else {
-        console.log("顺序播放");
-        console.log(this.id, this.nextSongId);
-
         this.play(this.nextSongId);
       }
     },
@@ -191,8 +176,16 @@ export const usePlayerStore = defineStore("player", {
       this.play(this.prevSongId);
     },
     //随机播放
-    randomPlay() {
-      this.play(this.playList[Math.floor(Math.random() * this.playListCount)]);
+    async randomPlay() {
+      const ramdomId = this.playList[Math.floor(Math.random() * this.playList.length)];
+      const { success, message } = await checkMusic(ramdomId);
+      if(!success) {
+        notify({ message: message, type: "warning" });
+        this.fremoveSongFromPlaylist(ramdomId);
+        this.randomPlay();
+        return
+      }
+      this.play(ramdomId);
     },
     //播放、暂停
     togglePlay() {
