@@ -16,7 +16,7 @@ export const likeMusicApi = (params: any) => {
   });
 };
 
-const getMusicUrlApi: any = (params: any) => {
+export const getMusicUrlApi: any = (params: any) => {
   return http({
     url: "/song/url/v1",
     method: "get",

@@ -106,7 +106,6 @@ export const usePlayerStore = defineStore("player", {
       if (!success) {
         notify({ message: message, type: "warning" });
         this.fremoveSongFromPlaylist(id);
-        this.next();
         return;
       }
       this.pushPlayList(id);
@@ -161,8 +160,9 @@ export const usePlayerStore = defineStore("player", {
       }, 1000);
     },
     //下一曲
-    next() {
+    async next() {
       if(this.nextSongId === this.id) return
+      
       if (this.loopType === 2) {
         this.randomPlay();
       } else if (this.loopType === 0) {
@@ -176,8 +176,16 @@ export const usePlayerStore = defineStore("player", {
       this.play(this.prevSongId);
     },
     //随机播放
-    randomPlay() {
-      this.play(this.playList[Math.floor(Math.random() * this.playListCount)]);
+    async randomPlay() {
+      const ramdomId = this.playList[Math.floor(Math.random() * this.playList.length)];
+      const { success, message } = await checkMusic(ramdomId);
+      if(!success) {
+        notify({ message: message, type: "warning" });
+        this.fremoveSongFromPlaylist(ramdomId);
+        this.randomPlay();
+        return
+      }
+      this.play(ramdomId);
     },
     //播放、暂停
     togglePlay() {
