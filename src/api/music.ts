@@ -86,8 +86,6 @@ export const checkMusicApi = async (id: number) => {
 // 获取歌曲资源
 export const getAudioSourceFromNetease = async (id: number) => {
   const res = await getMusicUrlApi({ id, level: "exhigh" });
-  if (!res.data[0]) return null;
-  if (!res.data[0].url) return null;
   const source = res.data[0].url.replace(/^http:/, "https:");
   return source;
 };

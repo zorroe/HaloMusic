@@ -133,17 +133,7 @@ export const usePlayerStore = defineStore("player", {
     },
     //播放结束
     playEnd() {
-      switch (this.loopType) {
-        case 0:
-          this.rePlay();
-          break;
-        case 1:
-          this.next();
-          break;
-        case 2:
-          this.randomPlay();
-          break;
-      }
+      this.next();
     },
 
     fremoveSongFromPlaylist(songId: number) {
@@ -161,31 +151,27 @@ export const usePlayerStore = defineStore("player", {
     },
     //下一曲
     async next() {
-      if(this.nextSongId === this.id) return
-      
-      if (this.loopType === 2) {
-        this.randomPlay();
-      } else if (this.loopType === 0) {
-        this.rePlay();
-      } else {
-        this.play(this.nextSongId);
-      }
-    },
-    //上一曲
-    prev() {
-      this.play(this.prevSongId);
-    },
-    //随机播放
-    async randomPlay() {
-      const ramdomId = this.playList[Math.floor(Math.random() * this.playList.length)];
-      const { success, message } = await checkMusic(ramdomId);
-      if(!success) {
+      const { success, message } = await checkMusic(this.nextSongId);
+      if(!success){
         notify({ message: message, type: "warning" });
-        this.fremoveSongFromPlaylist(ramdomId);
-        this.randomPlay();
+        this.id = this.nextSongId;
+        this.next();
+        this.fremoveSongFromPlaylist(this.nextSongId);
         return
       }
-      this.play(ramdomId);
+      this.play(this.nextSongId)
+    },
+    //上一曲
+    async prev() {
+      const { success, message } = await checkMusic(this.prevSongId);
+      if(!success){
+        notify({ message: message, type: "warning" });
+        this.id = this.prevSongId;
+        this.next();
+        this.fremoveSongFromPlaylist(this.prevSongId);
+        return
+      }
+      this.play(this.prevSongId)
     },
     //播放、暂停
     togglePlay() {

@@ -20,13 +20,12 @@
 <script setup lang="ts">
 import Header from "@/components/layout/Header.vue";
 import Footer from "@/components/layout/Footer.vue";
-import Modals from "@/components/layout/Modals.vue";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
 
 const playerStore = usePlayerStore(pinia);
 
-const excludes = ['artist','playlist','album']
+const excludes = ['artist','playlist','album','curPlaylist']
 
 </script>
 
