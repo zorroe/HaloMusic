@@ -1,5 +1,5 @@
 {
-  "name": "Halomusic",
+  "name": "halomusic",
   "version": "0.2.0",
   "main": "dist-electron/main/index.js",
   "description": "HaloMusic",
