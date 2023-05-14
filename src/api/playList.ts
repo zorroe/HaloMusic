@@ -6,7 +6,7 @@ const playerStore = usePlayerStore(pinia);
 
 export const getrecommendPlayListApi: any = (params: any = { limit: 10 }) => {
   return http({
-    url: "/recommend/resource",
+    url: "/personalized",
     method: "get",
     params,
   });
