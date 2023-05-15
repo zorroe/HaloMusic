@@ -243,6 +243,7 @@ watch(song, async () => {
   color: rgb(51, 94, 234);
   font-weight: 800;
   font-size: 32px;
+  line-height: 1.2
 }
 
 .v-enter-active,
