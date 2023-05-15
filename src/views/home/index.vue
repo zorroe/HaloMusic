@@ -74,13 +74,14 @@ const recommendSongList = ref<MusicBaseInfo[]>([]);
 
 const getRecommendPlayList = async () => {
   const {result} = await getrecommendPlayListApi();
+  console.log(result);
   
   result.forEach((item: any) => {
     recommendPlayList.value.push({
       id: item.id,
       name: item.name,
       picUrl: item.picUrl,
-      playCount: item.playcount,
+      playCount: item.playCount,
     });
   });
 };
