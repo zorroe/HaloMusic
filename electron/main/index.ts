@@ -47,12 +47,13 @@ const indexHtml = join(process.env.DIST, 'index.html')
 
 async function createWindow() {
   win = new BrowserWindow({
-    title: 'Main window',
+    title: 'HaloMusic',
     icon: join(process.env.PUBLIC, 'favicon.ico'),
     width: 1300,
     height: 800,
     minWidth: 1300,
     minHeight: 800,
+    titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload,
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
@@ -60,11 +61,11 @@ async function createWindow() {
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
       nodeIntegration: true,
       contextIsolation: false,
-      
+      webSecurity: false,
     },
   })
 
-  // win.setMenu(null)  
+  win.setMenuBarVisibility(false);
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
     win.loadURL(url)
     // Open devTool if the app is not packaged
