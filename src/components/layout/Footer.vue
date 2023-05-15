@@ -16,7 +16,7 @@
   <div class="ea-footer">
     <div class="flex items-center">
       <div class="w-10 h-10 mr-4">
-        <img :src="curMusic.picUrl" class="rounded-full w-10 h-10" />
+        <img :src="curMusic.picUrl" class="rounded-full w-10 h-10" @click="playerStore.openPlayerPage"/>
       </div>
       <div class="flex flex-col justify-center items-center w-36">
         <div class="text-sm font-bold w-full truncate">
@@ -98,9 +98,12 @@
         class="footer-icon btn-animation"
         :icon="Up"
         :size="20"
+        @click="playerStore.openPlayerPage"
       ></icon-park>
     </div>
   </div>
+  <Player :show="playerStore.showPlayerPage">
+  </Player>
 </template>
 
 <script setup lang="ts">
@@ -120,9 +123,11 @@ import {
 } from "@icon-park/vue-next";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
-import { computed, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { formatTrackTime } from "@/utils/common";
 import { routeTo } from "@/utils/common";
+import Player from "./Player.vue";
+
 
 const playerStore = usePlayerStore(pinia);
 const curMusic = computed(() => playerStore.song);
@@ -187,6 +192,7 @@ const handleClickVolumn = () => {
     playerStore.setVolume(0);
   }
 };
+
 </script>
 
 <style lang="scss" scoped>
@@ -200,9 +206,7 @@ const handleClickVolumn = () => {
   @apply h-16 rounded-b px-8 w-full flex justify-around items-center;
 }
 
-.volume-bar {
-  width: 84px;
-}
+
 
 .footer-icon {
   @apply p-1 rounded hover:bg-gray-100;

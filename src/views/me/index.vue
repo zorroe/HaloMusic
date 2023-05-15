@@ -32,6 +32,7 @@
         <div
           v-for="item in likeList.slice(0, 12)"
           class="rounded-xl like-music flex items-center cursor-pointer"
+          @click="playerStore.play(item.id)"
         >
           <img class="w-8 h-8 rounded" :src="item.picUrl" />
           <div class="flex flex-col justify-center px-2">
@@ -104,6 +105,10 @@ import { ArtistBaseInfo } from "@/types/artistRel";
 import dayjs from "dayjs";
 import { MvBaseInfo } from "@/types/mvRel";
 import { AlbumBaseInfo } from "@/types/albumRel";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store";
+
+const playerStore = usePlayerStore(pinia);
 
 const user = ref();
 const isLoaded = ref(false);

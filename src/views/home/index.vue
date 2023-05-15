@@ -73,22 +73,17 @@ const topList = ref<PlayListBaseInfo[]>([]);
 const recommendSongList = ref<MusicBaseInfo[]>([]);
 
 const getRecommendPlayList = async () => {
-  const { recommend } = await getrecommendPlayListApi();
-  recommend.forEach((item: any) => {
+  const {result} = await getrecommendPlayListApi();
+  console.log(result);
+  
+  result.forEach((item: any) => {
     recommendPlayList.value.push({
       id: item.id,
       name: item.name,
       picUrl: item.picUrl,
-      playCount: item.playcount,
+      playCount: item.playCount,
     });
   });
-  // 长度大于10截取10个，长度大于5截取5个
-  recommendPlayList.value =
-    recommendPlayList.value.length > 10
-      ? recommendPlayList.value.slice(0, 10)
-      : recommendPlayList.value.length > 5
-      ? recommendPlayList.value.slice(0, 5)
-      : recommendPlayList.value;
 };
 
 const getrecommendArtist = async () => {

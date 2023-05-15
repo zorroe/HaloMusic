@@ -7,3 +7,4 @@ declare module '*.vue' {
 }
 
 declare module 'js-cookie';
+declare module 'lyric-parser';

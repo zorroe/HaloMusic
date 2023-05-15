@@ -41,6 +41,7 @@ export const usePlayerStore = defineStore("player", {
     duration: 0, //总播放时长
     // 获取无法播放的歌曲的次数
     getErrorCount: 0,
+    showPlayerPage: false,
   }),
   getters: {
     playListCount: (state) => {
@@ -237,5 +238,11 @@ export const usePlayerStore = defineStore("player", {
         }, 1000);
       }
     },
+    openPlayerPage() {
+      this.showPlayerPage = true;
+    },
+    closePlayerPage() {
+      this.showPlayerPage = false;
+    }
   },
 });
