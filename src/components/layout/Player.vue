@@ -78,7 +78,7 @@
         </div>
         <div class="flex w-1/12 justify-center">
           <icon-park
-            class="p-1 h-fit rounded btn-animation hover:bg-gray-100 hover:bg-opacity-80"
+            class="mt-2 p-1 h-fit rounded btn-animation hover:bg-gray-100 hover:bg-opacity-80"
             :icon="Down"
             :size="20"
             @click="playerStore.closePlayerPage"
