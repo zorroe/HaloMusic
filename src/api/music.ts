@@ -2,7 +2,7 @@ import { MusicBaseInfo } from "@/types/musicRel";
 import http from "@/utils/request";
 import dayjs from "dayjs";
 
-export const getLyricApi = (params: any) => {
+export const getLyricApi:any = (params: any) => {
   return http({
     url: "/lyric",
     params,

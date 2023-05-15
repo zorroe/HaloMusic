@@ -49,6 +49,7 @@
     "express": "^4.18.2",
     "express-http-proxy": "^1.6.3",
     "js-cookie": "^3.0.5",
+    "lyric-parser": "^1.0.1",
     "NeteaseCloudMusicApi": "^4.8.10",
     "pinia": "^2.0.35",
     "vue-router": "^4.1.6",
