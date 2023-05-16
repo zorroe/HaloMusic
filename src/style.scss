@@ -96,3 +96,9 @@
 .volume-bar {
   width: 84px;
 }
+
+// 播放列表正在播放的歌曲item样式
+.playing {
+  background-color: rgb(234, 239, 253);
+  color: rgb(51, 94, 234);
+}

@@ -334,7 +334,6 @@ onMounted(async () => {
   await getPlayListByUid();
   await getLikeList();
   isLoaded.value = true;
-  console.log("Me组件onMounted");
 });
 </script>
 

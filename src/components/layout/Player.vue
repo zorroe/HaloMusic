@@ -156,8 +156,6 @@ const lyricList = computed(() => {
     const time = item.match(/\[(\d{2,}):(\d{2})(?:\.(\d{2,3}))?]/g);
     if (time) {
       const txt = item.split(time[0])[1];
-      console.log(txt);
-
       const timeReg = time[0].match(/(\d{2,}):(\d{2})(?:\.(\d{2,3}))?/);
       if (timeReg) {
         const time2Seconds =
@@ -165,7 +163,6 @@ const lyricList = computed(() => {
           parseInt(timeReg[2]) +
           parseInt(timeReg[3]) / 1000;
 
-        console.log(time2Seconds);
         lyricList.push({
           time: time2Seconds,
           txt,

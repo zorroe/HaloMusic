@@ -108,12 +108,24 @@
   </div>
   <ea-drawer :drawer-show="drawerShow" @close="changeDrawerStatus(false)">
     <div class="flex flex-col gap-2">
-      <div v-for="music in musicBaseInfoList" class="playlist-item cursor-default" @dbclick="playerStore.play(music.id)">
-        <div class="flex-grow text-start cursor-pointer">{{ music.name }}</div>
-        <div class="flex gap-1 item-center text-xs justify-end ">
-          <span class="ea-link" v-for="singer in music.singers" @click="routeTo(`/artist/${singer.id}`)">{{ singer.name }}</span>
+      <div
+        v-for="music in musicBaseInfoList"
+        class="playlist-item cursor-default"
+        @dblclick.native="handlePlayMusic(music)"
+        :class="{ playing: music.id == curMusic.id }"
+      >
+        <div class="flex-grow text-start cursor-pointer truncate">
+          {{ music.name }}
         </div>
-        <div class=" text-sm text-gray-500">
+        <div class="flex gap-1 item-center text-xs justify-end truncate">
+          <span
+            class="ea-link"
+            v-for="singer in music.singers"
+            @click="routeTo(`/artist/${singer.id}`)"
+            >{{ singer.name }}</span
+          >
+        </div>
+        <div class="text-sm text-gray-500">
           {{ music.duration }}
         </div>
       </div>
@@ -180,6 +192,11 @@ watch(
 );
 
 const drawerShow = ref(false);
+
+const handlePlayMusic = (music: MusicBaseInfo) => {
+  console.log(music);
+  playerStore.play(music.id);
+};
 
 const changeDrawerStatus = (status: boolean) => {
   drawerShow.value = status;
@@ -256,9 +273,9 @@ const handleClickVolumn = () => {
   @apply p-1 rounded hover:bg-gray-100;
 }
 
-.playlist-item{
+.playlist-item {
   @apply flex gap-8 w-full h-10 items-center justify-between rounded-lg px-4;
-  
+
   &:hover {
     background-color: rgb(234, 239, 253);
   }

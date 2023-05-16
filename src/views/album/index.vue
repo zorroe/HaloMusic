@@ -76,7 +76,6 @@ const isSub = computed(() => {
 const getAlbum = async () => {
   const { songs, album } = await getAlbumApi({ id: albumId.value });
   albumInfo.value = album;
-  console.log(songs);
   
   songs.forEach((song: any) => {
     albumSongs.value?.push({
@@ -96,7 +95,6 @@ const getAlbum = async () => {
       },
     });
   });
-  console.log(albumSongs.value);
   
 };
 
