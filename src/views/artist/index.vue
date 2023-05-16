@@ -21,7 +21,7 @@
           artistInfo.artist.briefDesc
         }}</label>
         <div class="flex flex-grow gap-4 items-end">
-          <ea-button>
+          <ea-button @click="playMusicByArtistId">
             <icon-park
               :icon="PlayOne"
               theme="filled"
@@ -89,7 +89,7 @@ import {
   getArtistDetailApi,
   getSongsByArtistIdApi,
   getArtistAlbumApi,
-  getArtistMvApi
+  getArtistMvApi,
 } from "@/api/artist";
 import { BrowserSafari, Like, PlayOne } from "@icon-park/vue-next";
 import { openUrl } from "@/utils/common";
@@ -98,10 +98,14 @@ import dayjs from "dayjs";
 import { getMusicDetailApi } from "@/api/music";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { MvBaseInfo } from "@/types/mvRel";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store";
+
+const playerStore = usePlayerStore(pinia);
 
 defineOptions({
-  name: 'artist',
-})
+  name: "artist",
+});
 
 const artistId = ref<string>();
 
@@ -165,19 +169,29 @@ const getAlbumsByArtistId = async () => {
 };
 
 const getMvsByArtistId = async () => {
-  const {mvs} = await getArtistMvApi({ id: artistId.value, limit: 8 })
-  mvs.forEach((mv:any)=>{
+  const { mvs } = await getArtistMvApi({ id: artistId.value, limit: 8 });
+  mvs.forEach((mv: any) => {
     artistHotMvs.value.push({
       id: mv.id,
       name: mv.name,
       picUrl: mv.imgurl16v9,
-      creators: [{
-        id: mv.artist.id,
-        name: mv.artist.name
-      }]
-    })
-  })
-  
+      creators: [
+        {
+          id: mv.artist.id,
+          name: mv.artist.name,
+        },
+      ],
+    });
+  });
+};
+
+const playMusicByArtistId = async () => {
+  const { songs: s1s } = await getSongsByArtistIdApi({
+    id: artistId.value,
+    limit: 999,
+  });
+  const ids = s1s.map((song: any) => song.id);
+  playerStore.playMulti(ids);
 };
 
 onMounted(async () => {
@@ -186,7 +200,7 @@ onMounted(async () => {
   loaded.value = true;
   getHotSongsByArtistId();
   getAlbumsByArtistId();
-  getMvsByArtistId()
+  getMvsByArtistId();
 });
 </script>
 
