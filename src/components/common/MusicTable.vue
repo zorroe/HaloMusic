@@ -27,8 +27,8 @@
       <div class="w-1/3 text-base cursor-pointer">
         <span
           class="hover:underline"
-          @click="routeTo(`/album/${item.album.id}`)"
-          >{{ item.album.name }}</span
+          @click="routeTo(`/album/${item.album?.id}`)"
+          >{{ item.album?.name }}</span
         >
       </div>
       <icon-park
@@ -94,8 +94,5 @@ const handleLikeMusic = async (music: MusicBaseInfo) => {
   @apply invisible group-hover:visible;
 }
 
-.playing {
-  background-color: rgb(234, 239, 253);
-  color: rgb(51, 94, 234);
-}
+
 </style>

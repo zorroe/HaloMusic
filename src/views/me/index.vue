@@ -32,7 +32,7 @@
         <div
           v-for="item in likeList.slice(0, 12)"
           class="rounded-xl like-music flex items-center cursor-pointer"
-          @dbclick="playerStore.play(item.id)"
+          @dblclick.native="playerStore.play(item.id)"
         >
           <img class="w-8 h-8 rounded" :src="item.picUrl" />
           <div class="flex flex-col justify-center px-2">
@@ -334,7 +334,6 @@ onMounted(async () => {
   await getPlayListByUid();
   await getLikeList();
   isLoaded.value = true;
-  console.log("Me组件onMounted");
 });
 </script>
 

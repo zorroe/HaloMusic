@@ -74,7 +74,6 @@ const recommendSongList = ref<MusicBaseInfo[]>([]);
 
 const getRecommendPlayList = async () => {
   const {result} = await getrecommendPlayListApi();
-  console.log(result);
   
   result.forEach((item: any) => {
     recommendPlayList.value.push({
@@ -169,7 +168,6 @@ onMounted(async () => {
     saveLikeMusicIds();
     saveSubAlbumIds();
   }, 0);
-  console.log("Home组件onMounted");
 });
 </script>
 

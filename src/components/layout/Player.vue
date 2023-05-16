@@ -78,7 +78,7 @@
         </div>
         <div class="flex w-1/12 justify-center">
           <icon-park
-            class="p-1 h-fit rounded btn-animation hover:bg-gray-100 hover:bg-opacity-80"
+            class="mt-2 p-1 h-fit rounded btn-animation hover:bg-gray-100 hover:bg-opacity-80"
             :icon="Down"
             :size="20"
             @click="playerStore.closePlayerPage"
@@ -156,8 +156,6 @@ const lyricList = computed(() => {
     const time = item.match(/\[(\d{2,}):(\d{2})(?:\.(\d{2,3}))?]/g);
     if (time) {
       const txt = item.split(time[0])[1];
-      console.log(txt);
-
       const timeReg = time[0].match(/(\d{2,}):(\d{2})(?:\.(\d{2,3}))?/);
       if (timeReg) {
         const time2Seconds =
@@ -165,7 +163,6 @@ const lyricList = computed(() => {
           parseInt(timeReg[2]) +
           parseInt(timeReg[3]) / 1000;
 
-        console.log(time2Seconds);
         lyricList.push({
           time: time2Seconds,
           txt,
@@ -243,6 +240,7 @@ watch(song, async () => {
   color: rgb(51, 94, 234);
   font-weight: 800;
   font-size: 32px;
+  line-height: 1.2
 }
 
 .v-enter-active,

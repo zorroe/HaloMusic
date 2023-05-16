@@ -232,10 +232,10 @@ export const usePlayerStore = defineStore("player", {
     interval() {
       if (this.isPlaying && !this.sliderInput) {
         setInterval(() => {
-          this.currentTime = parseInt(this.audio.currentTime.toString());
-          this.duration = parseInt(this.audio.duration.toString());
+          this.currentTime = parseFloat(this.audio.currentTime.toFixed(2));
+          this.duration = parseInt(this.audio.duration.toFixed(0));
           this.ended = this.audio.ended;
-        }, 1000);
+        }, 200);
       }
     },
     openPlayerPage() {

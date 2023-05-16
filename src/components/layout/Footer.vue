@@ -16,7 +16,11 @@
   <div class="ea-footer">
     <div class="flex items-center">
       <div class="w-10 h-10 mr-4">
-        <img :src="curMusic.picUrl" class="rounded-full w-10 h-10" @click="playerStore.openPlayerPage"/>
+        <img
+          :src="curMusic.picUrl"
+          class="rounded-full w-10 h-10"
+          @click="playerStore.openPlayerPage"
+        />
       </div>
       <div class="flex flex-col justify-center items-center w-36">
         <div class="text-sm font-bold w-full truncate">
@@ -70,7 +74,7 @@
         class="footer-icon btn-animation"
         :icon="MusicList"
         :size="20"
-        @click="routeTo('/curPlayList')"
+        @click="changeDrawerStatus(true)"
       ></icon-park>
       <div class="flex justify-center items-center gap-2 w-32">
         <icon-park
@@ -102,8 +106,27 @@
       ></icon-park>
     </div>
   </div>
-  <Player :show="playerStore.showPlayerPage">
-  </Player>
+  <ea-drawer :drawer-show="drawerShow" @close="changeDrawerStatus(false)">
+    <div class="flex flex-col gap-2">
+      <div
+        v-for="music in musicBaseInfoList"
+        class="playlist-item cursor-default"
+        @dblclick.native="handlePlayMusic(music)"
+        :class="{ playing: music.id == curMusic.id }"
+      >
+        <div class="flex-grow text-start cursor-pointer truncate">
+          {{ music.name }}
+        </div>
+        <div class="flex gap-1 item-center text-xs justify-end truncate">
+          <span v-for="singer in music.singers">{{ singer.name }}</span>
+        </div>
+        <div class="text-sm text-gray-500">
+          {{ music.duration }}
+        </div>
+      </div>
+    </div>
+  </ea-drawer>
+  <Player :show="playerStore.showPlayerPage"> </Player>
 </template>
 
 <script setup lang="ts">
@@ -124,10 +147,11 @@ import {
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
 import { computed, ref, watch } from "vue";
-import { formatTrackTime } from "@/utils/common";
-import { routeTo } from "@/utils/common";
+import { formatTrackTime, routeTo } from "@/utils/common";
 import Player from "./Player.vue";
-
+import { getMusicDetailApi } from "@/api/music";
+import dayjs from "dayjs";
+import { MusicBaseInfo } from "@/types/musicRel";
 
 const playerStore = usePlayerStore(pinia);
 const curMusic = computed(() => playerStore.song);
@@ -138,10 +162,49 @@ const volume = computed({
   },
 });
 
+const musicBaseInfoList = ref<MusicBaseInfo[]>([]);
+
+watch(
+  () => playerStore.playList,
+  async (newVal) => {
+    const { songs } = await getMusicDetailApi(newVal.join(","));
+    const list = songs.map((song: any) => {
+      return {
+        id: song.id,
+        name: song.name,
+        picUrl: song.al.picUrl,
+        singers: song.ar.map((singer: any) => {
+          return {
+            id: singer.id,
+            name: singer.name,
+          };
+        }),
+        duration: dayjs(song.dt).format("mm:ss"),
+      };
+    });
+    musicBaseInfoList.value = list;
+  },
+  {
+    deep: true,
+    immediate: true,
+  }
+);
+
+const drawerShow = ref(false);
+
+const handlePlayMusic = (music: MusicBaseInfo) => {
+  console.log(music);
+  playerStore.play(music.id);
+};
+
+const changeDrawerStatus = (status: boolean) => {
+  drawerShow.value = status;
+};
+
 const curMusicDuration = computed(() => playerStore.duration);
 
 const curMusicCurrentTime = computed({
-  get: () => playerStore.currentTime,
+  get: () => parseInt(playerStore.currentTime.toFixed(0)),
   set: (val) => {
     playerStore.onSliderChange(val);
   },
@@ -192,7 +255,6 @@ const handleClickVolumn = () => {
     playerStore.setVolume(0);
   }
 };
-
 </script>
 
 <style lang="scss" scoped>
@@ -206,9 +268,15 @@ const handleClickVolumn = () => {
   @apply h-16 rounded-b px-8 w-full flex justify-around items-center;
 }
 
-
-
 .footer-icon {
   @apply p-1 rounded hover:bg-gray-100;
+}
+
+.playlist-item {
+  @apply flex gap-8 w-full h-10 items-center justify-between rounded-lg px-4;
+
+  &:hover {
+    background-color: rgb(234, 239, 253);
+  }
 }
 </style>

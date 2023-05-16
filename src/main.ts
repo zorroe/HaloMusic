@@ -15,6 +15,7 @@ import MusicTable from "@/components/common/MusicTable.vue";
 import MvCover from "@/components/common/MvCover.vue";
 import EaButton from "@/components/common/EaButton.vue";
 import EaModal from "@/components/common/EaModal.vue";
+import EaDrawer from "@/components/common/drawer/EaDrawer.vue"
 import VueSlider from 'vue-slider-component'
 
 createApp(App)
@@ -28,6 +29,7 @@ createApp(App)
   .component("lmg", Image)
   .component("ea-button",EaButton)
   .component("ea-modal",EaModal)
+  .component("ea-drawer",EaDrawer)
   .component("vue-slider",VueSlider)
   .use(router)
   .use(pinia)
