@@ -76,7 +76,6 @@ function clearTimer() {
 }
 
 function close() {
-  console.log("close");
   visible.value = false;
 }
 

@@ -63,6 +63,7 @@ watch(
 </script>
 
 <style lang="scss" scoped>
+
 .ea-drawer-content {
   position: fixed;
   width: 30%;
@@ -110,7 +111,9 @@ watch(
   top: 0px;
   right: 0px;
   display: flex;
-  background-color: rgba(0, 0, 0, 0.1);
+  background: radial-gradient(transparent, rgba(0,0,0,0.1) 1px);
+  background-size: 2px 2px;
+  backdrop-filter: saturate(180%) blur(10px);
   z-index: 9998;
 }
 

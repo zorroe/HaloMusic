@@ -25,7 +25,7 @@
           }}
         </div>
         <div class="flex flex-grow gap-4 items-end">
-          <ea-button>
+          <ea-button @click="playMusicByAlbumId">
             <icon-park
               :icon="PlayOne"
               theme="filled"
@@ -37,7 +37,7 @@
           <ea-button>
             <icon-park
               :icon="Like"
-              :theme="isSub ? 'filled':'outline'"
+              :theme="isSub ? 'filled' : 'outline'"
               :size="20"
               class="rounded-full p-1"
             />
@@ -58,6 +58,10 @@ import { computed, onMounted, ref } from "vue";
 import { Like, PlayOne } from "@icon-park/vue-next";
 import dayjs from "dayjs";
 import { routeTo } from "@/utils/common";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store";
+
+const playerStore = usePlayerStore(pinia);
 
 defineOptions({
   name: "album",
@@ -76,7 +80,7 @@ const isSub = computed(() => {
 const getAlbum = async () => {
   const { songs, album } = await getAlbumApi({ id: albumId.value });
   albumInfo.value = album;
-  
+
   songs.forEach((song: any) => {
     albumSongs.value?.push({
       id: song.id,
@@ -95,7 +99,11 @@ const getAlbum = async () => {
       },
     });
   });
-  
+};
+
+const playMusicByAlbumId = async () => {
+  const ids = albumSongs.value.map((item: MusicBaseInfo) => item.id);
+  playerStore.playMulti(ids);
 };
 
 onMounted(async () => {

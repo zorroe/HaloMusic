@@ -53,22 +53,20 @@ export const usePlayerStore = defineStore("player", {
     },
     nextSongId(): number {
       const { loopType, thisIndex, playList } = this;
+      const nextIndex = (thisIndex + 1) % playList.length;
       return loopType === 0
         ? this.id
         : loopType === 1
-        ? thisIndex === playList.length - 1
-          ? playList[0]
-          : playList[thisIndex + 1]
+        ? playList[nextIndex]
         : playList[Math.floor(Math.random() * playList.length)];
     },
     prevSongId(): number {
       const { thisIndex, playList, loopType } = this;
+      const prevIndex = (thisIndex - 1 + playList.length) % playList.length;
       return loopType === 0
         ? this.id
         : loopType === 1
-        ? thisIndex === 0
-          ? playList[playList.length - 1]
-          : playList[thisIndex - 1]
+        ? playList[prevIndex]
         : playList[Math.floor(Math.random() * playList.length)];
     },
   },
@@ -105,8 +103,12 @@ export const usePlayerStore = defineStore("player", {
     async play(id: number) {
       const { success, message } = await checkMusic(id);
       if (!success) {
-        notify({ message: message, type: "warning" });
+        notify({ message, type: "warning" });
+        const index = this.playList.findIndex((songId) => songId === id);
         this.fremoveSongFromPlaylist(id);
+        if (this.playList.length === 0 || this.isPlaying) return;
+        const nextId = this.playList[index % this.playList.length];
+        if (!this.isPlaying) this.play(nextId);
         return;
       }
       this.pushPlayList(id);
@@ -143,7 +145,7 @@ export const usePlayerStore = defineStore("player", {
         this.playList.splice(index, 1);
       }
     },
-     //重新播放
+    //重新播放
     rePlay() {
       setTimeout(() => {
         this.currentTime = 0;
@@ -153,26 +155,26 @@ export const usePlayerStore = defineStore("player", {
     //下一曲
     async next() {
       const { success, message } = await checkMusic(this.nextSongId);
-      if(!success){
+      if (!success) {
         notify({ message: message, type: "warning" });
         this.id = this.nextSongId;
         this.next();
         this.fremoveSongFromPlaylist(this.nextSongId);
-        return
+        return;
       }
-      this.play(this.nextSongId)
+      this.play(this.nextSongId);
     },
     //上一曲
     async prev() {
       const { success, message } = await checkMusic(this.prevSongId);
-      if(!success){
+      if (!success) {
         notify({ message: message, type: "warning" });
         this.id = this.prevSongId;
         this.next();
         this.fremoveSongFromPlaylist(this.prevSongId);
-        return
+        return;
       }
-      this.play(this.prevSongId)
+      this.play(this.prevSongId);
     },
     //播放、暂停
     togglePlay() {
@@ -243,6 +245,6 @@ export const usePlayerStore = defineStore("player", {
     },
     closePlayerPage() {
       this.showPlayerPage = false;
-    }
+    },
   },
 });
