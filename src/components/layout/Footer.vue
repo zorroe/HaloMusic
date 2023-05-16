@@ -119,9 +119,7 @@
         </div>
         <div class="flex gap-1 item-center text-xs justify-end truncate">
           <span
-            class="ea-link"
             v-for="singer in music.singers"
-            @click="routeTo(`/artist/${singer.id}`)"
             >{{ singer.name }}</span
           >
         </div>
