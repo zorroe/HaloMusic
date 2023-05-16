@@ -118,10 +118,7 @@
           {{ music.name }}
         </div>
         <div class="flex gap-1 item-center text-xs justify-end truncate">
-          <span
-            v-for="singer in music.singers"
-            >{{ singer.name }}</span
-          >
+          <span v-for="singer in music.singers">{{ singer.name }}</span>
         </div>
         <div class="text-sm text-gray-500">
           {{ music.duration }}
@@ -186,6 +183,10 @@ watch(
       };
     });
     musicBaseInfoList.value = list;
+  },
+  {
+    deep: true,
+    immediate: true,
   }
 );
 

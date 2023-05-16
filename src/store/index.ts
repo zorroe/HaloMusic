@@ -5,7 +5,6 @@ import { computed, ref } from "vue";
 import { getAudioSourceFromNetease, getMusicDetail } from "@/api/music";
 import notify from "@/components/common/notification/notify";
 import { checkMusic } from "@/utils/common";
-import { Music } from "@icon-park/vue-next";
 
 export const useUserInfoStore = defineStore("userInfo", () => {
   const userInfo = ref<UserProfile>();
@@ -31,7 +30,6 @@ export const usePlayerStore = defineStore("player", {
     loopType: 1, //循环模式 0 单曲循环 1 列表循环 2随机播放
     volume: 60, //音量
     playList: [] as number[], //播放列表,
-    musicBaseInfoList : [] as MusicBaseInfo[],
     id: 0,
     song: {} as MusicBaseInfo,
     isPlaying: false, //是否播放中
