@@ -7,7 +7,7 @@ interface MusicBaseInfo {
     name: string;
   }[];
   duration: string;
-  album: {
+  album?: {
     id: number;
     name: string;
   };
