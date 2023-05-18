@@ -1,6 +1,7 @@
 import http from "@/utils/request";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
+import { getSongsByArtistIdApi } from "./artist";
 
 const playerStore = usePlayerStore(pinia);
 
@@ -55,10 +56,9 @@ export const deletePlayListApi = (params: any) => {
   });
 };
 
-
 // 根据歌单id播放歌单的所有歌曲
-export const playAllByPlayListId = async(id:number) => {
+export const playAllByPlayListId = async (id: number | string) => {
   const { songs } = await getPlayListAllApi({ id });
   const ids = songs.map((item: any) => item.id);
   playerStore.playMulti(ids);
-}
+};

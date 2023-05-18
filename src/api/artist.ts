@@ -54,3 +54,14 @@ export const playAllByArtistId = async (id: number) => {
   const ids = songs.map((item: any) => item.id);
   playerStore.playMulti(ids);
 };
+
+
+
+export const playMusicByArtistId = async (id:string) => {
+  const { songs: s1s } = await getSongsByArtistIdApi({
+    id,
+    limit: 999,
+  });
+  const ids = s1s.map((song: any) => song.id);
+  playerStore.playMulti(ids);
+};

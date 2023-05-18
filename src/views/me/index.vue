@@ -7,13 +7,13 @@
     <div class="flex gap-4 items-center">
       <div
         class="items-between w-1/3 h-48 like-card cursor-pointer"
-        @click="routeTo(`/playlist/${likePlayListId}`)"
+        
       >
-        <div class="flex-grow text-sm whitespace-pre-wrap">
+        <div class="flex-grow text-sm whitespace-pre-wrap" @click="routeTo(`/playlist/${likePlayListId}`)">
           {{ randomLyric }}
         </div>
         <div class="flex justify-between items-center w-full">
-          <div class="flex flex-col">
+          <div class="flex flex-col" @click="routeTo(`/playlist/${likePlayListId}`)">
             <div class="font-bold">我喜欢的音乐</div>
             <div>{{ `共${likeCount}首` }}</div>
           </div>
@@ -22,7 +22,8 @@
             fill="white"
             theme="filled"
             :size="24"
-            class="btn-play rounded-full p-2"
+            class="btn-play"
+            @click="playAllByPlayListId(parseInt(likePlayListId))"
           ></icon-park>
         </div>
       </div>
@@ -99,7 +100,7 @@ import {
 import { routeTo } from "@/utils/common";
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { getPlayListAllApi } from "@/api/playList";
+import { getPlayListAllApi,playAllByPlayListId } from "@/api/playList";
 import { getLyricApi } from "@/api/music";
 import { ArtistBaseInfo } from "@/types/artistRel";
 import dayjs from "dayjs";
@@ -165,7 +166,7 @@ const myPlayList = ref<PlayListBaseInfo[]>([]);
 const randomLyric = ref<string>("");
 
 // 我喜欢的音乐也是一个歌单，这个歌单的id
-const likePlayListId = localStorage.getItem("likePlayListId");
+const likePlayListId = localStorage.getItem("likePlayListId") || "";
 const artistSubList = ref<ArtistBaseInfo[]>([]);
 const mvSubList = ref<MvBaseInfo[]>([]);
 const albumSubList = ref<AlbumBaseInfo[]>([]);
@@ -338,9 +339,12 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+
 .btn-play {
   transition: all 300ms;
   background-color: rgb(51, 94, 234);
+  border-radius: 9999px;
+  padding: 0.5rem;
 
   &:hover {
     transform: scale(1.05);
