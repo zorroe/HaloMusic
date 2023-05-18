@@ -156,7 +156,7 @@ import { getMusicDetailApi } from "@/api/music";
 import dayjs from "dayjs";
 import { MusicBaseInfo } from "@/types/musicRel";
 
-const playerStore = usePlayerStore(pinia);
+const playerStore = usePlayerStore();
 const curMusic = computed(() => playerStore.song);
 const volume = computed({
   get: () => playerStore.volume,
@@ -170,6 +170,7 @@ const musicBaseInfoList = ref<MusicBaseInfo[]>([]);
 watch(
   () => playerStore.playList,
   async (newVal) => {
+    if(newVal.length === 0) return
     const { songs } = await getMusicDetailApi(newVal.join(","));
     const list = songs.map((song: any) => {
       return {
