@@ -56,6 +56,14 @@ export const deletePlayListApi = (params: any) => {
   });
 };
 
+// 歌单标签列表
+export const playListTagsApi = ()=>{
+  return http({
+    url: "/playlist/highquality/tags",
+    method: "get",
+  });
+}
+
 // 根据歌单id播放歌单的所有歌曲
 export const playAllByPlayListId = async (id: number | string) => {
   const { songs } = await getPlayListAllApi({ id });
