@@ -1,7 +1,6 @@
 import http from "@/utils/request";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
-import { getSongsByArtistIdApi } from "./artist";
 
 const playerStore = usePlayerStore(pinia);
 
@@ -64,9 +63,23 @@ export const playListTagsApi = ()=>{
   });
 }
 
+export const topPlayListApi = (params:any)=>{
+  return http({
+    url: "/top/playlist",
+    method: "get",
+    params,
+  })
+}
+
 // 根据歌单id播放歌单的所有歌曲
 export const playAllByPlayListId = async (id: number | string) => {
   const { songs } = await getPlayListAllApi({ id });
   const ids = songs.map((item: any) => item.id);
   playerStore.playMulti(ids);
 };
+
+
+export const getTopPlayList = async (params:any)=>{
+  const res = await topPlayListApi(params)
+  console.log(res);
+}
