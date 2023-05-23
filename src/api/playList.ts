@@ -55,10 +55,31 @@ export const deletePlayListApi = (params: any) => {
   });
 };
 
+// 歌单标签列表
+export const playListTagsApi = ()=>{
+  return http({
+    url: "/playlist/highquality/tags",
+    method: "get",
+  });
+}
+
+export const topPlayListApi = (params:any)=>{
+  return http({
+    url: "/top/playlist",
+    method: "get",
+    params,
+  })
+}
 
 // 根据歌单id播放歌单的所有歌曲
-export const playAllByPlayListId = async(id:number) => {
+export const playAllByPlayListId = async (id: number | string) => {
   const { songs } = await getPlayListAllApi({ id });
   const ids = songs.map((item: any) => item.id);
   playerStore.playMulti(ids);
+};
+
+
+export const getTopPlayList = async (params:any)=>{
+  const res = await topPlayListApi(params)
+  console.log(res);
 }

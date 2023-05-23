@@ -73,7 +73,7 @@ const topList = ref<PlayListBaseInfo[]>([]);
 const recommendSongList = ref<MusicBaseInfo[]>([]);
 
 const getRecommendPlayList = async () => {
-  const {result} = await getrecommendPlayListApi();
+  const {result} = await getrecommendPlayListApi({limit: 10});
   
   result.forEach((item: any) => {
     recommendPlayList.value.push({

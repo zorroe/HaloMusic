@@ -21,7 +21,7 @@
           artistInfo.artist.briefDesc
         }}</label>
         <div class="flex flex-grow gap-4 items-end">
-          <ea-button @click="playMusicByArtistId">
+          <ea-button @click="playAllByPlayListId(artistId)">
             <icon-park
               :icon="PlayOne"
               theme="filled"
@@ -95,19 +95,16 @@ import { BrowserSafari, Like, PlayOne } from "@icon-park/vue-next";
 import { openUrl } from "@/utils/common";
 import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
+import {playAllByPlayListId} from "@/api/playList";
 import { getMusicDetailApi } from "@/api/music";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { MvBaseInfo } from "@/types/mvRel";
-import { usePlayerStore } from "@/store";
-import pinia from "@/store/store";
-
-const playerStore = usePlayerStore(pinia);
 
 defineOptions({
   name: "artist",
 });
 
-const artistId = ref<string>();
+const artistId = ref<string>("");
 
 const artistInfo = ref<ArtistInfo>({} as ArtistInfo);
 const loaded = ref(false);
@@ -183,15 +180,6 @@ const getMvsByArtistId = async () => {
       ],
     });
   });
-};
-
-const playMusicByArtistId = async () => {
-  const { songs: s1s } = await getSongsByArtistIdApi({
-    id: artistId.value,
-    limit: 999,
-  });
-  const ids = s1s.map((song: any) => song.id);
-  playerStore.playMulti(ids);
 };
 
 onMounted(async () => {
