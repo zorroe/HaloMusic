@@ -24,7 +24,7 @@
           class="hover:underline active:text-gray-600 cursor-pointer"
           @click="
             openUrl(
-              `https://music.163.com/#/user/home?id=${props.data.creator.id}`
+              `https://music.163.com/#/user/home?id=${props.data.creator?.id}`
             )
           "
         >
