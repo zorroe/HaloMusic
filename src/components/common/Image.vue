@@ -36,10 +36,6 @@ const handleLoaded = (e: Event) => {
     opacity: 1;
     transition: all 300ms linear;
 
-    &:hover{
-        box-shadow: 0px 10px 15px 0px rgba(86, 86, 86, 0.3);
-    }
-
     &:active{
         transform: scale(0.95);
     }

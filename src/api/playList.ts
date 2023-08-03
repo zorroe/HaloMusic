@@ -1,15 +1,21 @@
 import http from "@/utils/request";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
-import { GrinningFaceWithSquintingEyes } from "@icon-park/vue-next";
 
 const playerStore = usePlayerStore(pinia);
 
-export const getrecommendPlayListApi: any = (params: any = { limit: 10 }) => {
+export const getrecommendPlayListApi: any = () => {
+  return http({
+    url: "/recommend/resource",
+    method: "get",
+  });
+};
+
+export const getPersonalizePlayListApi: any = (params:any) => {
   return http({
     url: "/personalized",
     method: "get",
-    params,
+    params:params
   });
 };
 

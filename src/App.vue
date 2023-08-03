@@ -25,7 +25,7 @@ import pinia from "@/store/store";
 
 const playerStore = usePlayerStore(pinia);
 
-const excludes = ['artist','playlist','album','curPlaylist']
+const excludes = ['artist','playlist','album','curPlaylist','search']
 
 </script>
 

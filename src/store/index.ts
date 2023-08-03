@@ -5,7 +5,7 @@ import { computed, ref } from "vue";
 import { getAudioSourceFromNetease, getMusicDetail } from "@/api/music";
 import notify from "@/components/common/notification/notify";
 import { checkMusic } from "@/utils/common";
-import { useLocalStorage,debounceFilter } from "@vueuse/core";
+import { useLocalStorage, debounceFilter } from "@vueuse/core";
 
 export const useUserInfoStore = defineStore("userInfo", () => {
   const userInfo = ref<UserProfile>();
@@ -28,7 +28,9 @@ export const useUserInfoStore = defineStore("userInfo", () => {
 export const usePlayerStore = defineStore("player", () => {
   const audio = new Audio();
   const loopType = ref(useLocalStorage("player-loopType", 1)); //循环模式 0 单曲循环 1 列表循环 2随机播放
-  const volume = ref(useLocalStorage("player-volume", 60,{ eventFilter: debounceFilter(1000) })); //音量
+  const volume = ref(
+    useLocalStorage("player-volume", 60, { eventFilter: debounceFilter(1000) })
+  ); //音量
   const playList = ref(useLocalStorage("player-playList", [] as number[])); //播放列表
   const id = ref(useLocalStorage("player-id", 0));
   const song = ref(useLocalStorage("player-song", {} as MusicBaseInfo));
@@ -177,7 +179,7 @@ export const usePlayerStore = defineStore("player", () => {
 
   const togglePlay = () => {
     if (!audio.src) {
-      init()
+      init();
       play(id.value);
       return;
     }
@@ -286,5 +288,61 @@ export const usePlayerStore = defineStore("player", () => {
     interval,
     openPlayerPage,
     closePlayerPage,
+  };
+});
+
+export const useSearchStore = defineStore("search", () => {
+  const searchKey = ref<string>("");
+  const searchResult = ref<any>({
+    song: { count: 0, s: [] },
+    album: { count: 0, s: [] },
+    artist: { count: 0, s: [] },
+    playlist: { count: 0, s: [] },
+    userprofile: { count: 0, s: [] },
+    mv: { count: 0, s: [] },
+  });
+
+  const setSearchKey = (key: string) => {
+    searchKey.value = key;
+  };
+
+  const setSearchResult = (typeC: string, result: any) => {
+    console.log(
+      result,
+      typeC,
+      searchResult.value[typeC].count,
+      result[`${typeC}Count`]
+    );
+
+    searchResult.value[typeC].count = result[`${typeC}Count`];
+    searchResult.value[typeC].s.push(...result[`${typeC}s`]);
+  };
+
+  const clearSearchResult = () => {
+    searchResult.value = {
+      song: { count: 0, s: [] },
+      album: { count: 0, s: [] },
+      artist: { count: 0, s: [] },
+      playlist: { count: 0, s: [] },
+      userprofile: { count: 0, s: [] },
+      mv: { count: 0, s: [] },
+    };
+  };
+
+  const getSearchKey = computed(() => {
+    return searchKey.value;
+  });
+
+  const getSearchResult = computed(() => {
+    return searchResult.value;
+  });
+
+  return {
+    searchKey,
+    setSearchKey,
+    getSearchKey,
+    setSearchResult,
+    getSearchResult,
+    clearSearchResult,
   };
 });

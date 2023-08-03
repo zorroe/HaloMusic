@@ -1,7 +1,7 @@
 <template>
   <div v-show="loaded" class="flex flex-col">
     <div class="text-lv1">推荐歌单</div>
-    <div class="grid-cols-5 grid place-items-center gap-4">
+    <div class="grid-cols-5 grid place-items-center gap-8">
       <play-list-cover
         v-for="item in recommendPlayList"
         :data="item"
@@ -73,14 +73,14 @@ const topList = ref<PlayListBaseInfo[]>([]);
 const recommendSongList = ref<MusicBaseInfo[]>([]);
 
 const getRecommendPlayList = async () => {
-  const {result} = await getrecommendPlayListApi({limit: 10});
+  const {recommend} = await getrecommendPlayListApi();
   
-  result.forEach((item: any) => {
+  recommend.forEach((item: any) => {
     recommendPlayList.value.push({
       id: item.id,
       name: item.name,
       picUrl: item.picUrl,
-      playCount: item.playCount,
+      playCount: item.playcount,
     });
   });
 };

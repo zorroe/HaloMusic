@@ -44,7 +44,7 @@ import { onMounted, ref } from "vue";
 import { playlistCategories } from "./btns";
 import { useLocalStorage } from "@vueuse/core";
 import { PlayListBaseInfo } from "@/types/playListRel";
-import { getHighQualityPlayList, getTopListApi, getrecommendPlayListApi, getTopPlayList } from "@/api/playList";
+import { getHighQualityPlayList, getTopListApi, getrecommendPlayListApi, getTopPlayList, getPersonalizePlayListApi } from "@/api/playList";
 
 const btns = ref(useLocalStorage("btns", playlistCategories));
 const cats = ["语种", "风格", "场景", "情感", "主题"];
@@ -74,7 +74,7 @@ const handleClickPersonized = async () => {
   playListList.value = [];
   showMoreBtn.value = false;
   params.offset = 0;
-  const { result } = await getrecommendPlayListApi({ limit: 100 });
+  const { result } = await getPersonalizePlayListApi({ limit: 100 });
   playListList.value = parse2PlayListBaseInfoList(result);
 }
 

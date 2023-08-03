@@ -47,6 +47,11 @@ const routes = [
     path:"/curPlayList",
     name:"curPlayList",
     component:()=>import("@/components/common/CurPlayList.vue")
+  },
+  {
+    path:"/search",
+    name:"search",
+    component: ()=>import("@/views/search/index.vue")
   }
 ];
 export const router = createRouter({
