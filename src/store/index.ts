@@ -307,13 +307,6 @@ export const useSearchStore = defineStore("search", () => {
   };
 
   const setSearchResult = (typeC: string, result: any) => {
-    console.log(
-      result,
-      typeC,
-      searchResult.value[typeC].count,
-      result[`${typeC}Count`]
-    );
-
     searchResult.value[typeC].count = result[`${typeC}Count`];
     searchResult.value[typeC].s.push(...result[`${typeC}s`]);
   };

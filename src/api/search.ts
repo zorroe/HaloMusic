@@ -50,6 +50,5 @@ export const searchByType = async (typeC: string, offset: number) => {
     offset,
   };
   const { result } = (await cloudSearchApi(params)) as any;
-  console.log(result)
   searchStore.setSearchResult(typeC, result);
 };
