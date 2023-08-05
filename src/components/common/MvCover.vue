@@ -6,6 +6,7 @@
         :width="320"
         :height="180"
         class="w-60 h-32 rounded-lg"
+        @click="routeTo(`/mv/${data.id}`)"
       ></lmg>
       <icon-park
         :icon="PlayOne"
@@ -13,6 +14,7 @@
         theme="filled"
         :size="24"
         class="cover-play group-hover:opacity-100"
+        @click="routeTo(`/mv/${data.id}`)"
       ></icon-park>
     </div>
     <div class="flex w-full justify-center gap-4 text-sm">

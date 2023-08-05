@@ -27,6 +27,7 @@
             v-if="
               playListDetail.creator.userId == userStore.getUserInfo?.userId
             "
+            class=" cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all duration-300"
             @click="handleEdit"></icon-park>
         </div>
 

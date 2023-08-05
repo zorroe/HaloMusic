@@ -1,6 +1,7 @@
 import "@/style.scss";
 import "@/assets/css/global.scss";
 import "@/assets/css/slider.css"
+import "video.js/dist/video-js.min.css";
 import { createApp } from "vue";
 import App from "@/App.vue";
 import pinia from "./store/store";
@@ -19,6 +20,8 @@ import EaModal from "@/components/common/EaModal.vue";
 import EaDrawer from "@/components/common/drawer/EaDrawer.vue"
 
 import VueSlider from 'vue-slider-component'
+import VueVideoPlayer from '@videojs-player/vue'
+import 'video.js/dist/video-js.css'
 
 createApp(App)
   .component("icon-park", IconPark)
@@ -36,6 +39,7 @@ createApp(App)
   .component("user-cover",UserCover)
   .use(router)
   .use(pinia)
+  .use(VueVideoPlayer)
   .mount("#app")
   .$nextTick(() => {
     postMessage({ payload: "removeLoading" }, "*");

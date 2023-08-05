@@ -7,8 +7,8 @@ const routes = [
     component: () => import("@/views/home/index.vue"),
   },
   {
-    path:"/explore",
-    name:"explore",
+    path: "/explore",
+    name: "explore",
     component: () => import("@/views/explore/index.vue"),
   },
   {
@@ -44,15 +44,20 @@ const routes = [
     component: () => import("@/views/album/index.vue"),
   },
   {
-    path:"/curPlayList",
-    name:"curPlayList",
-    component:()=>import("@/components/common/CurPlayList.vue")
+    path: "/mv/:id",
+    name: "mv",
+    component: () => import("@/views/mv/index.vue"),
   },
   {
-    path:"/search",
-    name:"search",
-    component: ()=>import("@/views/search/index.vue")
-  }
+    path: "/curPlayList",
+    name: "curPlayList",
+    component: () => import("@/components/common/CurPlayList.vue"),
+  },
+  {
+    path: "/search",
+    name: "search",
+    component: () => import("@/views/search/index.vue"),
+  },
 ];
 export const router = createRouter({
   history: createWebHashHistory(),

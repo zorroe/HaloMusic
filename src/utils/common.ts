@@ -14,6 +14,7 @@ const userInfoStore = useUserInfoStore(pinia);
 const playerStore = usePlayerStore(pinia);
 
 export const routeTo = (path: string) => {
+  console.log(path);
   router.push(path);
 };
 
