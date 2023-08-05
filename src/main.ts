@@ -11,11 +11,13 @@ import PlayListCover from "@/components/common/PlayListCover.vue";
 import ArtistCover from "@/components/common/ArtistCover.vue";
 import AlbumCover from "@/components/common/AlbumCover.vue";
 import TopListCover from "@/components/common/TopListCover.vue";
+import UserCover from "@/components/common/UserProfileCover.vue"
 import MusicTable from "@/components/common/MusicTable.vue";
 import MvCover from "@/components/common/MvCover.vue";
 import EaButton from "@/components/common/EaButton.vue";
 import EaModal from "@/components/common/EaModal.vue";
 import EaDrawer from "@/components/common/drawer/EaDrawer.vue"
+
 import VueSlider from 'vue-slider-component'
 
 createApp(App)
@@ -31,6 +33,7 @@ createApp(App)
   .component("ea-modal",EaModal)
   .component("ea-drawer",EaDrawer)
   .component("vue-slider",VueSlider)
+  .component("user-cover",UserCover)
   .use(router)
   .use(pinia)
   .mount("#app")

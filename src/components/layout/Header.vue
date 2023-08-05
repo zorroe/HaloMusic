@@ -119,7 +119,7 @@ const handleSearch = async () => {
   if (!searchKey.value) {
     return;
   }
-  if (searchKey.value == searchStore.getSearchKey) {
+  if (searchKey.value == searchStore.getSearchKey && curRoutePath.value == '/search') {
     return;
   }
   searchStore.setSearchKey(searchKey.value);

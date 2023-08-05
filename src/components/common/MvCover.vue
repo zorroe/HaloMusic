@@ -16,12 +16,9 @@
       ></icon-park>
     </div>
     <div class="flex w-full justify-center gap-4 text-sm">
-      <span
-        class="ea-link"
-        @click="routeTo(`/artist/${creator.id}`)"
-        v-for="creator in props.data.creators"
-        >{{ creator.name }}</span
-      >
+      <span class="mt-2 ea-link text-bold truncate" @click="routeTo(`/mv/${data.id}`)">
+        {{ data.name }}
+      </span>
     </div>
   </div>
 </template>

@@ -1,45 +1,75 @@
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-baseline gap-2">
-      <div class="text-3xl font-bold">
+    <!-- <div class="flex items-baseline gap-2">
+      <div class="text-2xl font-bold">
         {{ searchKey }}
       </div>
       <div class="text-gray-400 font-thin text-base">的相关搜索如下</div>
+    </div>-->
+    <div>
+      <div class="text-2xl my-2">
+        <span class="font-bold">{{ searchKey }}</span>
+        <span>相关歌手</span>
+      </div>
+      <div class="grid-cols-5 grid place-items-center gap-8 mt-4">
+        <artist-cover
+          v-for="item in artists.slice(0, 5)"
+          :key="item.id"
+          :data="item"></artist-cover>
+      </div>
     </div>
-    <div class="grid-cols-5 grid place-items-center gap-8 mx-4 mt-4">
-      <artist-cover
-        v-for="item in artists.slice(0, 5)"
-        :key="item.id"
-        :data="item"></artist-cover>
+    <div>
+      <div class="text-2xl my-2">
+        <span class="font-bold">{{ searchKey }}</span>
+        <span>相关歌单</span>
+      </div>
+      <div class="grid-cols-5 grid place-items-center gap-8 mt-4">
+        <play-list-cover
+          v-for="item in playlists"
+          :key="item.id"
+          :data="item"></play-list-cover>
+      </div>
+      <div
+        class="flex justify-center items-center"
+        v-show="playlists.length < playlistCount">
+        <ea-button @click="loadMore('playlist', playlists.length)" type="info">
+          <div class="text-lg font-bold">加载更多歌单</div>
+        </ea-button>
+      </div>
     </div>
-    <div class="grid-cols-5 grid place-items-center gap-8 mx-4 mt-4">
-      <play-list-cover
-        v-for="item in playlists"
-        :key="item.id"
-        :data="item"></play-list-cover>
+    <div>
+      <div class="text-2xl my-2">
+        <span class="font-bold">{{ searchKey }}</span>
+        <span>相关歌曲</span>
+      </div>
+      <music-table :data="songs" :showCover="false"></music-table>
+      <div
+        class="flex justify-center items-center"
+        v-show="songs.length < songCount">
+        <ea-button @click="loadMore('song', songs.length)" type="info">
+          <div class="text-lg font-bold">加载更多歌曲</div>
+        </ea-button>
+      </div>
     </div>
-    <div
-      class="flex justify-center items-center"
-      v-show="playlists.length < playlistCount">
-      <ea-button @click="loadMore('playlist', playlists.length)" type="info">
-        <div class="text-lg font-bold">加载更多歌单</div>
-      </ea-button>
+    <div>
+      <div class="text-2xl my-2">
+        <span class="font-bold">{{ searchKey }}</span>
+        <span>相关MV</span>
+      </div>
+      <div class="grid-cols-4 grid place-items-center gap-4">
+        <mv-cover v-for="item in mvs.slice(0, 8)" :data="item"></mv-cover>
+      </div>
     </div>
-    <music-table :data="songs" :showCover="false"></music-table>
-    <div
-      class="flex justify-center items-center"
-      v-show="songs.length < songCount">
-      <ea-button @click="loadMore('song', songs.length)" type="info">
-        <div class="text-lg font-bold">加载更多歌曲</div>
-      </ea-button>
-    </div>
-    <div class="grid-cols-4 grid place-items-center gap-4">
-      <mv-cover v-for="item in mvs" :data="item"></mv-cover>
-    </div>
-    <div class="flex justify-center items-center" v-show="mvs.length < mvCount">
-      <ea-button @click="loadMore('mv', mvs.length)" type="info">
-        <div class="text-lg font-bold">加载更多MV</div>
-      </ea-button>
+    <div>
+      <div class="text-2xl my-2">
+        <span class="font-bold">{{ searchKey }}</span>
+        <span>相关用户</span>
+      </div>
+      <div class="grid-cols-5 grid place-items-center gap-4">
+        <user-cover
+          v-for="item in userprofiles.slice(0, 5)"
+          :data="item"></user-cover>
+      </div>
     </div>
   </div>
 </template>

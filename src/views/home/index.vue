@@ -3,7 +3,7 @@
     <div class="text-lv1">推荐歌单</div>
     <div class="grid-cols-5 grid place-items-center gap-8">
       <play-list-cover
-        v-for="item in recommendPlayList"
+        v-for="item in recommendPlayList.slice(0,10)"
         :data="item"
       ></play-list-cover>
     </div>
