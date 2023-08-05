@@ -5,10 +5,31 @@
         :src="playListDetail.coverImgUrl"
         :width="300"
         :height="300"
-        class="w-64 h-64 rounded-xl"
-      ></lmg>
+        class="w-64 h-64 rounded-xl"></lmg>
       <div class="flex flex-col gap-4 truncate pl-4">
-        <div class="font-bold text-2xl my-2">{{ playListDetail.name }}</div>
+        <div class="flex items-center gap-4 font-bold text-2xl my-2">
+          <div v-show="!isEdit">
+            {{ playListDetail.name }}
+          </div>
+          <input
+            ref="playlistNameInputRef"
+            v-show="isEdit"
+            type="text"
+            placeholder="请输入歌单名"
+            class="input input-bordered input-sm max-w-xs"
+            v-model="newName"
+            @blur="handleBlur"
+            @keypress.enter="confirmEdit" />
+          <icon-park
+            :icon="Edit"
+            theme="filled"
+            :size="24"
+            v-if="
+              playListDetail.creator.userId == userStore.getUserInfo?.userId
+            "
+            @click="handleEdit"></icon-park>
+        </div>
+
         <div>
           <span>Created By </span>
           <span
@@ -38,28 +59,24 @@
               :icon="PlayOne"
               theme="filled"
               :size="20"
-              class="rounded-full p-1"
-            />
+              class="rounded-full p-1" />
             <div class="text-lg font-bold">播放</div></ea-button
           >
           <ea-button
             v-if="playListDetail.userId != user.userId"
-            @click="handleSubscribePlayList"
-          >
+            @click="handleSubscribePlayList">
             <icon-park
               :icon="Like"
               :theme="!playListDetail.subscribed ? 'outline' : 'filled'"
               :size="20"
-              class="rounded-full p-1"
-            />
+              class="rounded-full p-1" />
           </ea-button>
           <ea-button for="delete-modal" type="danger" v-else>
             <icon-park
               :icon="Delete"
               theme="outline"
               :size="20"
-              class="rounded-full p-1"
-            />
+              class="rounded-full p-1" />
             <div class="text-lg font-bold">删除</div>
           </ea-button>
         </div>
@@ -80,23 +97,31 @@ import {
   getPlayListAllApi,
   getPlayListDetailApi,
   subscribePlayListApi,
+  updatePlaylistName,
 } from "@/api/playList";
 import { onBeforeMount, onMounted, ref } from "vue";
-import { Delete, Like, PlayOne } from "@icon-park/vue-next";
+import { Delete, Edit, Like, PlayOne } from "@icon-park/vue-next";
 import { openUrl } from "@/utils/common";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { usePlayerStore } from "@/store";
+import { usePlayerStore, useUserInfoStore } from "@/store";
 import pinia from "@/store/store";
+import notify from "@/components/common/notification/notify";
 
 const playerStore = usePlayerStore(pinia);
+const userStore = useUserInfoStore(pinia);
 
 defineOptions({
   name: "playlist",
 });
 
+const playlistNameInputRef = ref();
+
 const loaded = ref(false);
 const user = ref();
 const musicTableData = ref<MusicBaseInfo[]>([]);
+const isEdit = ref(false);
+
+const newName = ref("");
 
 const init = () => {
   user.value = JSON.parse(localStorage.getItem("user") || "");
@@ -112,6 +137,36 @@ const getPlayListDetail = async (params: any) => {
 const handleDeletePlayList = async () => {
   await deletePlayListApi({ id: playListId.value });
   router.push("/me");
+};
+
+const handleEdit = () => {
+  isEdit.value = true;
+  newName.value = playListDetail.value.name;
+  setTimeout(() => {
+    playlistNameInputRef.value.focus();
+  }, 0);
+};
+
+const handleBlur = () => {
+  isEdit.value = false;
+};
+
+const confirmEdit = async () => {
+  const params = {
+    id: playListId.value,
+    name: newName.value,
+  };
+  updatePlaylistName(params)
+    .then(() => {
+      playListDetail.value.name = newName;
+      notify({ message: "修改成功", type: "success" });
+    })
+    .catch(() => {
+      notify({ message: "修改失败", type: "warning" });
+    })
+    .finally(() => {
+      isEdit.value = false;
+    });
 };
 
 const handleSubscribePlayList = async () => {

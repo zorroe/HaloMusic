@@ -11,11 +11,11 @@ export const getrecommendPlayListApi: any = () => {
   });
 };
 
-export const getPersonalizePlayListApi: any = (params:any) => {
+export const getPersonalizePlayListApi: any = (params: any) => {
   return http({
     url: "/personalized",
     method: "get",
-    params:params
+    params: params,
   });
 };
 
@@ -63,28 +63,36 @@ export const deletePlayListApi = (params: any) => {
 };
 
 // 歌单标签列表
-export const playListTagsApi = ()=>{
+export const playListTagsApi = () => {
   return http({
     url: "/playlist/highquality/tags",
     method: "get",
   });
-}
+};
 
-export const topPlayListApi = (params:any)=>{
+export const topPlayListApi = (params: any) => {
   return http({
     url: "/top/playlist",
     method: "get",
     params,
-  })
-}
+  });
+};
 
-export const getHighQualityPlayListApi = (params:any)=>{
+export const getHighQualityPlayListApi = (params: any) => {
   return http({
     url: "/top/playlist/highquality",
     method: "get",
     params,
-  })
-}
+  });
+};
+
+export const updatePlaylistName = (params: any) => {
+  return http({
+    url: "/playlist/name/update",
+    method: "get",
+    params,
+  });
+};
 
 // 根据歌单id播放歌单的所有歌曲
 export const playAllByPlayListId = async (id: number | string) => {
@@ -93,14 +101,13 @@ export const playAllByPlayListId = async (id: number | string) => {
   playerStore.playMulti(ids);
 };
 
-
 // 获取精品歌单
-export const getHighQualityPlayList:any = async (params:any)=>{
-  const res = await getHighQualityPlayListApi(params)
-  return res
-}
+export const getHighQualityPlayList: any = async (params: any) => {
+  const res = await getHighQualityPlayListApi(params);
+  return res;
+};
 
-export const getTopPlayList:any = async (params:any)=>{
-  const res = await topPlayListApi(params)
-  return res
-}
+export const getTopPlayList: any = async (params: any) => {
+  const res = await topPlayListApi(params);
+  return res;
+};

@@ -3,17 +3,25 @@
     <div class="flex gap-4 items-center">
       <img class="w-10 h-10 rounded-full" :src="user.avatarUrl" />
       <div class="font-bold text-3xl">{{ `${user.nickname}的音乐库` }}</div>
+      <icon-park
+        :icon="Refresh"
+        :size="18"
+        @click="refreshMe"
+        :class="{ rotating: isRotate }"
+        >刷新</icon-park
+      >
     </div>
     <div class="flex gap-4 items-center">
-      <div
-        class="items-between w-1/3 h-48 like-card cursor-pointer"
-        
-      >
-        <div class="flex-grow text-sm whitespace-pre-wrap" @click="routeTo(`/playlist/${likePlayListId}`)">
+      <div class="items-between w-1/3 h-48 like-card cursor-pointer">
+        <div
+          class="flex-grow text-sm whitespace-pre-wrap"
+          @click="routeTo(`/playlist/${likePlayListId}`)">
           {{ randomLyric }}
         </div>
         <div class="flex justify-between items-center w-full">
-          <div class="flex flex-col" @click="routeTo(`/playlist/${likePlayListId}`)">
+          <div
+            class="flex flex-col"
+            @click="routeTo(`/playlist/${likePlayListId}`)">
             <div class="font-bold">我喜欢的音乐</div>
             <div>{{ `共${likeCount}首` }}</div>
           </div>
@@ -23,18 +31,15 @@
             theme="filled"
             :size="24"
             class="btn-play"
-            @click="playAllByPlayListId(parseInt(likePlayListId))"
-          ></icon-park>
+            @click="playAllByPlayListId(parseInt(likePlayListId))"></icon-park>
         </div>
       </div>
       <div
-        class="grid-cols-3 grid place-content-center w-2/3 h-48 rounded-xl gap-1"
-      >
+        class="grid-cols-3 grid place-content-center w-2/3 h-48 rounded-xl gap-1">
         <div
           v-for="item in likeList.slice(0, 12)"
           class="rounded-xl like-music flex items-center cursor-pointer"
-          @dblclick.native="playerStore.play(item.id)"
-        >
+          @dblclick.native="playerStore.play(item.id)">
           <img class="w-8 h-8 rounded" :src="item.picUrl" />
           <div class="flex flex-col justify-center px-2">
             <div class="font-bold text-sm">{{ item.name }}</div>
@@ -42,8 +47,7 @@
               <span
                 v-for="ar in item.singers"
                 class="hover:underline"
-                @click="routeTo(`/artist/${ar.id}`)"
-              >
+                @click="routeTo(`/artist/${ar.id}`)">
                 {{ ar.name }}</span
               >
             </div>
@@ -64,13 +68,12 @@
     <div v-show="activeTab == '1'" class="grid-cols-5 grid gap-4">
       <play-list-cover
         v-for="item in myPlayList"
-        :data="item"
-      ></play-list-cover>
+        :data="item"></play-list-cover>
     </div>
     <div v-show="activeTab == '2'">
       <div class="grid-cols-5 grid place-items-center gap-4">
-      <album-cover v-for="item in albumSubList" :data="item"></album-cover>
-    </div>
+        <album-cover v-for="item in albumSubList" :data="item"></album-cover>
+      </div>
     </div>
     <div v-show="activeTab == '3'">
       <div class="grid-cols-6 grid place-items-center gap-3">
@@ -87,8 +90,8 @@
 </template>
 
 <script setup lang="ts">
-import { PlayOne } from "@icon-park/vue-next";
-import { onBeforeMount, onMounted, ref } from "vue";
+import { PlayOne, Refresh } from "@icon-park/vue-next";
+import { onActivated, onBeforeMount, onMounted, ref } from "vue";
 import {
   getAlbumSubListApi,
   getArtistSubListApi,
@@ -100,7 +103,7 @@ import {
 import { routeTo } from "@/utils/common";
 import { PlayListBaseInfo } from "@/types/playListRel";
 import { MusicBaseInfo } from "@/types/musicRel";
-import { getPlayListAllApi,playAllByPlayListId } from "@/api/playList";
+import { getPlayListAllApi, playAllByPlayListId } from "@/api/playList";
 import { getLyricApi } from "@/api/music";
 import { ArtistBaseInfo } from "@/types/artistRel";
 import dayjs from "dayjs";
@@ -111,14 +114,15 @@ import pinia from "@/store/store";
 
 const playerStore = usePlayerStore(pinia);
 
+const isRotate = ref(false);
 const user = ref();
 const isLoaded = ref(false);
 const historyType = ref<0 | 1>(1);
 const musicHistoryData = ref<MusicBaseInfo[]>([]);
 
 defineOptions({
-  name: 'me',
-})
+  name: "me",
+});
 
 const init = () => {
   user.value = JSON.parse(localStorage.getItem("user") || "");
@@ -176,8 +180,8 @@ const getPlayListByUid = async () => {
     uid: user.value.userId,
   });
   // 我的所有歌单（创建的，收藏的）
-  res.playlist.slice(1).forEach((item: any) => {
-    myPlayList.value.push({
+  myPlayList.value = res.playlist.slice(1).map((item: any) => {
+    return {
       id: item.id,
       name: item.name,
       picUrl: item.coverImgUrl,
@@ -186,11 +190,11 @@ const getPlayListByUid = async () => {
         id: item.creator.userId,
         nickname: item.creator.nickname,
       },
-    });
+    };
   });
   const playListDetail = await getPlayListAllApi({ id: likePlayListId });
-  playListDetail.songs.forEach((item: any) => {
-    likeList.value.push({
+  likeList.value = playListDetail.songs.map((item: any) => {
+    return {
       id: item.id,
       name: item.name,
       picUrl: item.al.picUrl,
@@ -205,7 +209,7 @@ const getPlayListByUid = async () => {
         name: item.al.name,
       },
       duration: item.dt,
-    });
+    };
   });
 
   // 随机歌词
@@ -327,6 +331,14 @@ const handleClickTab = (id: string) => {
   });
 };
 
+const refreshMe = async (e: Event) => {
+  isRotate.value = true;
+  await getPlayListByUid();
+  setTimeout(() => {
+    isRotate.value = false;
+  }, 1000);
+};
+
 onBeforeMount(() => {
   init();
 });
@@ -339,7 +351,6 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-
 .btn-play {
   transition: all 300ms;
   background-color: rgb(51, 94, 234);
@@ -376,5 +387,24 @@ onMounted(async () => {
   transition: all 300ms;
   color: rgb(51, 94, 234);
   border-color: rgb(51, 94, 234);
+}
+
+// .rotate {
+//   // animation: rotate360 1s linear 0s infinite;
+// }
+
+@keyframes rotate360 {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.rotating {
+  transition: all 1s;
+  // 旋转一圈
+  transform: rotate(360deg);
 }
 </style>
