@@ -275,7 +275,7 @@ const handleClickVolumn = () => {
 }
 
 .footer-icon {
-  @apply p-1 rounded hover:bg-gray-100;
+  @apply p-1 rounded-full hover:bg-gray-100 hover:bg-opacity-50;
 }
 
 .playlist-item {
