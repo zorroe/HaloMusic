@@ -4,6 +4,7 @@
       :src="src"
       :poster="cover"
       controls
+      @play="handlePlay"
       :height="480"
       :width="900"
       :loop="true"
@@ -40,9 +41,7 @@
             class="cursor-pointer p-2 hover:bg-gray-200 transition-all duration-300 rounded-full"></icon-park>
         </div>
       </div>
-      <div>
-        {{  }}
-      </div>
+      <div>{{}}</div>
     </div>
   </div>
 </template>
@@ -53,6 +52,10 @@ import { mvDetailApi, mvUrlApi, MvData } from "./index";
 import router from "@/router";
 import { openUrl, routeTo } from "@/utils/common";
 import { Share } from "@icon-park/vue-next";
+import { usePlayerStore } from "@/store/index";
+import pinia from "@/store/store";
+
+const playerStore = usePlayerStore(pinia);
 
 defineOptions({
   name: "mv",
@@ -88,6 +91,10 @@ const getMvUrl = async () => {
   };
   const { data } = await mvUrlApi(params);
   src.value = data.url;
+};
+
+const handlePlay = () => {
+  playerStore.setPause();
 };
 
 onMounted(() => {
