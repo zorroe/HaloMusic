@@ -55,6 +55,18 @@ export const playAllByArtistId = async (id: number) => {
   playerStore.playMulti(ids);
 };
 
+export const subArtistApi = async (id: string, t: 1 | 2) => {
+  const params = {
+    id,
+    t,
+  };
+  return http({
+    url: "/artist/sub",
+    method: "get",
+    params,
+  });
+}
+
 
 
 export const playMusicByArtistId = async (id:string) => {

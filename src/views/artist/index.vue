@@ -21,7 +21,7 @@
           artistInfo.artist.briefDesc
         }}</label>
         <div class="flex flex-grow gap-4 items-end">
-          <ea-button @click="playAllByPlayListId(artistId)">
+          <ea-button @click="playAllByArtistId">
             <icon-park
               :icon="PlayOne"
               theme="filled"
@@ -30,14 +30,24 @@
             />
             <div class="text-lg font-bold">播放</div>
           </ea-button>
-          <ea-button>
+          <ea-button @click="starArtist">
+            <icon-park
+              :icon="Like"
+              theme="outline"
+              :size="20"
+              class="rounded-full p-1"
+              v-if="!isStarArtist"
+            />
             <icon-park
               :icon="Like"
               theme="filled"
               :size="20"
               class="rounded-full p-1"
+              v-else
             />
-            <div class="text-lg font-bold">关注</div>
+
+            <div class="text-lg font-bold" v-if="!isStarArtist">关注</div>
+            <div class="text-lg font-bold" v-else>已关注</div>
           </ea-button>
           <ea-button
             type="info"
@@ -82,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import router from "@/router";
 import { ArtistInfo } from "@/types/artistRel";
 import {
@@ -90,15 +100,20 @@ import {
   getSongsByArtistIdApi,
   getArtistAlbumApi,
   getArtistMvApi,
+  subArtistApi,
 } from "@/api/artist";
 import { BrowserSafari, Like, PlayOne } from "@icon-park/vue-next";
 import { openUrl } from "@/utils/common";
 import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
-import {playAllByPlayListId} from "@/api/playList";
 import { getMusicDetailApi } from "@/api/music";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { MvBaseInfo } from "@/types/mvRel";
+import { usePlayerStore } from "@/store";
+import pinia from "@/store/store";
+import { useLocalStorage } from "@vueuse/core";
+
+const playStore = usePlayerStore(pinia);
 
 defineOptions({
   name: "artist",
@@ -112,6 +127,17 @@ const loaded = ref(false);
 const artistHotSongs = ref<MusicBaseInfo[]>([]);
 const artistHotAlbums = ref<AlbumBaseInfo[]>([]);
 const artistHotMvs = ref<MvBaseInfo[]>([]);
+const artistSubList = useLocalStorage<any>("artistSubList", []);
+
+const isStarArtist = computed(() => {
+  for (let index = 0; index < artistSubList.value.length; index++) {
+    const element = artistSubList.value[index];
+    if (element.id == artistId.value) {
+      return true;
+    }
+  }
+  return false;
+});
 
 const getArtistDetail = async () => {
   const { data } = await getArtistDetailApi({ id: artistId.value });
@@ -180,6 +206,36 @@ const getMvsByArtistId = async () => {
       ],
     });
   });
+};
+
+const playAllByArtistId = async () => {
+  const { songs: s1s } = await getSongsByArtistIdApi({
+    id: artistId.value,
+    limit: 999,
+  });
+  console.log(s1s);
+  const ids = s1s.map((song: any) => song.id);
+  playStore.playMulti(ids);
+};
+
+const starArtist = async () => {
+  const res = await subArtistApi(artistId.value, isStarArtist.value ? 2 : 1) as any;
+  if(res.code == 200 && res.message == "success"){
+    if(isStarArtist.value){
+      for (let index = 0; index < artistSubList.value.length; index++) {
+        const element = artistSubList.value[index];
+        if (element.id == artistId.value) {
+          artistSubList.value.splice(index, 1);
+        }
+      }
+    }else{
+      artistSubList.value.push({
+        id: artistId.value,
+        name: artistInfo.value.artist.name,
+        picUrl: artistInfo.value.artist.cover,
+      });
+    }
+  }
 };
 
 onMounted(async () => {

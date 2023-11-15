@@ -12,7 +12,7 @@
       >
     </div>
     <div class="flex gap-4 items-center">
-      <div class="items-between w-1/3 h-48 like-card cursor-pointer">
+      <div class="items-between w-1/3 h-48 like-card cursor-pointer ">
         <div
           class="flex-grow text-sm whitespace-pre-wrap"
           @click="routeTo(`/playlist/${likePlayListId}`)">
@@ -35,14 +35,14 @@
         </div>
       </div>
       <div
-        class="grid-cols-3 grid place-content-center w-2/3 h-48 rounded-xl gap-1">
+        class="grid-cols-3 grid place-content-center w-2/3 h-48 rounded gap-1">
         <div
           v-for="item in likeList.slice(0, 12)"
-          class="rounded-xl like-music flex items-center cursor-pointer"
+          class=" rounded-md like-music flex items-center cursor-pointer py-1"
           @dblclick.native="playerStore.play(item.id)">
           <img class="w-8 h-8 rounded" :src="item.picUrl" />
           <div class="flex flex-col justify-center px-2">
-            <div class="font-bold text-sm">{{ item.name }}</div>
+            <div class="font-bold text-sm overflow-hidden text-ellipsis whitespace-nowrap">{{ item.name }}</div>
             <div class="text-xs flex gap-1 text-gray-600 active:text-gray-800">
               <span
                 v-for="ar in item.singers"
@@ -111,6 +111,7 @@ import { MvBaseInfo } from "@/types/mvRel";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
+import { useLocalStorage } from "@vueuse/core";
 
 const playerStore = usePlayerStore(pinia);
 
@@ -171,7 +172,7 @@ const randomLyric = ref<string>("");
 
 // 我喜欢的音乐也是一个歌单，这个歌单的id
 const likePlayListId = localStorage.getItem("likePlayListId") || "";
-const artistSubList = ref<ArtistBaseInfo[]>([]);
+const artistSubList = useLocalStorage<ArtistBaseInfo[]>("artistSubList", []);
 const mvSubList = ref<MvBaseInfo[]>([]);
 const albumSubList = ref<AlbumBaseInfo[]>([]);
 
@@ -376,7 +377,7 @@ onMounted(async () => {
 }
 
 .like-music {
-  padding: 0 8px;
+  padding: 4px 8px;
 
   &:hover {
     background-color: rgba(218, 220, 228, 0.4);

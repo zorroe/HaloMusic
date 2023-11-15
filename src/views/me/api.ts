@@ -24,6 +24,7 @@ export const getArtistSubListApi: any = (params: any) => {
   });
 };
 
+
 export const getMvSubListApi: any = (params: any) => {
   return http({
     url: "/mv/sublist",
