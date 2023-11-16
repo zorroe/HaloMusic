@@ -20,13 +20,17 @@
 import { routeTo, openUrl, setCookie, checkLoginStatus } from "@/utils/common";
 import { onMounted, onUnmounted, ref } from "vue";
 import { qrStatusApi, qrKeyApi, qrImgApi } from "./api";
+import { useUserInfoStore } from "@/store";
+import pinia from "@/store/store";
+
+const userInfoStore = useUserInfoStore(pinia);
 
 defineOptions({
-  name: 'login',
-})
+  name: "login",
+});
 
 const imgSrc = ref<string>("");
-let timer: string | number | NodeJS.Timer | undefined;
+const timer = ref();
 
 const checkStatus = async (key: string) => {
   const res = await qrStatusApi({ key });
@@ -42,11 +46,11 @@ const login = async () => {
   const res2: any = await qrImgApi(params);
   imgSrc.value = res2.data.qrimg;
 
-  timer = setInterval(async () => {
+  timer.value = setInterval(async () => {
     const statusRes = (await checkStatus(res.data.unikey)) as any;
     if (statusRes.code === 800) {
       login();
-      clearInterval(timer);
+      clearInterval(timer.value);
     }
     if (statusRes.code === 803) {
       const arr = statusRes.cookie.split(";");
@@ -57,8 +61,9 @@ const login = async () => {
         }
       });
       await checkLoginStatus();
+      userInfoStore.setLogin(true);
       routeTo("/");
-      clearInterval(timer);
+      clearInterval(timer.value);
     }
   }, 2000);
 };
@@ -69,19 +74,19 @@ const addCls = (e: Event) => {
   target.classList.add("gradual-appear");
 };
 
-const getLoginStatus = async()=>{
-  if(localStorage.getItem("user")){
-    routeTo("/")
+const getLoginStatus = async () => {
+  if (localStorage.getItem("user")) {
+    routeTo("/");
   }
-}
+};
 
 onMounted(() => {
   login();
-  getLoginStatus()
+  getLoginStatus();
 });
 
 onUnmounted(() => {
-  clearInterval(timer);
+  clearInterval(timer.value);
 });
 </script>
 
@@ -96,5 +101,4 @@ onUnmounted(() => {
   opacity: 1;
   transition: all 300ms linear;
 }
-
 </style>

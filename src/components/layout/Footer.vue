@@ -31,7 +31,7 @@
             <span
               v-for="singer in curMusic.singers"
               class="ea-link"
-              @click="`/artist/${singer.id}`"
+              @click="routeTo(`/artist/${singer.id}`)"
             >
               {{ singer.name }}
             </span>

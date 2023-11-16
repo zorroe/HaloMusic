@@ -5,9 +5,9 @@
     </div>
     <div class="content">
       <router-view v-slot="{ Component }">
-        <keep-alive :max="10" :exclude="excludes">
-          <component :is="Component"/>
-        </keep-alive>
+          <keep-alive :max="10" :exclude="excludes">
+            <component :is="Component" />
+          </keep-alive>
       </router-view>
     </div>
     <div class="footer" v-show="playerStore.song.id">
@@ -25,8 +25,15 @@ import pinia from "@/store/store";
 
 const playerStore = usePlayerStore(pinia);
 
-const excludes = ['artist','playlist','album','curPlaylist','search','mv','login']
-
+const excludes = [
+  "artist",
+  "playlist",
+  "album",
+  "curPlaylist",
+  "search",
+  "mv",
+  "login",
+];
 </script>
 
 <style lang="scss" scoped>
@@ -56,7 +63,7 @@ const excludes = ['artist','playlist','album','curPlaylist','search','mv','login
   z-index: 9000;
 }
 
-.footer{
+.footer {
   position: fixed;
   bottom: 0px;
   left: 0px;
@@ -67,4 +74,5 @@ const excludes = ['artist','playlist','album','curPlaylist','search','mv','login
   backdrop-filter: saturate(180%) blur(50px);
   z-index: 9000;
 }
+
 </style>

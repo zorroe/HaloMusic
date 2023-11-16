@@ -58,6 +58,14 @@ export const removeCookie = (key: string) => {
   Cookies.remove(key);
 };
 
+export const clearAllCookie = ()=>{
+  var keys = document.cookie.match(/[^ =;]+(?=\=)/g);
+  if(keys) {
+    for(var i = keys.length; i--;)
+      document.cookie = keys[i] + '=0;expires=' + new Date(0).toUTCString()
+  }
+}
+
 export const clearLocalStorage = () => {
   localStorage.clear();
 };
@@ -76,9 +84,11 @@ export const checkLoginStatus = async () => {
 
 export const doLogout = async () => {
   await logoutApi();
-  removeCookie("MUSIC_U");
-  removeCookie("__csrf");
+  clearAllCookie();
   clearLocalStorage();
+  userInfoStore.setLogin(false);
+  userInfoStore.setUserInfo({} as UserProfile);
+  playerStore.clearPlayList();
   await checkLoginStatus();
 };
 

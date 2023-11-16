@@ -9,9 +9,14 @@ import { useLocalStorage, debounceFilter } from "@vueuse/core";
 
 export const useUserInfoStore = defineStore("userInfo", () => {
   const userInfo = ref<UserProfile>();
+  const isLogin = useLocalStorage("isLogin", false);
 
   const setUserInfo = (info: UserProfile) => {
     userInfo.value = info;
+  };
+
+  const setLogin = (val: boolean) => {
+    isLogin.value = val;
   };
 
   const getUserInfo = computed(() => {
@@ -20,6 +25,8 @@ export const useUserInfoStore = defineStore("userInfo", () => {
 
   return {
     userInfo,
+    isLogin,
+    setLogin,
     getUserInfo,
     setUserInfo,
   };
@@ -288,6 +295,7 @@ export const usePlayerStore = defineStore("player", () => {
     interval,
     openPlayerPage,
     closePlayerPage,
+    clearPlayList,
   };
 });
 

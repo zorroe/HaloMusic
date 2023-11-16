@@ -68,7 +68,15 @@
       </div>
     </div>
     <div>
-      <div class="text-lv1">热门歌曲</div>
+      <div class="flex justify-between items-center pr-2">
+        <div class="text-lv1">热门歌曲</div>
+        <div
+          class="ea-link text-xs font-bold"
+          @click="routeTo('/artistTracks/' + artistId)"
+        >
+          查看全部
+        </div>
+      </div>
       <music-table :data="artistHotSongs"></music-table>
     </div>
     <div>
@@ -106,6 +114,7 @@ import { BrowserSafari, Like, PlayOne } from "@icon-park/vue-next";
 import { openUrl } from "@/utils/common";
 import { MusicBaseInfo } from "@/types/musicRel";
 import dayjs from "dayjs";
+import { routeTo } from "@/utils/common";
 import { getMusicDetailApi } from "@/api/music";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { MvBaseInfo } from "@/types/mvRel";
@@ -219,16 +228,19 @@ const playAllByArtistId = async () => {
 };
 
 const starArtist = async () => {
-  const res = await subArtistApi(artistId.value, isStarArtist.value ? 2 : 1) as any;
-  if(res.code == 200 && res.message == "success"){
-    if(isStarArtist.value){
+  const res = (await subArtistApi(
+    artistId.value,
+    isStarArtist.value ? 2 : 1
+  )) as any;
+  if (res.code == 200 && res.message == "success") {
+    if (isStarArtist.value) {
       for (let index = 0; index < artistSubList.value.length; index++) {
         const element = artistSubList.value[index];
         if (element.id == artistId.value) {
           artistSubList.value.splice(index, 1);
         }
       }
-    }else{
+    } else {
       artistSubList.value.push({
         id: artistId.value,
         name: artistInfo.value.artist.name,

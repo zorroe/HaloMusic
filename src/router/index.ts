@@ -1,4 +1,8 @@
 import { createRouter, createWebHashHistory } from "vue-router";
+import { useUserInfoStore } from "@/store";
+import pinia from "@/store/store";
+
+const userInfoStore = useUserInfoStore(pinia);
 
 const routes = [
   {
@@ -26,6 +30,11 @@ const routes = [
     path: "/artist/:id",
     name: "artist",
     component: () => import("@/views/artist/index.vue"),
+  },
+  {
+    path: '/artistTracks/:id',
+    name: 'artistTrack',
+    component: () => import("@/views/artist/tracks.vue")
   },
   {
     // 传入歌单id
@@ -62,6 +71,18 @@ const routes = [
 export const router = createRouter({
   history: createWebHashHistory(),
   routes: routes,
+});
+
+router.beforeEach((to, from, next) => {
+  if (to.name === "login") {
+    next();
+  } else {
+    if (userInfoStore.isLogin) {
+      next();
+    } else {
+      next({ name: "login" });
+    }
+  }
 });
 
 export default router;

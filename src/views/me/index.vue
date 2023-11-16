@@ -1,7 +1,7 @@
 <template>
   <div v-show="isLoaded" class="flex flex-col w-full gap-8">
     <div class="flex gap-4 items-center">
-      <img class="w-10 h-10 rounded-full" :src="user.avatarUrl" />
+      <lmg class="w-10 h-10 rounded-full" :src="user.avatarUrl" :width="60" :height="60"/>
       <div class="font-bold text-3xl">{{ `${user.nickname}的音乐库` }}</div>
       <icon-park
         :icon="Refresh"
@@ -40,7 +40,7 @@
           v-for="item in likeList.slice(0, 12)"
           class=" rounded-md like-music flex items-center cursor-pointer py-1"
           @dblclick.native="playerStore.play(item.id)">
-          <img class="w-8 h-8 rounded" :src="item.picUrl" />
+          <lmg class="w-8 h-8 rounded" :src="item.picUrl" :width="60" :height="60"/>
           <div class="flex flex-col justify-center px-2">
             <div class="font-bold text-sm overflow-hidden text-ellipsis whitespace-nowrap">{{ item.name }}</div>
             <div class="text-xs flex gap-1 text-gray-600 active:text-gray-800">
@@ -116,7 +116,7 @@ import { useLocalStorage } from "@vueuse/core";
 const playerStore = usePlayerStore(pinia);
 
 const isRotate = ref(false);
-const user = ref();
+const user = useLocalStorage<any>("user", {});
 const isLoaded = ref(false);
 const historyType = ref<0 | 1>(1);
 const musicHistoryData = ref<MusicBaseInfo[]>([]);
@@ -341,7 +341,7 @@ const refreshMe = async (e: Event) => {
 };
 
 onBeforeMount(() => {
-  init();
+  // init();
 });
 
 onMounted(async () => {
