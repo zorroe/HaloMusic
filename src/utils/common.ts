@@ -41,6 +41,18 @@ export const openUrl = (url: string) => {
   ipcRenderer.send("open-url", url);
 };
 
+export const windowMinimize = ()=>{
+  ipcRenderer.send('minimize')
+}
+
+export const windowMaxRestore = ()=>{
+  ipcRenderer.send('maximizeOrUnmaximize')
+}
+
+export const windowClose = ()=>{
+  ipcRenderer.send('close')
+}
+
 export const handleLogin = () => {
   routeTo("/login");
 };

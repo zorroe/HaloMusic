@@ -1,11 +1,17 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain,
+  dialog,
+  ipcRenderer,
+} from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import clc from 'cli-color'
 import express from 'express'
 import expressProxy from 'express-http-proxy'
 const server = require('NeteaseCloudMusicApi')
-
 
 // The built directory structure
 //
@@ -54,6 +60,7 @@ async function createWindow() {
     minWidth: 1300,
     minHeight: 800,
     titleBarStyle: 'hiddenInset',
+    frame: false,
     webPreferences: {
       preload,
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
@@ -65,8 +72,8 @@ async function createWindow() {
     },
   })
 
-  win.setMenuBarVisibility(false);
-  if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
+  if (process.env.VITE_DEV_SERVER_URL) {
+    // electron-vite-vue#298
     win.loadURL(url)
     // Open devTool if the app is not packaged
     // win.webContents.openDevTools()
@@ -89,25 +96,26 @@ async function createWindow() {
 
 async function startNeteaseMusicApi() {
   // Let user know that the service is starting
-  console.log(`${clc.redBright('[NetEase API]')} initiating NCM API`);
+  console.log(`${clc.redBright('[NetEase API]')} initiating NCM API`)
 
   // Load the NCM API.
   await server.serveNcmApi({
     port: 16666,
-  });
+  })
 }
 
-function createExpressApp(){
+function createExpressApp() {
   const expressApp = express()
-  expressApp.use('/',express.static(process.env.DIST))
-  expressApp.use('/api',expressProxy('http://localhost:16666'))
+  expressApp.use('/', express.static(process.env.DIST))
+  expressApp.use('/api', expressProxy('http://localhost:16666'))
   expressApp.listen(17777)
 }
 
-app.whenReady()
-.then(createExpressApp)
-.then(createWindow)
-.then(startNeteaseMusicApi)
+app
+  .whenReady()
+  .then(createExpressApp)
+  .then(createWindow)
+  .then(startNeteaseMusicApi)
 
 app.on('window-all-closed', () => {
   win = null
@@ -149,5 +157,23 @@ ipcMain.handle('open-win', (_, arg) => {
 })
 
 ipcMain.on('open-url', (event, url) => {
-  shell.openExternal(url);
-});
+  shell.openExternal(url)
+})
+
+ipcMain.on('minimize', () => {
+  win.minimize()
+})
+
+ipcMain.on('maximizeOrUnmaximize', () => {
+  win.isMaximized() ? win.unmaximize() : win.maximize()
+  
+})
+
+ipcMain.on('isMax',()=>{
+  win.webContents.send('isMaximized', win.isMaximized())
+})
+
+ipcMain.on('close', e => {
+  e.preventDefault() //阻止默认行为
+  app.exit()
+})

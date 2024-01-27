@@ -48,7 +48,7 @@ const excludes = [
   overflow-y: scroll;
   overflow-x: hidden;
   flex: 1;
-  padding: 64px 40px 64px 40px;
+  padding: 75px 40px 64px 40px;
 }
 
 .header {
@@ -56,7 +56,6 @@ const excludes = [
   top: 0px;
   left: 0px;
   right: 0px;
-  height: 64px;
   background: radial-gradient(transparent, rgb(255, 255, 255) 1px);
   background-size: 2px 2px;
   backdrop-filter: saturate(180%) blur(50px);
