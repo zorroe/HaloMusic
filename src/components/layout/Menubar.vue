@@ -1,9 +1,9 @@
 <template>
-  <div
-    class="flex items-center"
-    style="-webkit-app-region: drag">
+  <div class="flex items-center h-6">
     <div class="text-xs ml-4 select-none">HaloMusic</div>
-    <div class="flex-1"></div>
+    <div
+      class="flex-1 h-full"
+      style="-webkit-app-region: drag"></div>
     <icon-park
       @click="windowMinimize"
       class="button-primary"
