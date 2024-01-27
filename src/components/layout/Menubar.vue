@@ -1,5 +1,7 @@
 <template>
-  <div class="flex items-center">
+  <div
+    class="flex items-center"
+    style="-webkit-app-region: drag">
     <div class="text-xs ml-4 select-none">HaloMusic</div>
     <div class="flex-1"></div>
     <icon-park
@@ -33,18 +35,18 @@ import { windowClose, windowMaxRestore, windowMinimize } from '@/utils/common'
 import { onMounted, ref } from 'vue'
 import { ipcRenderer } from 'electron'
 
-const isMax = ref("false")
+const isMax = ref('false')
 
-const maxRestore = ()=>{
-    windowMaxRestore()
-    ipcRenderer.send("isMax")
+const maxRestore = () => {
+  windowMaxRestore()
+  ipcRenderer.send('isMax')
 }
 
-onMounted(()=>{
-    ipcRenderer.on('isMaximized', (_, value) => {
-        isMax.value = value;
-    });
-    ipcRenderer.send("isMax")
+onMounted(() => {
+  ipcRenderer.on('isMaximized', (_, value) => {
+    isMax.value = value
+  })
+  ipcRenderer.send('isMax')
 })
 </script>
 
