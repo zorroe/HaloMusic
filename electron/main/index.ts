@@ -1,11 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  shell,
-  ipcMain,
-  dialog,
-  ipcRenderer,
-} from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import clc from 'cli-color'
@@ -69,6 +62,7 @@ async function createWindow() {
       nodeIntegration: true,
       contextIsolation: false,
       webSecurity: false,
+      devTools: false,
     },
   })
 
@@ -80,6 +74,10 @@ async function createWindow() {
   } else {
     win.loadURL('http://localhost:17777')
   }
+
+  win.on('resize', () => {
+    win.webContents.send('isMaximized', win.isMaximized())
+  })
 
   // Test actively push message to the Electron-Renderer
   win.webContents.on('did-finish-load', () => {
@@ -166,11 +164,10 @@ ipcMain.on('minimize', () => {
 
 ipcMain.on('maximizeOrUnmaximize', () => {
   win.isMaximized() ? win.unmaximize() : win.maximize()
-  
 })
 
-ipcMain.on('isMax',()=>{
-  win.webContents.send('isMaximized', win.isMaximized())
+ipcMain.on('isMax', () => {
+  win.webContents.send('isMax', win.isMaximized())
 })
 
 ipcMain.on('close', e => {

@@ -10,16 +10,9 @@
       :icon="Minus"
       :size="16"></icon-park>
     <icon-park
-      @click="windowMaxRestore"
-      class="button-primary"
-      :icon="Split"
-      v-if="isMax"
-      :size="16"></icon-park>
-    <icon-park
       @click="maxRestore"
       class="button-primary"
-      :icon="Stretching"
-      v-else
+      :icon="isMax ? Split : Stretching"
       :size="16"></icon-park>
     <icon-park
       @click="windowClose"
@@ -32,21 +25,19 @@
 <script setup lang="ts">
 import { Close, Split, Stretching, Minus } from '@icon-park/vue-next'
 import { windowClose, windowMaxRestore, windowMinimize } from '@/utils/common'
-import { onMounted, ref } from 'vue'
+import { onBeforeMount, ref } from 'vue'
 import { ipcRenderer } from 'electron'
 
-const isMax = ref('false')
+const isMax = ref(false)
 
 const maxRestore = () => {
   windowMaxRestore()
-  ipcRenderer.send('isMax')
 }
 
-onMounted(() => {
+onBeforeMount(() => {
   ipcRenderer.on('isMaximized', (_, value) => {
     isMax.value = value
   })
-  ipcRenderer.send('isMax')
 })
 </script>
 
