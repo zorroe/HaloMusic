@@ -89,3 +89,8 @@ export const getAudioSourceFromNetease = async (id: number) => {
   const source = res.data[0].url.replace(/^http:/, "https:");
   return source;
 };
+
+// 私人fm
+export const personFmApi = ()=>{
+  return http.get("/personal_fm")
+}

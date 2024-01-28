@@ -40,6 +40,22 @@
     <div class="grid-cols-5 grid place-items-center gap-4">
       <top-list-cover v-for="item in topList" :data="item"></top-list-cover>
     </div>
+    <div class="flex h-48 gap-8">
+      <div class="flex items-end rounded-2xl w-1/2 relative overflow-hidden">
+        <img :src="recommendBg" class="recommend">
+        <div class="ml-4 mb-4 text-7xl w-48 font-bold text-white">
+          每日推荐
+        </div>
+        <div class="flex-1"></div>
+          <icon-park
+          :icon="PlayOne"
+          fill="white"
+          theme="filled"
+          :size="24"
+          class="mr-4 mb-4 p-2 rounded-full transition-all text-white bg-white bg-opacity-20 hover:bg-opacity-40 active:scale-90"></icon-park>
+        </div>
+      <person-fm class="w-1/2"></person-fm>
+    </div>
   </div>
 </template>
 
@@ -50,7 +66,7 @@ import { getrecommendPlayListApi, getTopListApi } from "@/api/playList";
 import { AlbumBaseInfo } from "@/types/albumRel";
 import { ArtistBaseInfo } from "@/types/artistRel";
 import { PlayListBaseInfo } from "@/types/playListRel";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { routeTo, saveLikeMusicIds, saveSubAlbumIds } from "@/utils/common";
 import { getRecommendSongsApi } from "@/api/music";
 import { MusicBaseInfo } from "@/types/musicRel";
@@ -58,6 +74,7 @@ import dayjs from "dayjs";
 import { PlayOne } from "@icon-park/vue-next";
 import { usePlayerStore } from "@/store";
 import pinia from "@/store/store";
+
 
 const playerStore = usePlayerStore(pinia);
 
@@ -71,6 +88,8 @@ const recommendArtist = ref<ArtistBaseInfo[]>([]);
 const albumNewest = ref<AlbumBaseInfo[]>([]);
 const topList = ref<PlayListBaseInfo[]>([]);
 const recommendSongList = ref<MusicBaseInfo[]>([]);
+
+const recommendBg = ref("")
 
 const getRecommendPlayList = async () => {
   const {recommend} = await getrecommendPlayListApi();
@@ -150,6 +169,8 @@ const getRecommendSongs = async () => {
       },
     });
   });
+  recommendBg.value = recommendSongList.value[0].picUrl
+
 };
 
 const handlePlayMultiRecommend = () => {
@@ -171,4 +192,24 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.recommend{
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  animation: move 38s infinite;
+  animation-direction: alternate;
+  z-index: 1;
+}
+
+@keyframes move {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+</style>

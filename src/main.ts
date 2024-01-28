@@ -18,6 +18,7 @@ import MvCover from "@/components/common/MvCover.vue";
 import EaButton from "@/components/common/EaButton.vue";
 import EaModal from "@/components/common/EaModal.vue";
 import EaDrawer from "@/components/common/drawer/EaDrawer.vue"
+import PersonFM from "@/components/common/PersonalFm.vue"
 
 import VueSlider from 'vue-slider-component'
 import VueVideoPlayer from '@videojs-player/vue'
@@ -37,6 +38,7 @@ createApp(App)
   .component("ea-drawer",EaDrawer)
   .component("vue-slider",VueSlider)
   .component("user-cover",UserCover)
+  .component("person-fm",PersonFM)
   .use(router)
   .use(pinia)
   .use(VueVideoPlayer)
