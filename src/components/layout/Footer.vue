@@ -10,29 +10,26 @@
         :duration="0"
         :tooltip-formatter="formatTrackTime"
         :height="2"
-        :dot-size="12"
-      >
+        :dot-size="12">
       </vue-slider>
     </div>
     <div class="ea-footer">
       <div class="flex items-center">
         <div class="w-10 h-10 mr-4">
           <img
-            :src="curMusic.picUrl"
+            :src="curMusic?.al.picUrl"
             class="rounded-full w-10 h-10"
-            @click="playerStore.openPlayerPage"
-          />
+            @click="playerStore.openPlayerPage" />
         </div>
         <div class="flex flex-col justify-center items-center w-36">
           <div class="text-sm font-bold w-full truncate">
-            {{ curMusic.name }}
+            {{ curMusic?.name }}
           </div>
           <div class="text-xs flex gap-2 w-full truncate">
             <span
-              v-for="singer in curMusic.singers"
+              v-for="singer in curMusic?.ar"
               class="ea-link"
-              @click="routeTo(`/artist/${singer.id}`)"
-            >
+              @click="routeTo(`/artist/${singer.id}`)">
               {{ singer.name }}
             </span>
           </div>
@@ -45,46 +42,40 @@
           theme="filled"
           fill="black"
           class="footer-icon btn-animation"
-          @click="playerStore.prev"
-        ></icon-park>
+          @click="playerStore.playPrev"></icon-park>
         <icon-park
           :icon="playIcon"
           :size="36"
           theme="filled"
           fill="black"
           class="footer-icon btn-animation"
-          @click="playerStore.togglePlay"
-        ></icon-park>
+          @click="playerStore.tooglePlay"></icon-park>
         <icon-park
           :icon="RightOne"
           :size="20"
           theme="filled"
           fill="black"
           class="footer-icon btn-animation"
-          @click="playerStore.next"
-        ></icon-park>
+          @click="playerStore.playNext"></icon-park>
       </div>
       <div class="flex items-center gap-4">
         <icon-park
           :icon="playModeIcon"
           :size="20"
           @click="playerStore.toggleLoop"
-          class="footer-icon btn-animation"
-        ></icon-park>
+          class="footer-icon btn-animation"></icon-park>
         <icon-park
           class="footer-icon btn-animation"
           :icon="MusicList"
           :size="20"
-          @click="changeDrawerStatus(true)"
-        ></icon-park>
+          @click="changeDrawerStatus(true)"></icon-park>
         <div class="flex justify-center items-center gap-2 w-32">
           <icon-park
             :icon="volumnIcon"
             :size="18"
             theme="filled"
             fill="black"
-            @click="handleClickVolumn"
-          ></icon-park>
+            @click="handleClickVolumn"></icon-park>
           <div class="volume-bar">
             <vue-slider
               v-model="volume"
@@ -94,8 +85,7 @@
               :drag-on-click="true"
               :duration="0"
               tooltip="none"
-              :dot-size="12"
-            >
+              :dot-size="12">
             </vue-slider>
           </div>
         </div>
@@ -103,18 +93,18 @@
           class="footer-icon btn-animation"
           :icon="Up"
           :size="20"
-          @click="playerStore.openPlayerPage"
-        ></icon-park>
+          @click="playerStore.openPlayerPage"></icon-park>
       </div>
     </div>
-    <ea-drawer :drawer-show="drawerShow" @close="changeDrawerStatus(false)">
+    <ea-drawer
+      :drawer-show="drawerShow"
+      @close="changeDrawerStatus(false)">
       <div class="flex flex-col gap-2">
         <div
           v-for="music in musicBaseInfoList"
           class="playlist-item cursor-default"
           @dblclick.native="handlePlayMusic(music)"
-          :class="{ playing: music.id == curMusic.id }"
-        >
+          :class="{ playing: music.id == curMusic.id }">
           <div class="flex-grow text-start cursor-pointer truncate">
             {{ music.name }}
           </div>
@@ -129,7 +119,7 @@
     </ea-drawer>
   </div>
 
-  <Player :show="playerStore.showPlayerPage"> </Player>
+  <Player :show="showPlayerPage"> </Player>
 </template>
 
 <script setup lang="ts">
@@ -146,118 +136,86 @@ import {
   Pause,
   LeftOne,
   RightOne,
-} from "@icon-park/vue-next";
-import { usePlayerStore } from "@/store";
-import pinia from "@/store/store";
-import { computed, ref, watch } from "vue";
-import { formatTrackTime, routeTo } from "@/utils/common";
-import Player from "./Player.vue";
-import { getMusicDetailApi } from "@/api/music";
-import dayjs from "dayjs";
-import { MusicBaseInfo } from "@/types/musicRel";
+} from '@icon-park/vue-next'
+import { usePlayer2Store } from '@/store/playerStore'
+import pinia from '@/store/store'
+import { computed, ref } from 'vue'
+import { formatTrackTime, routeTo } from '@/utils/common'
+import Player from './Player.vue'
+var _ = require('lodash')
+import { MusicBaseInfo } from '@/types/musicRel'
 
-const playerStore = usePlayerStore();
-const curMusic = computed(() => playerStore.song);
+const playerStore = usePlayer2Store(pinia)
+const curMusic = computed(() => playerStore.current.currentSong)
 const volume = computed({
   get: () => playerStore.volume,
-  set: (val) => {
-    playerStore.setVolume(val);
+  set: val => {
+    playerStore.setVolumn(val)
   },
-});
+})
 
-const musicBaseInfoList = ref<MusicBaseInfo[]>([]);
-
-watch(
-  () => playerStore.playList,
-  async (newVal) => {
-    if(newVal.length === 0) return
-    const { songs } = await getMusicDetailApi(newVal.join(","));
-    const list = songs.map((song: any) => {
-      return {
-        id: song.id,
-        name: song.name,
-        picUrl: song.al.picUrl,
-        singers: song.ar.map((singer: any) => {
-          return {
-            id: singer.id,
-            name: singer.name,
-          };
-        }),
-        duration: dayjs(song.dt).format("mm:ss"),
-      };
-    });
-    musicBaseInfoList.value = list;
-  },
-  {
-    deep: true,
-    immediate: true,
-  }
-);
-
-const drawerShow = ref(false);
+const musicBaseInfoList = ref<MusicBaseInfo[]>([])
+const drawerShow = ref(false)
+const showPlayerPage = computed(() => playerStore.showPlayerPage)
 
 const handlePlayMusic = (music: MusicBaseInfo) => {
-  playerStore.play(music.id);
-};
+  playerStore.playOne(music.id + '')
+}
 
 const changeDrawerStatus = (status: boolean) => {
-  drawerShow.value = status;
-};
+  drawerShow.value = status
+}
 
-const curMusicDuration = computed(() => playerStore.duration);
+const curMusicDuration = computed(() =>
+  Number(playerStore.current.currentSong?.dt / 1000).toFixed(0)
+)
 
 const curMusicCurrentTime = computed({
-  get: () => parseInt(playerStore.currentTime.toFixed(0)),
-  set: (val) => {
-    playerStore.onSliderChange(val);
+  get: () => playerStore.currentTime,
+  set: val => {
+    console.log(val)
+    playerStore.changeSlider(val)
   },
-});
-
-// 播放完毕之后自动播放下一首
-watch(curMusicCurrentTime, () => {
-  if (curMusicCurrentTime.value === curMusicDuration.value) {
-    playerStore.playEnd();
-  }
-});
+})
 
 // 播放图标
 const playIcon = computed(() => {
-  if (playerStore.isPlaying) {
-    return Pause;
+  if (!playerStore.paused) {
+    return Pause
   } else {
-    return PlayOne;
+    return PlayOne
   }
-});
+})
 
 // 音量图标
 const volumnIcon = computed(() => {
   if (volume.value == 0) {
-    return VolumeMute;
+    return VolumeMute
   } else if (volume.value <= 60) {
-    return VolumeSmall;
+    return VolumeSmall
   } else {
-    return VolumeNotice;
+    return VolumeNotice
   }
-});
+})
 
 // 播放模式图标
 const playModeIcon = computed(() => {
-  if (playerStore.loopType === 0) {
-    return PlayOnce;
-  } else if (playerStore.loopType === 1) {
-    return PlayCycle;
-  } else if (playerStore.loopType === 2) {
-    return ShuffleOne;
+  if (playerStore.cycleMode === 0) {
+    return PlayOnce
+  } else if (playerStore.cycleMode === 1) {
+    return PlayCycle
+  } else if (playerStore.cycleMode === 2) {
+    return ShuffleOne
   }
-});
+})
 
 const handleClickVolumn = () => {
   if (playerStore.volume == 0) {
-    playerStore.setVolume(60);
+    playerStore.setVolumn(60)
   } else {
-    playerStore.setVolume(0);
+    playerStore.setVolumn(0)
   }
-};
+}
 </script>
 
 <style lang="scss" scoped>

@@ -4,15 +4,13 @@
       v-for="item in props.data"
       class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 gap-4 group"
       :class="{ playing: item.id == curMusicId }"
-      @dblclick="playerStore.play(item.id)"
-    >
+      @dblclick="player2Store.playOne(item.id + '')">
       <lmg
         :src="item.picUrl"
         :width="100"
         :height="100"
         class="w-12 h-12 rounded"
-        v-if="props.showCover"
-      ></lmg>
+        v-if="props.showCover"></lmg>
       <div class="flex flex-col flex-grow justify-center px-2">
         <div class="font-bold cursor-default">{{ item.name }}</div>
         <div class="flex gap-1 text-sm">
@@ -37,8 +35,7 @@
         :size="16"
         class="subscribe-icon btn-animation"
         :class="{ 'no-liked': likeMusicIds.indexOf(item.id) == -1 }"
-        @click="handleLikeMusic(item)"
-      />
+        @click="handleLikeMusic(item)" />
       <div class="flex w-12 text-base">
         {{ item.duration }}
       </div>
@@ -47,41 +44,41 @@
 </template>
 
 <script setup lang="ts">
-import { likeMusicApi } from "@/api/music";
-import { MusicBaseInfo } from "@/types/musicRel";
-import { saveLikeMusicIds, routeTo } from "@/utils/common";
-import { Like } from "@icon-park/vue-next";
-import { computed, ref } from "vue";
-import { usePlayerStore } from "@/store";
-import pinia from "@/store/store";
+import { likeMusicApi } from '@/api/music'
+import { MusicBaseInfo } from '@/types/musicRel'
+import { saveLikeMusicIds, routeTo } from '@/utils/common'
+import { Like } from '@icon-park/vue-next'
+import { computed, ref } from 'vue'
+import { usePlayer2Store } from '@/store/playerStore'
+import pinia from '@/store/store'
 
-const playerStore = usePlayerStore(pinia);
+const player2Store = usePlayer2Store(pinia)
 
-const curMusicId = computed(() => playerStore.song.id);
+const curMusicId = computed(() => player2Store.current.currentSong.id)
 
 /* 歌单封面图组件 */
 interface Props {
-  data: MusicBaseInfo[];
-  showCover?: boolean;
+  data: MusicBaseInfo[]
+  showCover?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   data: () => [],
   showCover: true,
-});
+})
 
 const likeMusicIds = ref(
-  JSON.parse(localStorage.getItem("likeMusicIds") || "[]")
-);
+  JSON.parse(localStorage.getItem('likeMusicIds') || '[]')
+)
 
 const handleLikeMusic = async (music: MusicBaseInfo) => {
   await likeMusicApi({
     id: music.id,
     like: likeMusicIds.value.indexOf(music.id) == -1 ? true : false,
-  });
-  await saveLikeMusicIds();
-  likeMusicIds.value = JSON.parse(localStorage.getItem("likeMusicIds") || "[]");
-};
+  })
+  await saveLikeMusicIds()
+  likeMusicIds.value = JSON.parse(localStorage.getItem('likeMusicIds') || '[]')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -93,6 +90,4 @@ const handleLikeMusic = async (music: MusicBaseInfo) => {
 .no-liked {
   @apply invisible group-hover:visible;
 }
-
-
 </style>

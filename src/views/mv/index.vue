@@ -47,61 +47,61 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { mvDetailApi, mvUrlApi, MvData } from "./index";
-import router from "@/router";
-import { openUrl, routeTo } from "@/utils/common";
-import { Share } from "@icon-park/vue-next";
-import { usePlayerStore } from "@/store/index";
-import pinia from "@/store/store";
+import { onMounted, ref } from 'vue'
+import { mvDetailApi, mvUrlApi, MvData } from './index'
+import router from '@/router'
+import { openUrl, routeTo } from '@/utils/common'
+import { Share } from '@icon-park/vue-next'
+import { usePlayer2Store } from '@/store/playerStore'
+import pinia from '@/store/store'
 
-const playerStore = usePlayerStore(pinia);
+const playerStore = usePlayer2Store(pinia)
 
 defineOptions({
-  name: "mv",
-});
+  name: 'mv',
+})
 
 interface BrType {
-  size: number;
-  br: number;
-  point: number;
+  size: number
+  br: number
+  point: number
 }
 
-const mvId = ref<string>("");
-const cover = ref<string>(""); // 封面
-const brs = ref<BrType[]>([]); // 所有码率
-const src = ref<string>(""); // mv地址
-const r = ref<number>(1080); // 视频码率
-const mvData = ref<MvData>();
+const mvId = ref<string>('')
+const cover = ref<string>('') // 封面
+const brs = ref<BrType[]>([]) // 所有码率
+const src = ref<string>('') // mv地址
+const r = ref<number>(1080) // 视频码率
+const mvData = ref<MvData>()
 
 const getMvDetail = async () => {
   const params = {
     mvid: mvId.value,
-  };
-  const { data } = await mvDetailApi(params);
-  mvData.value = data;
-  cover.value = data.cover;
-  brs.value = data.brs;
-};
+  }
+  const { data } = await mvDetailApi(params)
+  mvData.value = data
+  cover.value = data.cover
+  brs.value = data.brs
+}
 
 const getMvUrl = async () => {
   const params = {
     id: mvId.value,
     r: r.value,
-  };
-  const { data } = await mvUrlApi(params);
-  src.value = data.url;
-};
+  }
+  const { data } = await mvUrlApi(params)
+  src.value = data.url
+}
 
 const handlePlay = () => {
-  playerStore.setPause();
-};
+  playerStore.setPause()
+}
 
 onMounted(() => {
-  mvId.value = router.currentRoute.value.params.id as string;
-  getMvDetail();
-  getMvUrl();
-});
+  mvId.value = router.currentRoute.value.params.id as string
+  getMvDetail()
+  getMvUrl()
+})
 </script>
 
 <style scoped>

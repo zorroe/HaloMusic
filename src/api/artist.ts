@@ -1,8 +1,8 @@
 import http from "@/utils/request";
-import { usePlayerStore } from "@/store";
+import { usePlayer2Store } from "@/store/playerStore";
 import pinia from "@/store/store";
 
-const playerStore = usePlayerStore(pinia);
+const playerStore = usePlayer2Store(pinia);
 
 export const getrecommendArtistApi: any = (params: { type: 1 | 2 | 3 | 4 }) => {
   return http({
@@ -75,5 +75,5 @@ export const playMusicByArtistId = async (id:string) => {
     limit: 999,
   });
   const ids = s1s.map((song: any) => song.id);
-  playerStore.playMulti(ids);
+  playerStore.playMulti(ids.join(','));
 };

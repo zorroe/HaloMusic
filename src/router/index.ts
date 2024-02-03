@@ -68,6 +68,11 @@ const routes = [
     name: 'search',
     component: () => import('@/views/search/index.vue'),
   },
+  {
+    path: '/test',
+    name: 'test',
+    component: () => import('@/views/test/index.vue'),
+  },
 ]
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -93,6 +98,5 @@ router.beforeEach((to, from, next) => {
     }
   }
 })
-
 
 export default router

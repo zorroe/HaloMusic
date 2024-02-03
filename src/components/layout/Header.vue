@@ -20,6 +20,12 @@
         :size="12"
         @click="rebootApp"
         title="修复异常"
+      /><icon-park
+        class="button-primary"
+        :icon="Tool"
+        :size="12"
+        @click="routeTo('/test')"
+        title="修复异常"
       />
     </div>
     <div class="flex w-1/3 gap-4 items-center justify-center font-bold">

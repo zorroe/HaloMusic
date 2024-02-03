@@ -5,12 +5,16 @@
     </div>
     <div class="content">
       <router-view v-slot="{ Component }">
-          <keep-alive :max="10" :exclude="excludes">
-            <component :is="Component" />
-          </keep-alive>
+        <keep-alive
+          :max="10"
+          :exclude="excludes">
+          <component :is="Component" />
+        </keep-alive>
       </router-view>
     </div>
-    <div class="footer" v-show="playerStore.song.id">
+    <div
+      class="footer"
+      v-show="playerStore.current.idx !== -1">
       <Footer />
     </div>
   </div>
@@ -18,22 +22,27 @@
 </template>
 
 <script setup lang="ts">
-import Header from "@/components/layout/Header.vue";
-import Footer from "@/components/layout/Footer.vue";
-import { usePlayerStore } from "@/store";
-import pinia from "@/store/store";
+import Header from '@/components/layout/Header.vue'
+import Footer from '@/components/layout/Footer.vue'
+import { usePlayer2Store } from '@/store/playerStore'
+import pinia from '@/store/store'
+import { onMounted } from 'vue'
 
-const playerStore = usePlayerStore(pinia);
+const playerStore = usePlayer2Store(pinia)
 
 const excludes = [
-  "artist",
-  "playlist",
-  "album",
-  "curPlaylist",
-  "search",
-  "mv",
-  "login",
-];
+  'artist',
+  'playlist',
+  'album',
+  'curPlaylist',
+  'search',
+  'mv',
+  'login',
+]
+
+onMounted(() => {
+  playerStore.initPlayer()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -73,5 +82,4 @@ const excludes = [
   backdrop-filter: saturate(180%) blur(50px);
   z-index: 9000;
 }
-
 </style>
