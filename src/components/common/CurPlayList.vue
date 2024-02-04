@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import { computed } from 'vue'
 
@@ -20,10 +20,10 @@ defineOptions({
   name: 'curPlaylist',
 })
 
-const player2Store = usePlayer2Store(pinia)
-const song = computed(() => player2Store.current.currentSong)
-const currentMusic = computed(() => [player2Store.current.currentSong])
-const currentPlaylist = computed(() => player2Store.playlist)
+const playerStore = usePlayerStore(pinia)
+const song = computed(() => playerStore.current.currentSong)
+const currentMusic = computed(() => [playerStore.current.currentSong])
+const currentPlaylist = computed(() => playerStore.playlist)
 
 const showPlayList = computed(() => {
   const ids = currentPlaylist.value.findIndex(

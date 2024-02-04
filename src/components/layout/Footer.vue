@@ -101,7 +101,7 @@
       @close="changeDrawerStatus(false)">
       <div class="flex flex-col gap-2">
         <div
-          v-for="music in musicBaseInfoList"
+          v-for="music in playlist"
           class="playlist-item cursor-default"
           @dblclick.native="handlePlayMusic(music)"
           :class="{ playing: music.id == curMusic.id }">
@@ -109,10 +109,10 @@
             {{ music.name }}
           </div>
           <div class="flex gap-1 item-center text-xs justify-end truncate">
-            <span v-for="singer in music.singers">{{ singer.name }}</span>
+            <span v-for="singer in music.ar">{{ singer.name }}</span>
           </div>
           <div class="text-sm text-gray-500">
-            {{ music.duration }}
+            {{ formatTrackTime(music.dt / 1000) }}
           </div>
         </div>
       </div>
@@ -137,7 +137,7 @@ import {
   LeftOne,
   RightOne,
 } from '@icon-park/vue-next'
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import { computed, ref } from 'vue'
 import { formatTrackTime, routeTo } from '@/utils/common'
@@ -145,7 +145,7 @@ import Player from './Player.vue'
 var _ = require('lodash')
 import { MusicBaseInfo } from '@/types/musicRel'
 
-const playerStore = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 const curMusic = computed(() => playerStore.current.currentSong)
 const volume = computed({
   get: () => playerStore.volume,
@@ -154,7 +154,7 @@ const volume = computed({
   },
 })
 
-const musicBaseInfoList = ref<MusicBaseInfo[]>([])
+const playlist = computed(()=>playerStore.playlist)
 const drawerShow = ref(false)
 const showPlayerPage = computed(() => playerStore.showPlayerPage)
 

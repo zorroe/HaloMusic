@@ -1,7 +1,13 @@
 <template>
-  <div v-show="isLoaded" class="flex flex-col w-full gap-8">
+  <div
+    v-show="isLoaded"
+    class="flex flex-col w-full gap-8">
     <div class="flex gap-4 items-center">
-      <lmg class="w-10 h-10 rounded-full" :src="user.avatarUrl" :width="60" :height="60"/>
+      <lmg
+        class="w-10 h-10 rounded-full"
+        :src="user.avatarUrl"
+        :width="60"
+        :height="60" />
       <div class="font-bold text-3xl">{{ `${user.nickname}的音乐库` }}</div>
       <icon-park
         :icon="Refresh"
@@ -12,7 +18,7 @@
       >
     </div>
     <div class="flex gap-4 items-center">
-      <div class="items-between w-1/3 h-48 like-card cursor-pointer ">
+      <div class="items-between w-1/3 h-48 like-card cursor-pointer">
         <div
           class="flex-grow text-sm whitespace-pre-wrap"
           @click="routeTo(`/playlist/${likePlayListId}`)">
@@ -38,11 +44,18 @@
         class="grid-cols-3 grid place-content-center w-2/3 h-48 rounded gap-1">
         <div
           v-for="item in likeList.slice(0, 12)"
-          class=" rounded-md like-music flex items-center cursor-pointer py-1"
-          @dblclick.native="playerStore.play(item.id)">
-          <lmg class="w-8 h-8 rounded" :src="item.picUrl" :width="60" :height="60"/>
+          class="rounded-md like-music flex items-center cursor-pointer py-1"
+          @dblclick.native="playerStore.playOne(item.id + '')">
+          <lmg
+            class="w-8 h-8 rounded"
+            :src="item.picUrl"
+            :width="60"
+            :height="60" />
           <div class="flex flex-col justify-center px-2">
-            <div class="font-bold text-sm overflow-hidden text-ellipsis whitespace-nowrap">{{ item.name }}</div>
+            <div
+              class="font-bold text-sm overflow-hidden text-ellipsis whitespace-nowrap">
+              {{ item.name }}
+            </div>
             <div class="text-xs flex gap-1 text-gray-600 active:text-gray-800">
               <span
                 v-for="ar in item.singers"
@@ -65,23 +78,33 @@
         >{{ tab.name }}</a
       >
     </div>
-    <div v-show="activeTab == '1'" class="grid-cols-5 grid gap-4">
+    <div
+      v-show="activeTab == '1'"
+      class="grid-cols-5 grid gap-4">
       <play-list-cover
         v-for="item in myPlayList"
         :data="item"></play-list-cover>
     </div>
     <div v-show="activeTab == '2'">
       <div class="grid-cols-5 grid place-items-center gap-4">
-        <album-cover v-for="item in albumSubList" :data="item"></album-cover>
+        <album-cover
+          v-for="item in albumSubList"
+          :data="item"></album-cover>
       </div>
     </div>
     <div v-show="activeTab == '3'">
       <div class="grid-cols-6 grid place-items-center gap-3">
-        <artist-cover v-for="item in artistSubList" :data="item"></artist-cover>
+        <artist-cover
+          v-for="item in artistSubList"
+          :data="item"></artist-cover>
       </div>
     </div>
     <div v-show="activeTab == '4'">
-      <div><mv-cover v-for="item in mvSubList" :data="item"></mv-cover></div>
+      <div>
+        <mv-cover
+          v-for="item in mvSubList"
+          :data="item"></mv-cover>
+      </div>
     </div>
     <div v-show="activeTab == '5'">
       <div><music-table :data="musicHistoryData"></music-table></div>
@@ -90,8 +113,8 @@
 </template>
 
 <script setup lang="ts">
-import { PlayOne, Refresh } from "@icon-park/vue-next";
-import { onActivated, onBeforeMount, onMounted, ref } from "vue";
+import { PlayOne, Refresh } from '@icon-park/vue-next'
+import { onActivated, onBeforeMount, onMounted, ref } from 'vue'
 import {
   getAlbumSubListApi,
   getArtistSubListApi,
@@ -99,87 +122,87 @@ import {
   getListenHistoryApi,
   getMvSubListApi,
   getPlayListByUidApi,
-} from "./api";
-import { routeTo } from "@/utils/common";
-import { PlayListBaseInfo } from "@/types/playListRel";
-import { MusicBaseInfo } from "@/types/musicRel";
-import { getPlayListAllApi, playAllByPlayListId } from "@/api/playList";
-import { getLyricApi } from "@/api/music";
-import { ArtistBaseInfo } from "@/types/artistRel";
-import dayjs from "dayjs";
-import { MvBaseInfo } from "@/types/mvRel";
-import { AlbumBaseInfo } from "@/types/albumRel";
-import { usePlayerStore } from "@/store";
-import pinia from "@/store/store";
-import { useLocalStorage } from "@vueuse/core";
+} from './api'
+import { routeTo } from '@/utils/common'
+import { PlayListBaseInfo } from '@/types/playListRel'
+import { MusicBaseInfo } from '@/types/musicRel'
+import { getPlayListAllApi, playAllByPlayListId } from '@/api/playList'
+import { getLyricApi } from '@/api/music'
+import { ArtistBaseInfo } from '@/types/artistRel'
+import dayjs from 'dayjs'
+import { MvBaseInfo } from '@/types/mvRel'
+import { AlbumBaseInfo } from '@/types/albumRel'
+import { usePlayerStore } from '@/store/playerStore'
+import pinia from '@/store/store'
+import { useLocalStorage } from '@vueuse/core'
 
-const playerStore = usePlayerStore(pinia);
+const playerStore = usePlayerStore(pinia)
 
-const isRotate = ref(false);
-const user = useLocalStorage<any>("user", {});
-const isLoaded = ref(false);
-const historyType = ref<0 | 1>(1);
-const musicHistoryData = ref<MusicBaseInfo[]>([]);
+const isRotate = ref(false)
+const user = useLocalStorage<any>('user', {})
+const isLoaded = ref(false)
+const historyType = ref<0 | 1>(1)
+const musicHistoryData = ref<MusicBaseInfo[]>([])
 
 defineOptions({
-  name: "me",
-});
+  name: 'me',
+})
 
 const init = () => {
-  user.value = JSON.parse(localStorage.getItem("user") || "");
-};
+  user.value = JSON.parse(localStorage.getItem('user') || '')
+}
 
-const activeTab = ref("1");
+const activeTab = ref('1')
 
 const tabs = [
-  { id: "1", name: "全部歌单", do: () => {} },
+  { id: '1', name: '全部歌单', do: () => {} },
   {
-    id: "2",
-    name: "专辑",
+    id: '2',
+    name: '专辑',
     do: () => {
-      getAlbumSubList();
+      getAlbumSubList()
     },
   },
   {
-    id: "3",
-    name: "艺人",
+    id: '3',
+    name: '艺人',
     do: () => {
-      getArtistSubList();
+      getArtistSubList()
     },
   },
   {
-    id: "4",
-    name: "MV",
+    id: '4',
+    name: 'MV',
     do: () => {
-      getMvSubList();
+      getMvSubList()
     },
   },
   {
-    id: "5",
-    name: "听歌排行",
+    id: '5',
+    name: '听歌排行',
     do: () => {
-      getListenHistory(historyType.value);
+      getListenHistory(historyType.value)
     },
   },
-];
+]
 
 // 喜欢的歌曲列表
-const likeList = ref<MusicBaseInfo[]>([]);
-const likeCount = ref("");
+const likeList = ref<MusicBaseInfo[]>([])
+const likeCount = ref('')
 
-const myPlayList = ref<PlayListBaseInfo[]>([]);
-const randomLyric = ref<string>("");
+const myPlayList = ref<PlayListBaseInfo[]>([])
+const randomLyric = ref<string>('')
 
 // 我喜欢的音乐也是一个歌单，这个歌单的id
-const likePlayListId = localStorage.getItem("likePlayListId") || "";
-const artistSubList = useLocalStorage<ArtistBaseInfo[]>("artistSubList", []);
-const mvSubList = ref<MvBaseInfo[]>([]);
-const albumSubList = ref<AlbumBaseInfo[]>([]);
+const likePlayListId = localStorage.getItem('likePlayListId') || ''
+const artistSubList = useLocalStorage<ArtistBaseInfo[]>('artistSubList', [])
+const mvSubList = ref<MvBaseInfo[]>([])
+const albumSubList = ref<AlbumBaseInfo[]>([])
 
 const getPlayListByUid = async () => {
   const res: any = await getPlayListByUidApi({
     uid: user.value.userId,
-  });
+  })
   // 我的所有歌单（创建的，收藏的）
   myPlayList.value = res.playlist.slice(1).map((item: any) => {
     return {
@@ -191,9 +214,9 @@ const getPlayListByUid = async () => {
         id: item.creator.userId,
         nickname: item.creator.nickname,
       },
-    };
-  });
-  const playListDetail = await getPlayListAllApi({ id: likePlayListId });
+    }
+  })
+  const playListDetail = await getPlayListAllApi({ id: likePlayListId })
   likeList.value = playListDetail.songs.map((item: any) => {
     return {
       id: item.id,
@@ -203,57 +226,57 @@ const getPlayListByUid = async () => {
         return {
           id: item.id,
           name: item.name,
-        };
+        }
       }),
       album: {
         id: item.al.id,
         name: item.al.name,
       },
       duration: item.dt,
-    };
-  });
+    }
+  })
 
   // 随机歌词
   const randomMusicId =
-    likeList.value[Math.floor(Math.random() * likeList.value.length)].id;
-  const lrcRes: any = await getLyricApi({ id: randomMusicId });
+    likeList.value[Math.floor(Math.random() * likeList.value.length)].id
+  const lrcRes: any = await getLyricApi({ id: randomMusicId })
   const lyric = lrcRes.lrc.lyric
-    .split("\n")
+    .split('\n')
     .filter((item: string) => item)
-    .map((item: string) => item.split("]")[1])
-    .filter((item: string) => item);
+    .map((item: string) => item.split(']')[1])
+    .filter((item: string) => item)
   // 随机的连续3个元素
-  const randomIndex = Math.floor(Math.random() * (lyric.length - 1));
-  randomLyric.value = lyric.slice(randomIndex, randomIndex + 3).join("\n");
-};
+  const randomIndex = Math.floor(Math.random() * (lyric.length - 1))
+  randomLyric.value = lyric.slice(randomIndex, randomIndex + 3).join('\n')
+}
 
 const getLikeList = async () => {
   const res: any = await getLikeListApi({
     uid: user.value.userId,
-  });
-  likeCount.value = res.ids.length;
-};
+  })
+  likeCount.value = res.ids.length
+}
 
 const getArtistSubList = async () => {
   const { data, hasMore } = await getArtistSubListApi({
     offset: artistSubList.value.length,
-  });
+  })
   data.forEach((item: any) => {
     artistSubList.value.push({
       id: item.id,
       name: item.name,
       picUrl: item.img1v1Url,
-    });
-  });
+    })
+  })
   if (hasMore) {
-    getArtistSubList();
+    getArtistSubList()
   }
-};
+}
 
 const getAlbumSubList = async () => {
   const { data, hasMore } = await getAlbumSubListApi({
     offset: albumSubList.value.length,
-  });
+  })
 
   data.forEach((item: any) => {
     albumSubList.value.push({
@@ -264,19 +287,19 @@ const getAlbumSubList = async () => {
         return {
           id: item.id,
           name: item.name,
-        };
+        }
       }),
-    });
-  });
+    })
+  })
   if (hasMore) {
-    getAlbumSubList();
+    getAlbumSubList()
   }
-};
+}
 
 const getMvSubList = async () => {
   const { data, hasMore } = await getMvSubListApi({
     offset: mvSubList.value.length,
-  });
+  })
   data.forEach((item: any) => {
     mvSubList.value.push({
       id: item.vid,
@@ -286,20 +309,20 @@ const getMvSubList = async () => {
         return {
           id: item.userId,
           name: item.userName,
-        };
+        }
       }),
-    });
-  });
+    })
+  })
   if (hasMore) {
-    getMvSubList();
+    getMvSubList()
   }
-};
+}
 
 const getListenHistory = async (type: 1 | 0) => {
   const { weekData, allData } = await getListenHistoryApi({
     uid: user.value.userId,
     type,
-  });
+  })
   if (type === 1) {
     musicHistoryData.value = weekData.map(({ song }: any) => {
       return {
@@ -310,45 +333,45 @@ const getListenHistory = async (type: 1 | 0) => {
           return {
             id: item.id,
             name: item.name,
-          };
+          }
         }),
         album: {
           id: song.al.id,
           name: song.al.name,
         },
-        duration: dayjs(song.dt).format("mm:ss"),
-      };
-    });
+        duration: dayjs(song.dt).format('mm:ss'),
+      }
+    })
   }
-};
+}
 
 const handleClickTab = (id: string) => {
-  if (id === activeTab.value) return;
-  activeTab.value = id;
-  tabs.forEach((item) => {
+  if (id === activeTab.value) return
+  activeTab.value = id
+  tabs.forEach(item => {
     if (item.id === id) {
-      item.do();
+      item.do()
     }
-  });
-};
+  })
+}
 
 const refreshMe = async (e: Event) => {
-  isRotate.value = true;
-  await getPlayListByUid();
+  isRotate.value = true
+  await getPlayListByUid()
   setTimeout(() => {
-    isRotate.value = false;
-  }, 1000);
-};
+    isRotate.value = false
+  }, 1000)
+}
 
 onBeforeMount(() => {
   // init();
-});
+})
 
 onMounted(async () => {
-  await getPlayListByUid();
-  await getLikeList();
-  isLoaded.value = true;
-});
+  await getPlayListByUid()
+  await getLikeList()
+  isLoaded.value = true
+})
 </script>
 
 <style lang="scss" scoped>

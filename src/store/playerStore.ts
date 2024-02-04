@@ -4,6 +4,7 @@ import notify from '@/components/common/notification/notify'
 import {
   checkMusicApi,
   getAudioSourceFromNetease,
+  getLyricApi,
   getMusicDetailApi,
 } from '@/api/music'
 import {
@@ -14,7 +15,7 @@ import {
 } from '@/utils/player'
 import { useLocalStorage, debounceFilter } from '@vueuse/core'
 
-export const usePlayer2Store = defineStore('player2', () => {
+export const usePlayerStore = defineStore('player', () => {
   const audio = ref(new Audio())
   const songId = ref(useLocalStorage('player-id', ''))
   const cycleMode = ref(useLocalStorage('player-cycleMode', 1)) // 0 单曲循环  1 列表循环  2 随机
@@ -26,7 +27,8 @@ export const usePlayer2Store = defineStore('player2', () => {
   const showPlayerPage = ref(false)
   const timer = ref()
   const paused = ref(true)
-  const currentTime = ref(0)
+  const currentTime = ref(useLocalStorage('player-current-time', 0))
+  const lyricStr = ref(useLocalStorage('player-lyricStr', ''))
 
   const playlistCount = computed(() => playlist.value.length)
   const current = computed(() => {
@@ -102,10 +104,17 @@ export const usePlayer2Store = defineStore('player2', () => {
     songId.value = id
     audio.value.src = url
     await audio.value.play()
+    await getlyricStr(id)
+    audio.value.currentTime = currentTime.value
     clearInterval(timer.value)
     timer.value = setInterval(() => {
       currentTime.value += 1
     }, 1000)
+  }
+
+  const getlyricStr = async (id: string) => {
+    const { lrc } = await getLyricApi({ id })
+    lyricStr.value = lrc.lyric
   }
 
   /**
@@ -188,6 +197,7 @@ export const usePlayer2Store = defineStore('player2', () => {
   }
 
   const playOne = async (id: string) => {
+    currentTime.value = 0
     clearInterval(timer.value)
     isFm.value = false
     if (!id) {
@@ -263,6 +273,7 @@ export const usePlayer2Store = defineStore('player2', () => {
     currentTime,
     showPlayerPage,
     playlistCount,
+    lyricStr,
     initPlayer,
     playMulti,
     tooglePlay,

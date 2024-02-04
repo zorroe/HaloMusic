@@ -1,5 +1,7 @@
 <template>
-  <div v-if="loaded" class="flex flex-col w-full px-4 h-64 gap-8">
+  <div
+    v-if="loaded"
+    class="flex flex-col w-full px-4 h-64 gap-8">
     <div class="flex my-4 gap-4">
       <lmg
         :src="playListDetail.coverImgUrl"
@@ -27,7 +29,7 @@
             v-if="
               playListDetail.creator.userId == userStore.getUserInfo?.userId
             "
-            class=" cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all duration-300"
+            class="cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all duration-300"
             @click="handleEdit"></icon-park>
         </div>
 
@@ -46,7 +48,7 @@
         <div class="text-gray-600 text-sm">
           <span>最后更新于</span>
           <span>{{
-            dayjs(playListDetail.trackUpdateTime).format("YYYY-MM-DD")
+            dayjs(playListDetail.trackUpdateTime).format('YYYY-MM-DD')
           }}</span>
           <span> · </span>
           <span>{{ `${playListDetail.trackCount}首` }}</span>
@@ -72,7 +74,10 @@
               :size="20"
               class="rounded-full p-1" />
           </ea-button>
-          <ea-button for="delete-modal" type="danger" v-else>
+          <ea-button
+            for="delete-modal"
+            type="danger"
+            v-else>
             <icon-park
               :icon="Delete"
               theme="outline"
@@ -85,90 +90,93 @@
     </div>
     <music-table :data="musicTableData"></music-table>
   </div>
-  <ea-modal id="delete-modal" @confirm="handleDeletePlayList">
+  <ea-modal
+    id="delete-modal"
+    @confirm="handleDeletePlayList">
     <div class="font-bold">确定删除此歌单吗？</div>
   </ea-modal>
 </template>
 
 <script setup lang="ts">
-import dayjs from "dayjs";
-import router from "@/router";
+import dayjs from 'dayjs'
+import router from '@/router'
 import {
   deletePlayListApi,
   getPlayListAllApi,
   getPlayListDetailApi,
   subscribePlayListApi,
   updatePlaylistName,
-} from "@/api/playList";
-import { onBeforeMount, onMounted, ref } from "vue";
-import { Delete, Edit, Like, PlayOne } from "@icon-park/vue-next";
-import { openUrl } from "@/utils/common";
-import { MusicBaseInfo } from "@/types/musicRel";
-import { usePlayerStore, useUserInfoStore } from "@/store";
-import pinia from "@/store/store";
-import notify from "@/components/common/notification/notify";
+} from '@/api/playList'
+import { onBeforeMount, onMounted, ref } from 'vue'
+import { Delete, Edit, Like, PlayOne } from '@icon-park/vue-next'
+import { openUrl } from '@/utils/common'
+import { MusicBaseInfo } from '@/types/musicRel'
+import { useUserInfoStore } from '@/store'
+import { usePlayerStore } from '@/store/playerStore'
+import pinia from '@/store/store'
+import notify from '@/components/common/notification/notify'
 
-const playerStore = usePlayerStore(pinia);
-const userStore = useUserInfoStore(pinia);
+const playerStore = usePlayerStore(pinia)
+const userStore = useUserInfoStore(pinia)
 
 defineOptions({
-  name: "playlist",
-});
+  name: 'playlist',
+})
 
-const playlistNameInputRef = ref();
+const playlistNameInputRef = ref()
 
-const loaded = ref(false);
-const user = ref();
-const musicTableData = ref<MusicBaseInfo[]>([]);
-const isEdit = ref(false);
+const loaded = ref(false)
+const user = ref()
+const musicTableData = ref<MusicBaseInfo[]>([])
+const isEdit = ref(false)
 
-const newName = ref("");
+const newName = ref('')
 
 const init = () => {
-  user.value = JSON.parse(localStorage.getItem("user") || "");
-};
-const playListId = ref<string>();
-const playListDetail = ref();
+  user.value = JSON.parse(localStorage.getItem('user') || '')
+}
+const playListId = ref<string>()
+const playListDetail = ref()
 
 const getPlayListDetail = async (params: any) => {
-  const res: any = await getPlayListDetailApi(params);
-  playListDetail.value = res.playlist;
-};
+  const res: any = await getPlayListDetailApi(params)
+  playListDetail.value = res.playlist
+}
 
 const handleDeletePlayList = async () => {
-  await deletePlayListApi({ id: playListId.value });
-  router.push("/me");
-};
+  await deletePlayListApi({ id: playListId.value })
+  router.push('/me')
+}
 
 const handleEdit = () => {
-  isEdit.value = true;
-  newName.value = playListDetail.value.name;
+  isEdit.value = true
+  newName.value = playListDetail.value.name
   setTimeout(() => {
-    playlistNameInputRef.value.focus();
-  }, 0);
-};
+    playlistNameInputRef.value.focus()
+  }, 0)
+}
 
 const handleBlur = () => {
-  isEdit.value = false;
-};
+  isEdit.value = false
+}
 
 const confirmEdit = async () => {
   const params = {
     id: playListId.value,
     name: newName.value,
-  };
+  }
   updatePlaylistName(params)
     .then(() => {
-      playListDetail.value.name = newName;
-      notify({ message: "修改成功", type: "success" });
+      playListDetail.value.name = newName
+      notify({ message: '修改成功', type: 'success' })
     })
     .catch(() => {
-      notify({ message: "修改失败", type: "warning" });
+      notify({ message: '修改失败', type: 'warning' })
     })
     .finally(() => {
-      isEdit.value = false;
-    });
-};
+      isEdit.value = false
+    })
+}
 
 const handleSubscribePlayList = async () => {
   // 判断是否已经订阅
@@ -176,45 +184,45 @@ const handleSubscribePlayList = async () => {
   await subscribePlayListApi({
     id: playListId.value,
     t: playListDetail.value.subscribed ? 2 : 1,
-  });
+  })
   await getPlayListDetail({
     id: playListId.value,
-  });
-};
+  })
+}
 
 const getPlayListMusic = async () => {
-  const { songs } = await getPlayListAllApi({ id: playListId.value });
+  const { songs } = await getPlayListAllApi({ id: playListId.value })
   songs.forEach((song: any) => {
     musicTableData.value.push({
       id: song.id,
       name: song.name,
       picUrl: song.al.picUrl,
       singers: song.ar.map((ar: any) => {
-        return { id: ar.id, name: ar.name };
+        return { id: ar.id, name: ar.name }
       }),
-      duration: dayjs(song.dt).format("mm:ss"),
+      duration: dayjs(song.dt).format('mm:ss'),
       album: { id: song.al.id, name: song.al.name },
-    });
-  });
-};
+    })
+  })
+}
 
 const handlePlayAll = () => {
-  const ids = musicTableData.value.map((music) => music.id);
-  playerStore.playMulti(ids);
-};
+  const ids = musicTableData.value.map(music => music.id)
+  playerStore.playMulti(ids.join(','))
+}
 
 onBeforeMount(() => {
-  init();
-});
+  init()
+})
 
 onMounted(async () => {
-  playListId.value = router.currentRoute.value.params.id as string;
+  playListId.value = router.currentRoute.value.params.id as string
   await getPlayListDetail({
     id: playListId.value,
-  });
-  await getPlayListMusic();
-  loaded.value = true;
-});
+  })
+  await getPlayListMusic()
+  loaded.value = true
+})
 </script>
 
 <style lang="scss" scoped>

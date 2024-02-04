@@ -1,8 +1,8 @@
 import http from "@/utils/request";
-import { usePlayer2Store } from "@/store/playerStore";
+import { usePlayerStore } from "@/store/playerStore";
 import pinia from "@/store/store";
 
-const player2Store = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 
 export const getNewAlbumApi: any = () => {
   return http({
@@ -32,5 +32,5 @@ export const getSubAlbumlistApi:any = (params:any)=>{
 export const playAllByAlbumId = async(id:number) => {
   const {songs} = await getAlbumApi({id})
   const ids = songs.map((item:any)=>item.id)
-  player2Store.playMulti(ids.join(','));
+  playerStore.playMulti(ids.join(','));
 }

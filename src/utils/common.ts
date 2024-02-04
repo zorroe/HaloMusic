@@ -4,7 +4,7 @@ import { ipcRenderer } from 'electron'
 import Cookies from 'js-cookie'
 import pinia from '@/store/store'
 import { useUserInfoStore } from '@/store/index'
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import { getPlayListByUidApi } from '@/views/me/api'
 import { getPlayListAllApi } from '@/api/playList'
 import { UserProfile } from '@/types/userRel'
@@ -12,7 +12,7 @@ import { checkMusicApi, getMusicUrlApi } from '@/api/music'
 import { getSubAlbumlistApi } from '@/api/album'
 
 const userInfoStore = useUserInfoStore(pinia)
-const playerStore = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 
 export const routeTo = (path: string) => {
   console.log(path)

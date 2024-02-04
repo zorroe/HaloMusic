@@ -29,10 +29,10 @@ import {
   getMusicDetail,
   getPersonfm,
 } from '@/utils/player'
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 
-const player2Store = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 
 const testCanPlay = () => canPlay(1974443814)
 const testMusicResource = () => getSongResource(1974443814, 'exhigh')
@@ -40,12 +40,12 @@ const testGetMusicDetail1 = () => getMusicDetail('1974443814')
 const testGetMusicDetail2 = () => getMusicDetail('1974443814, 514761281')
 const testGetPersonFm = () => getPersonfm()
 
-const testPlayMulti = () => player2Store.playMulti('1974443814, 514761281')
-const testPlayOne = () => player2Store.playOne('1974443814')
-const testPlayNext = () => player2Store.playNext()
-const testPlayPrev = () => player2Store.playPrev()
+const testPlayMulti = () => playerStore.playMulti('1974443814, 514761281')
+const testPlayOne = () => playerStore.playOne('1974443814')
+const testPlayNext = () => playerStore.playNext()
+const testPlayPrev = () => playerStore.playPrev()
 
-const testPlayFm = () => player2Store.playFm()
+const testPlayFm = () => playerStore.playFm()
 </script>
 
 <style scoped></style>

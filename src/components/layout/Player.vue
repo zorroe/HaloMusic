@@ -7,7 +7,7 @@
         <div
           class="flex flex-col w-1/2 h-full gap-4 justify-center items-center">
           <lmg
-            :src="song.picUrl"
+            :src="song?.al.picUrl"
             :width="500"
             :height="500"
             class="w-80 h-80 rounded-2xl">
@@ -19,21 +19,21 @@
               theme="filled"
               fill="black"
               class="footer-icon btn-animation"
-              @click="playerStore.prev"></icon-park>
+              @click="playerStore.playPrev"></icon-park>
             <icon-park
               :icon="playIcon"
               :size="36"
               theme="filled"
               fill="black"
               class="footer-icon btn-animation"
-              @click="playerStore.togglePlay"></icon-park>
+              @click="playerStore.tooglePlay"></icon-park>
             <icon-park
               :icon="RightOne"
               :size="20"
               theme="filled"
               fill="black"
               class="footer-icon btn-animation"
-              @click="playerStore.next"></icon-park>
+              @click="playerStore.playNext"></icon-park>
           </div>
           <div class="flex justify-center items-center gap-4 w-32">
             <icon-park
@@ -61,7 +61,7 @@
           <div
             v-for="(line, idx) in lyricList"
             class="py-1 text-base cursor-pointer"
-            @dblclick="playerStore.onSliderChange(line.time)"
+            @dblclick="playerStore.changeSlider(line.time)"
             :class="{
               'is-sing': isSing(idx),
             }">
@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { usePlayerStore } from '@/store'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import {
   Down,
@@ -93,8 +93,7 @@ import {
   VolumeSmall,
   VolumeMute,
 } from '@icon-park/vue-next'
-import { computed, ref, watch } from 'vue'
-import { getLyricApi } from '@/api/music'
+import { computed} from 'vue'
 
 const playerStore = usePlayerStore(pinia)
 
@@ -104,7 +103,7 @@ const currentTime = computed(() => {
 const volume = computed({
   get: () => playerStore.volume,
   set: val => {
-    playerStore.setVolume(val)
+    playerStore.setVolumn(val)
   },
 })
 
@@ -121,10 +120,10 @@ const isSing = (idx: number) => {
 }
 
 const playIcon = computed(() => {
-  if (playerStore.isPlaying) {
-    return Pause
-  } else {
+  if (playerStore.paused) {
     return PlayOne
+  } else {
+    return Pause
   }
 })
 
@@ -138,10 +137,10 @@ const volumnIcon = computed(() => {
   }
 })
 
-const lyricStr = ref('')
 const lyricList = computed(() => {
+  const lyricStr = playerStore.lyricStr
   // 将歌词字符串转换为歌词数组
-  const lyricArr = lyricStr.value.split('\n')
+  const lyricArr = lyricStr.split('\n')
   const lyricList: LyricLine[] = []
   lyricArr.forEach(item => {
     const time = item.match(/\[(\d{2,}):(\d{2})(?:\.(\d{2,3}))?]/g)
@@ -164,9 +163,8 @@ const lyricList = computed(() => {
   return lyricList
 })
 
-// const lyric = ref("");
 const song = computed(() => {
-  return playerStore.song
+  return playerStore.current.currentSong
 })
 
 const showplayerPage = computed(() => {
@@ -175,9 +173,9 @@ const showplayerPage = computed(() => {
 
 const handleClickVolumn = () => {
   if (playerStore.volume == 0) {
-    playerStore.setVolume(60)
+    playerStore.setVolumn(60)
   } else {
-    playerStore.setVolume(0)
+    playerStore.setVolumn(0)
   }
 }
 
@@ -206,12 +204,6 @@ const scrollTo = () => {
 setInterval(() => {
   scrollTo()
 }, 1000)
-
-watch(song, async () => {
-  if (!song.value.id) return
-  const { lrc } = await getLyricApi({ id: song.value.id })
-  lyricStr.value = lrc.lyric
-})
 </script>
 
 <style lang="scss" scoped>

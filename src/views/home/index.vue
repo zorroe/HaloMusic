@@ -64,7 +64,7 @@ import { getRecommendSongsApi } from '@/api/music'
 import { MusicBaseInfo } from '@/types/musicRel'
 import dayjs from 'dayjs'
 import { PlayOne } from '@icon-park/vue-next'
-import { usePlayerStore } from '@/store'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 
 const playerStore = usePlayerStore(pinia)
@@ -165,7 +165,7 @@ const getRecommendSongs = async () => {
 
 const handlePlayMultiRecommend = () => {
   const ids = recommendSongList.value.map(item => item.id)
-  playerStore.playMulti(ids)
+  playerStore.playMulti(ids.join(','))
 }
 
 onMounted(async () => {

@@ -4,7 +4,7 @@
       v-for="item in props.data"
       class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 gap-4 group"
       :class="{ playing: item.id == curMusicId }"
-      @dblclick="player2Store.playOne(item.id + '')">
+      @dblclick="playerStore.playOne(item.id + '')">
       <lmg
         :src="item.picUrl"
         :width="100"
@@ -49,12 +49,12 @@ import { MusicBaseInfo } from '@/types/musicRel'
 import { saveLikeMusicIds, routeTo } from '@/utils/common'
 import { Like } from '@icon-park/vue-next'
 import { computed, ref } from 'vue'
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 
-const player2Store = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 
-const curMusicId = computed(() => player2Store.current.currentSong.id)
+const curMusicId = computed(() => playerStore.current.currentSong?.id)
 
 /* 歌单封面图组件 */
 interface Props {

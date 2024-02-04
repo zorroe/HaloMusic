@@ -52,10 +52,10 @@ import { mvDetailApi, mvUrlApi, MvData } from './index'
 import router from '@/router'
 import { openUrl, routeTo } from '@/utils/common'
 import { Share } from '@icon-park/vue-next'
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 
-const playerStore = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 
 defineOptions({
   name: 'mv',

@@ -24,11 +24,11 @@
 <script setup lang="ts">
 import Header from '@/components/layout/Header.vue'
 import Footer from '@/components/layout/Footer.vue'
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import { onMounted } from 'vue'
 
-const playerStore = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 
 const excludes = [
   'artist',

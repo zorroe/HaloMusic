@@ -1,8 +1,8 @@
 import http from '@/utils/request'
-import { usePlayer2Store } from '@/store/playerStore'
+import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 
-const playerStore = usePlayer2Store(pinia)
+const playerStore = usePlayerStore(pinia)
 
 export const getrecommendPlayListApi: any = () => {
   return http({

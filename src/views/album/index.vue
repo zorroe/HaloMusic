@@ -1,12 +1,13 @@
 <template>
-  <div v-show="loaded" class="flex flex-col w-full px-4 h-64 gap-8">
+  <div
+    v-show="loaded"
+    class="flex flex-col w-full px-4 h-64 gap-8">
     <div class="flex my-4 gap-8">
       <lmg
         :src="albumInfo?.picUrl"
         :width="300"
         :height="300"
-        class="rounded-xl w-48 h-48 shadow"
-      ></lmg>
+        class="rounded-xl w-48 h-48 shadow"></lmg>
       <div class="flex flex-col gap-2">
         <div class="font-bold text-3xl">{{ albumInfo?.name }}</div>
         <div>
@@ -19,7 +20,7 @@
         </div>
         <div class="text-sm">
           {{
-            `${dayjs(albumInfo?.publishTime).format("YYYY")} · ${
+            `${dayjs(albumInfo?.publishTime).format('YYYY')} · ${
               albumInfo?.size
             }首歌`
           }}
@@ -30,8 +31,7 @@
               :icon="PlayOne"
               theme="filled"
               :size="20"
-              class="rounded-full p-1"
-            />
+              class="rounded-full p-1" />
             <div class="text-lg font-bold">播放</div>
           </ea-button>
           <ea-button>
@@ -39,47 +39,48 @@
               :icon="Like"
               :theme="isSub ? 'filled' : 'outline'"
               :size="20"
-              class="rounded-full p-1"
-            />
+              class="rounded-full p-1" />
           </ea-button>
         </div>
       </div>
     </div>
-    <music-table :data="albumSongs" :showCover="false"></music-table>
+    <music-table
+      :data="albumSongs"
+      :showCover="false"></music-table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { getAlbumApi } from "@/api/album";
-import router from "@/router";
-import { AlbumInfo } from "@/types/albumRel";
-import { MusicBaseInfo } from "@/types/musicRel";
-import { computed, onMounted, ref } from "vue";
-import { Like, PlayOne } from "@icon-park/vue-next";
-import dayjs from "dayjs";
-import { routeTo } from "@/utils/common";
-import { usePlayerStore } from "@/store";
-import pinia from "@/store/store";
+import { getAlbumApi } from '@/api/album'
+import router from '@/router'
+import { AlbumInfo } from '@/types/albumRel'
+import { MusicBaseInfo } from '@/types/musicRel'
+import { computed, onMounted, ref } from 'vue'
+import { Like, PlayOne } from '@icon-park/vue-next'
+import dayjs from 'dayjs'
+import { routeTo } from '@/utils/common'
+import { usePlayerStore } from '@/store/playerStore'
+import pinia from '@/store/store'
 
-const playerStore = usePlayerStore(pinia);
+const playerStore = usePlayerStore(pinia)
 
 defineOptions({
-  name: "album",
-});
+  name: 'album',
+})
 
-const loaded = ref(false);
-const albumId = ref<string>("");
-const albumSongs = ref<MusicBaseInfo[]>([]);
-const albumInfo = ref<AlbumInfo>();
-const subAlbums = JSON.parse(localStorage.getItem("subAlbumIds") || "[]");
+const loaded = ref(false)
+const albumId = ref<string>('')
+const albumSongs = ref<MusicBaseInfo[]>([])
+const albumInfo = ref<AlbumInfo>()
+const subAlbums = JSON.parse(localStorage.getItem('subAlbumIds') || '[]')
 
 const isSub = computed(() => {
-  return subAlbums.some((item: number) => item == albumInfo.value?.id);
-});
+  return subAlbums.some((item: number) => item == albumInfo.value?.id)
+})
 
 const getAlbum = async () => {
-  const { songs, album } = await getAlbumApi({ id: albumId.value });
-  albumInfo.value = album;
+  const { songs, album } = await getAlbumApi({ id: albumId.value })
+  albumInfo.value = album
 
   songs.forEach((song: any) => {
     albumSongs.value?.push({
@@ -90,27 +91,27 @@ const getAlbum = async () => {
         return {
           id: singer.id,
           name: singer.name,
-        };
+        }
       }),
-      duration: dayjs(song.dt).format("mm:ss"),
+      duration: dayjs(song.dt).format('mm:ss'),
       album: {
         id: song.al.id,
         name: song.al.name,
       },
-    });
-  });
-};
+    })
+  })
+}
 
 const playMusicByAlbumId = async () => {
-  const ids = albumSongs.value.map((item: MusicBaseInfo) => item.id);
-  playerStore.playMulti(ids);
-};
+  const ids = albumSongs.value.map((item: MusicBaseInfo) => item.id)
+  playerStore.playMulti(ids.join(','))
+}
 
 onMounted(async () => {
-  albumId.value = router.currentRoute.value.params.id as string;
-  await getAlbum();
-  loaded.value = true;
-});
+  albumId.value = router.currentRoute.value.params.id as string
+  await getAlbum()
+  loaded.value = true
+})
 </script>
 
 <style scoped></style>
