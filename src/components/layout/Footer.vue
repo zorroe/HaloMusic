@@ -99,7 +99,9 @@
     <ea-drawer
       :drawer-show="drawerShow"
       @close="changeDrawerStatus(false)">
-      <div class="flex flex-col gap-2">
+      <div
+        v-if="!isFm"
+        class="flex flex-col gap-2">
         <div
           v-for="music in playlist"
           class="playlist-item cursor-default"
@@ -115,6 +117,11 @@
             {{ formatTrackTime(music.dt / 1000) }}
           </div>
         </div>
+      </div>
+      <div
+        v-else
+        class="flex justify-center items-center w-full h-full">
+        私人FM播放中
       </div>
     </ea-drawer>
   </div>
@@ -153,8 +160,9 @@ const volume = computed({
     playerStore.setVolumn(val)
   },
 })
+const isFm = computed(() => playerStore.isFm)
 
-const playlist = computed(()=>playerStore.playlist)
+const playlist = computed(() => playerStore.playlist)
 const drawerShow = ref(false)
 const showPlayerPage = computed(() => playerStore.showPlayerPage)
 

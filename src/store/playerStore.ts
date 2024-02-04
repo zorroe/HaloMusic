@@ -1,12 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import notify from '@/components/common/notification/notify'
-import {
-  checkMusicApi,
-  getAudioSourceFromNetease,
-  getLyricApi,
-  getMusicDetailApi,
-} from '@/api/music'
+import { getLyricApi } from '@/api/music'
 import {
   canPlay,
   getSongResource,
@@ -19,7 +14,7 @@ export const usePlayerStore = defineStore('player', () => {
   const audio = ref(new Audio())
   const songId = ref(useLocalStorage('player-id', ''))
   const cycleMode = ref(useLocalStorage('player-cycleMode', 1)) // 0 单曲循环  1 列表循环  2 随机
-  const isFm = ref(false)
+  const isFm = ref(useLocalStorage('player-isfm', false))
   const volume = ref(
     useLocalStorage('player-volume', 60, { eventFilter: debounceFilter(1000) })
   )
@@ -127,6 +122,7 @@ export const usePlayerStore = defineStore('player', () => {
     if (isFm.value) {
       const { id } = await getPersonfm()
       nextId = id
+      playOne(nextId + '', true)
     } else {
       if (cycleMode.value === 0) {
         nextId = current.value.currentSong.id
@@ -137,8 +133,8 @@ export const usePlayerStore = defineStore('player', () => {
         const nextIdx = Math.floor(Math.random() * playlist.value.length)
         nextId = playlist.value[nextIdx].id
       }
+      playOne(nextId + '')
     }
-    playOne(nextId + '')
   }
 
   /**
@@ -151,6 +147,7 @@ export const usePlayerStore = defineStore('player', () => {
     if (isFm.value) {
       const { id } = await getPersonfm()
       prevId = id
+      playOne(prevId + '', true)
     } else {
       if (cycleMode.value === 0) {
         prevId = current.value.currentSong.id
@@ -163,8 +160,8 @@ export const usePlayerStore = defineStore('player', () => {
         const prevIdx = Math.floor(Math.random() * playlist.value.length)
         prevId = playlist.value[prevIdx].id
       }
+      playOne(prevId + '')
     }
-    playOne(prevId + '')
   }
 
   /**
@@ -196,10 +193,17 @@ export const usePlayerStore = defineStore('player', () => {
     playOne(songInfo.id)
   }
 
-  const playOne = async (id: string) => {
-    currentTime.value = 0
+  const playOne = async (id: string, fm = false) => {
+    isFm.value = fm
+    if (!current.value.currentSong) {
+      currentTime.value = 0
+      audio.value.currentTime = 0
+    }
+    if (id !== current.value.currentSong?.id) {
+      currentTime.value = 0
+      audio.value.currentTime = 0
+    }
     clearInterval(timer.value)
-    isFm.value = false
     if (!id) {
       notify({ message: '空的', type: 'warning' })
       return
@@ -274,6 +278,7 @@ export const usePlayerStore = defineStore('player', () => {
     showPlayerPage,
     playlistCount,
     lyricStr,
+    isFm,
     initPlayer,
     playMulti,
     tooglePlay,

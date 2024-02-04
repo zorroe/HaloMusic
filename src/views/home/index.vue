@@ -3,7 +3,7 @@
     v-show="loaded"
     class="flex flex-col">
     <div class="text-lv1">推荐歌单</div>
-    <div class="grid-cols-5 grid place-content-between gap-8 my-8">
+    <div class="grid-cols-5 grid place-content-between gap-8 mb-8">
       <play-list-cover
         v-for="item in recommendPlayList.slice(0, 10)"
         :data="item"></play-list-cover>
@@ -163,7 +163,8 @@ const getRecommendSongs = async () => {
   recommendBg.value = recommendSongList.value[0].picUrl
 }
 
-const handlePlayMultiRecommend = () => {
+const handlePlayMultiRecommend = (event: Event) => {
+  event.stopPropagation()
   const ids = recommendSongList.value.map(item => item.id)
   playerStore.playMulti(ids.join(','))
 }
