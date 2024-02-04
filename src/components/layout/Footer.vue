@@ -71,11 +71,11 @@
           @click="changeDrawerStatus(true)"></icon-park>
         <div class="flex justify-center items-center gap-2 w-32">
           <icon-park
-            :icon="volumnIcon"
+            :icon="volumeIcon"
             :size="18"
             theme="filled"
             fill="black"
-            @click="handleClickVolumn"></icon-park>
+            @click="handleClickVolume"></icon-park>
           <div class="volume-bar">
             <vue-slider
               v-model="volume"
@@ -157,7 +157,7 @@ const curMusic = computed(() => playerStore.current.currentSong)
 const volume = computed({
   get: () => playerStore.volume,
   set: val => {
-    playerStore.setVolumn(val)
+    playerStore.setVolume(val)
   },
 })
 const isFm = computed(() => playerStore.isFm)
@@ -196,7 +196,7 @@ const playIcon = computed(() => {
 })
 
 // 音量图标
-const volumnIcon = computed(() => {
+const volumeIcon = computed(() => {
   if (volume.value == 0) {
     return VolumeMute
   } else if (volume.value <= 60) {
@@ -217,11 +217,11 @@ const playModeIcon = computed(() => {
   }
 })
 
-const handleClickVolumn = () => {
+const handleClickVolume = () => {
   if (playerStore.volume == 0) {
-    playerStore.setVolumn(60)
+    playerStore.setVolume(60)
   } else {
-    playerStore.setVolumn(0)
+    playerStore.setVolume(0)
   }
 }
 </script>

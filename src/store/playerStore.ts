@@ -251,7 +251,7 @@ export const usePlayerStore = defineStore('player', () => {
     cycleMode.value = (cycleMode.value + 1) % 3
   }
 
-  const setVolumn = (n: number) => {
+  const setVolume = (n: number) => {
     n = n > 100 ? 100 : n
     n = n < 0 ? 0 : n
     volume.value = n
@@ -289,7 +289,7 @@ export const usePlayerStore = defineStore('player', () => {
     openPlayerPage,
     closePlayerPage,
     toggleLoop,
-    setVolumn,
+    setVolume,
     changeSlider,
     setPause,
   }
