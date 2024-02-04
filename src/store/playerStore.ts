@@ -43,14 +43,6 @@ export const usePlayerStore = defineStore('player', () => {
       audio.value = new Audio()
     }
     audio.value.volume = volume.value / 100
-
-    // TODO 获取歌曲时长
-
-    // 正在播放时触发的事件，用来更新进度条
-    // audio.value.addEventListener('timeupdate', event => {
-    //   currentTime.value = Number((event.timeStamp / 1000).toFixed(0))
-    // })
-
     // 播放完触发的事件，用来下一首
     audio.value.addEventListener('ended', event => {
       playNext()
