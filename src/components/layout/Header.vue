@@ -65,13 +65,13 @@
         <ul
           tabindex="0"
           class="dropdown-content px-2 py-4 shadow rounded-xl w-32 bg-white">
-          <li>
-            <label
-              @click="routeTo('/pan')"
-              class="avatar-dropdown">
-              <div class="text-base font-bold">我的云盘</div>
-            </label>
-          </li>
+<!--          <li>-->
+<!--            <label-->
+<!--              @click="routeTo('/pan')"-->
+<!--              class="avatar-dropdown">-->
+<!--              <div class="text-base font-bold">我的云盘</div>-->
+<!--            </label>-->
+<!--          </li>-->
           <li>
             <label
               for="logout-modal"

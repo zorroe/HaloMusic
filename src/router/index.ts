@@ -73,11 +73,11 @@ const routes = [
     name: 'test',
     component: () => import('@/views/test/index.vue'),
   },
-  {
-    path: '/pan',
-    name: 'pan',
-    component: ()=> import('@/views/pan/index.vue')
-  }
+  // {
+  //   path: '/pan',
+  //   name: 'pan',
+  //   component: ()=> import('@/views/pan/index.vue')
+  // }
 ]
 export const router = createRouter({
   history: createWebHashHistory(),
