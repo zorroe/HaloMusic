@@ -1,6 +1,6 @@
 {
   "name": "halomusic",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "main": "dist-electron/main/index.js",
   "description": "halomusic",
   "author": "zorroe <1318753541@qq.com>",
