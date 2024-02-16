@@ -69,6 +69,16 @@
           :icon="MusicList"
           :size="20"
           @click="changeDrawerStatus(true)"></icon-park>
+        <label
+          for="song-quality"
+          class="footer-icon btn-animation"
+          ><icon-park
+            class=""
+            :icon="VoiceOne"
+            :size="20"
+            @click="chooseQuality"></icon-park
+        ></label>
+
         <div class="flex justify-center items-center gap-2 w-32">
           <icon-park
             :icon="volumeIcon"
@@ -124,6 +134,11 @@
         私人FM播放中
       </div>
     </ea-drawer>
+    <ea-modal
+      id="song-quality"
+      :showBtn="false">
+      <div class="text-base whitespace-pre-wrap">ddd</div>
+    </ea-modal>
   </div>
 
   <Player :show="showPlayerPage"> </Player>
@@ -143,6 +158,7 @@ import {
   Pause,
   LeftOne,
   RightOne,
+  VoiceOne,
 } from '@icon-park/vue-next'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
@@ -222,6 +238,10 @@ const handleClickVolume = () => {
   } else {
     playerStore.setVolume(0)
   }
+}
+
+const chooseQuality = () => {
+  console.log('选择音质')
 }
 </script>
 
