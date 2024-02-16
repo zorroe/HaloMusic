@@ -93,7 +93,7 @@ import {
   VolumeSmall,
   VolumeMute,
 } from '@icon-park/vue-next'
-import { computed} from 'vue'
+import { computed } from 'vue'
 
 const playerStore = usePlayerStore(pinia)
 
@@ -114,8 +114,8 @@ interface LyricLine {
 
 const isSing = (idx: number) => {
   return (
-    currentTime.value > lyricList.value[idx].time &&
-    currentTime.value < lyricList.value[idx + 1].time
+    currentTime.value > lyricList.value[idx]?.time &&
+    currentTime.value < lyricList.value[idx + 1]?.time
   )
 }
 

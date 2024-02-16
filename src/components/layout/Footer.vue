@@ -175,13 +175,12 @@ const changeDrawerStatus = (status: boolean) => {
 }
 
 const curMusicDuration = computed(() =>
-  Number(playerStore.current.currentSong?.dt / 1000).toFixed(0)
+  Number((playerStore.current.currentSong?.dt / 1000).toFixed(0))
 )
 
 const curMusicCurrentTime = computed({
-  get: () => playerStore.currentTime,
+  get: () => Number(playerStore.currentTime),
   set: val => {
-    console.log(val)
     playerStore.changeSlider(val)
   },
 })

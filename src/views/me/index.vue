@@ -1,7 +1,7 @@
 <template>
   <div
     v-show="isLoaded"
-    class="flex flex-col w-full gap-8">
+    class="flex flex-col w-full gap-4">
     <div class="flex gap-4 items-center">
       <lmg
         class="w-10 h-10 rounded-full"
@@ -107,6 +107,16 @@
       </div>
     </div>
     <div v-show="activeTab == '5'">
+      <div class="tabs">
+        <a
+          v-for="tab in sortTabs"
+          :id="tab.id"
+          :class="{ 'active-tab': historyType == tab.id }"
+          class="tab tab-bordered w-20 min-w-max font-bold text-lg text-gray-600 hover:text-gray-800"
+          @click="handleClickSortTab(tab.id)"
+          >{{ tab.name }}</a
+        >
+      </div>
       <div><music-table :data="musicHistoryData"></music-table></div>
     </div>
   </div>
@@ -114,7 +124,7 @@
 
 <script setup lang="ts">
 import { PlayOne, Refresh } from '@icon-park/vue-next'
-import { onActivated, onBeforeMount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
   getAlbumSubListApi,
   getArtistSubListApi,
@@ -141,16 +151,12 @@ const playerStore = usePlayerStore(pinia)
 const isRotate = ref(false)
 const user = useLocalStorage<any>('user', {})
 const isLoaded = ref(false)
-const historyType = ref<0 | 1>(1)
+const historyType = ref<string>('1')
 const musicHistoryData = ref<MusicBaseInfo[]>([])
 
 defineOptions({
   name: 'me',
 })
-
-const init = () => {
-  user.value = JSON.parse(localStorage.getItem('user') || '')
-}
 
 const activeTab = ref('1')
 
@@ -186,6 +192,19 @@ const tabs = [
   },
 ]
 
+const sortTabs = [
+  {
+    id: '1',
+    name: '本周',
+    do: () => getListenHistory('1'),
+  },
+  {
+    id: '0',
+    name: '所有时间',
+    do: () => getListenHistory('0'),
+  },
+]
+
 // 喜欢的歌曲列表
 const likeList = ref<MusicBaseInfo[]>([])
 const likeCount = ref('')
@@ -198,6 +217,11 @@ const likePlayListId = localStorage.getItem('likePlayListId') || ''
 const artistSubList = useLocalStorage<ArtistBaseInfo[]>('artistSubList', [])
 const mvSubList = ref<MvBaseInfo[]>([])
 const albumSubList = ref<AlbumBaseInfo[]>([])
+
+const handleClickSortTab = (id: string) => {
+  historyType.value = id
+  getListenHistory(id)
+}
 
 const getPlayListByUid = async () => {
   const res: any = await getPlayListByUidApi({
@@ -318,13 +342,33 @@ const getMvSubList = async () => {
   }
 }
 
-const getListenHistory = async (type: 1 | 0) => {
+const getListenHistory = async (type: string) => {
   const { weekData, allData } = await getListenHistoryApi({
     uid: user.value.userId,
     type,
   })
-  if (type === 1) {
+  if (type === '1') {
     musicHistoryData.value = weekData.map(({ song }: any) => {
+      return {
+        id: song.id,
+        name: song.name,
+        picUrl: song.al.picUrl,
+        singers: song.ar.map((item: any) => {
+          return {
+            id: item.id,
+            name: item.name,
+          }
+        }),
+        album: {
+          id: song.al.id,
+          name: song.al.name,
+        },
+        duration: dayjs(song.dt).format('mm:ss'),
+      }
+    })
+  }
+  if (type === '0') {
+    musicHistoryData.value = allData.map(({ song }: any) => {
       return {
         id: song.id,
         name: song.name,
@@ -362,10 +406,6 @@ const refreshMe = async (e: Event) => {
     isRotate.value = false
   }, 1000)
 }
-
-onBeforeMount(() => {
-  // init();
-})
 
 onMounted(async () => {
   await getPlayListByUid()
