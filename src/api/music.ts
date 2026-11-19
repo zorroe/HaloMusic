@@ -1,103 +1,115 @@
-import {MusicBaseInfo} from '@/types/musicRel'
-import http from '@/utils/request'
 import dayjs from 'dayjs'
+import http from '@/utils/request'
+import type {
+  CheckMusicResponse,
+  LikeMusicResponse,
+  LyricResponse,
+  MusicBaseInfo,
+  MusicUrlResponse,
+  PersonalFmResponse,
+  RecommendSongsResponse,
+  SongDetailResponse,
+  SongLevel,
+  UserCloudResponse,
+} from '@/types/musicRel'
 
-export const getLyricApi: any = (params: any) => {
-    return http({
-        url: '/lyric',
-        params,
-    })
+export interface LyricParams {
+  id: number | string
 }
 
-export const likeMusicApi = (params: any) => {
-    return http({
-        url: '/like',
-        params,
-    })
+export interface LikeMusicParams {
+  id: number
+  like: boolean
 }
 
-export const getMusicUrlApi: any = (params: any) => {
-    return http({
-        url: '/song/url/v1',
-        method: 'get',
-        params,
-    })
+export interface MusicUrlParams {
+  id: number | string
+  /** 音质档位，缺省由服务端决定 */
+  level?: SongLevel
 }
 
-export const getMusicUrl = async (musicId: string | number) => {
-    const res = await getMusicUrlApi(musicId)
-    if (res.code === 200) {
-        const {data} = res
-        if (data[0].url === null) {
-            return ''
-        }
-        return data[0].url
-    }
-    return ''
+export interface MusicDetailParams {
+  /** 单个 id 或逗号分隔的 id 列表 */
+  ids: string | number
 }
 
-export const getMusicDetailApi: any = async (params: string) => {
-    return http({
-        url: '/song/detail',
-        method: 'get',
-        params,
-    })
+export const getLyricApi = (params: LyricParams): Promise<LyricResponse> =>
+  http.get<LyricResponse>('/lyric', { params })
+
+export const likeMusicApi = (
+  params: LikeMusicParams
+): Promise<LikeMusicResponse> =>
+  http.get<LikeMusicResponse>('/like', { params })
+
+export const getMusicUrlApi = (
+  params: MusicUrlParams
+): Promise<MusicUrlResponse> =>
+  http.get<MusicUrlResponse>('/song/url/v1', { params })
+
+/** 取单曲播放地址；无资源时返回空字符串 */
+export const getMusicUrl = async (
+  musicId: string | number
+): Promise<string> => {
+  const res = await getMusicUrlApi({ id: musicId })
+  const source = res.data?.[0]?.url
+  return source ? source.replace(/^http:/, 'https:') : ''
 }
 
-export const getMusicDetail = async (musicId: string | number) => {
-    const {songs} = await getMusicDetailApi(musicId)
-    const song = songs[0]
+export const getMusicDetailApi = (
+  params: MusicDetailParams
+): Promise<SongDetailResponse> =>
+  http.get<SongDetailResponse>('/song/detail', { params })
 
-    return {
-        id: song.id,
-        name: song.name,
-        picUrl: song.al.picUrl,
-        singers: song.ar.map((item: any) => {
-            return {name: item.name, id: item.id}
-        }),
-        duration: dayjs(song.dt).format('mm:ss'),
-        album: {
-            id: song.al.id,
-            name: song.al.name,
-        },
-    }
+/** 取单曲信息并组装成视图层使用的 MusicBaseInfo；查不到时返回 null */
+export const getMusicDetail = async (
+  musicId: string | number
+): Promise<MusicBaseInfo | null> => {
+  const { songs } = await getMusicDetailApi({ ids: musicId })
+  const song = songs?.[0]
+  if (!song) return null
+
+  return {
+    id: song.id,
+    name: song.name,
+    picUrl: song.al?.picUrl ?? '',
+    singers: Array.isArray(song.ar)
+      ? song.ar.map((item) => ({ name: item.name, id: item.id }))
+      : [],
+    duration: dayjs(song.dt ?? 0).format('mm:ss'),
+    album: song.al ? { id: song.al.id, name: song.al.name } : undefined,
+  }
 }
 
-export const getRecommendSongsApi = async () => {
-    return http({
-        url: '/recommend/songs',
-        method: 'get',
-    })
+export const getRecommendSongsApi = (): Promise<RecommendSongsResponse> =>
+  http.get<RecommendSongsResponse>('/recommend/songs')
+
+/** 检查歌曲是否可用 */
+export const checkMusicApi = (id: number): Promise<CheckMusicResponse> =>
+  http.get<CheckMusicResponse>('/check/music', { params: { id } })
+
+/**
+ * 获取歌曲资源（http -> https，避免 Electron 混合内容拦截）。
+ * 无版权 / 无资源时返回空字符串。
+ */
+export const getAudioSourceFromNetease = async (
+  id: number
+): Promise<string> => {
+  const res = await getMusicUrlApi({ id, level: 'exhigh' })
+  const source = res.data?.[0]?.url
+  return source ? source.replace(/^http:/, 'https:') : ''
 }
 
-// 检查歌曲是否可用
-export const checkMusicApi = async (id: number) => {
-    return http<any, any>({
-        url: '/check/music',
-        method: 'get',
-        params: {
-            id,
-        },
-    })
-}
+/** 私人 FM */
+export const personFmApi = (): Promise<PersonalFmResponse> =>
+  http.get<PersonalFmResponse>('/personal_fm')
 
-// 获取歌曲资源
-export const getAudioSourceFromNetease = async (id: number) => {
-    const res = await getMusicUrlApi({id, level: 'exhigh'})
-    const source = res.data[0].url.replace(/^http:/, 'https:')
-    return source
-}
+/** 云盘 */
+export const userCloudApi = (
+  params: Record<string, unknown>
+): Promise<UserCloudResponse> =>
+  http.get<UserCloudResponse>('/user/cloud', { params })
 
-// 私人fm
-export const personFmApi = () => {
-    return http.get('/personal_fm')
-}
-
-// 云盘
-export const userCloudApi = (params: any) => {
-    return http.get<any>('/user/cloud', {params})
-}
-
-export const userCloudDetailApi = (params: any) => {
-    return http.get<any>('/user/cloud/detail', {params})
-}
+export const userCloudDetailApi = (
+  params: Record<string, unknown>
+): Promise<UserCloudResponse> =>
+  http.get<UserCloudResponse>('/user/cloud/detail', { params })

@@ -1,36 +1,40 @@
-import http from "@/utils/request";
-import { usePlayerStore } from "@/store/playerStore";
-import pinia from "@/store/store";
+import http from '@/utils/request'
+import pinia from '@/store/store'
+import { usePlayerStore } from '@/store/playerStore'
+import type {
+  AlbumDetailResponse,
+  NewAlbumResponse,
+  SubAlbumListResponse,
+} from '@/types/albumRel'
+
+export interface AlbumParams {
+  id: number | string
+}
+
+export interface SubAlbumListParams {
+  offset?: number
+  limit?: number
+}
 
 const playerStore = usePlayerStore(pinia)
 
-export const getNewAlbumApi: any = () => {
-  return http({
-    url: "/album/newest",
-    method: "get",
-    params: { limit: 10 },
-  });
-};
+export const getNewAlbumApi = (): Promise<NewAlbumResponse> =>
+  http.get<NewAlbumResponse>('/album/newest', { params: { limit: 10 } })
 
+export const getAlbumApi = (
+  params: AlbumParams
+): Promise<AlbumDetailResponse> =>
+  http.get<AlbumDetailResponse>('/album', { params })
 
-export const getAlbumApi:any = (params:any)=>{
-  return http({
-    url:"/album",
-    method:"get",
-    params
-  })
-}
+export const getSubAlbumlistApi = (
+  params: SubAlbumListParams
+): Promise<SubAlbumListResponse> =>
+  http.get<SubAlbumListResponse>('/album/sublist', { params })
 
-export const getSubAlbumlistApi:any = (params:any)=>{
-  return http({
-    url: "/album/sublist",
-    method: "get",
-    params
-  })
-}
-
-export const playAllByAlbumId = async(id:number) => {
-  const {songs} = await getAlbumApi({id})
-  const ids = songs.map((item:any)=>item.id)
-  playerStore.playMulti(ids.join(','));
+/** 根据专辑 id 播放专辑内所有歌曲 */
+export const playAllByAlbumId = async (id: number): Promise<void> => {
+  const { songs } = await getAlbumApi({ id })
+  const ids = (songs ?? []).map((item) => item.id)
+  if (ids.length === 0) return
+  await playerStore.playMulti(ids.join(','))
 }
