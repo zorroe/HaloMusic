@@ -1,0 +1,19 @@
+# 依赖与构建产物
+node_modules
+dist
+dist-ssr
+dist-electron
+release
+coverage
+
+# 锁文件（不要格式化，避免 diff 噪音）
+package-lock.json
+
+# 静态资源（由 Vite 原样拷贝，无需格式化）
+public
+
+# 第三方生成/二进制文件
+*.woff2
+*.ttf
+*.png
+*.ico

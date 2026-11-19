@@ -1,31 +1,33 @@
 import { rmSync } from 'node:fs'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import DefineOptions from 'unplugin-vue-define-options/vite'
 import electron from 'vite-plugin-electron'
-import renderer from 'vite-plugin-electron-renderer'
 import pkg from './package.json'
-import path from 'path'
 
-// https://vitejs.dev/config/
+// https://vite.dev/config/
 export default defineConfig(({ command }) => {
+  // 每次启动/构建前清空主进程与预加载脚本产物，避免旧 chunk 残留
   rmSync('dist-electron', { recursive: true, force: true })
 
   const isServe = command === 'serve'
   const isBuild = command === 'build'
   const sourcemap = isServe || !!process.env.VSCODE_DEBUG
 
+  // 主进程 / preload 里 import 的运行时依赖不打包进 bundle，由 node_modules 提供
+  const externalDependencies = Object.keys(pkg.dependencies ?? {})
+
   return {
     plugins: [
       vue(),
-      DefineOptions(),
       electron([
         {
-          // Main-Process entry file of the Electron App.
+          // Electron 主进程入口
           entry: 'electron/main/index.ts',
           onstart(options) {
             if (process.env.VSCODE_DEBUG) {
-              console.log(/* For `.vscode/.debug.script.mjs` */'[startup] Electron App')
+              // 供 .vscode/tasks.json 的 problemMatcher 捕获启动信号
+              console.info('[startup] Electron App')
             } else {
               options.startup()
             }
@@ -36,43 +38,53 @@ export default defineConfig(({ command }) => {
               minify: isBuild,
               outDir: 'dist-electron/main',
               rollupOptions: {
-                external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
+                external: externalDependencies,
               },
             },
           },
         },
         {
+          // Electron preload 入口
           entry: 'electron/preload/index.ts',
           onstart(options) {
-            // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete, 
-            // instead of restarting the entire Electron App.
+            // preload 重建时只刷新渲染进程，不重启整个应用
             options.reload()
           },
           vite: {
             build: {
-              sourcemap: sourcemap ? 'inline' : undefined, // #332
+              sourcemap: sourcemap ? 'inline' : undefined,
               minify: isBuild,
               outDir: 'dist-electron/preload',
               rollupOptions: {
-                external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
+                external: externalDependencies,
               },
             },
           },
-        }
+        },
       ]),
-      // Use Node.js API in the Renderer-process
-      renderer(),
     ],
-    server: process.env.VSCODE_DEBUG && (() => {
-      const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
-      return {
-        host: url.hostname,
-        port: +url.port,
-      }
-    })(),
+    server: {
+      host: '127.0.0.1',
+      port: 3344,
+      strictPort: true,
+    },
     resolve: {
       alias: {
-        "@": path.resolve("./src"), // @代替src
+        '@': path.resolve('./src'), // @ 代替 src
+      },
+    },
+    build: {
+      target: 'esnext',
+      chunkSizeWarningLimit: 1500,
+      rollupOptions: {
+        output: {
+          // 拆出体积大且低频变化的依赖，提升缓存命中率
+          manualChunks: {
+            'vue-vendor': ['vue', 'vue-router', 'pinia', '@vueuse/core'],
+            axios: ['axios'],
+            'icon-park': ['@icon-park/vue-next'],
+          },
+        },
       },
     },
     clearScreen: false,

@@ -1,43 +1,157 @@
 # HaloMusic
-> 界面来自：[YesPlayMusic](https://github.com/qier222/YesPlayMusic)
 
-![image-20230805200354894](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052004587.png)
+> 基于 Electron + Vue 3 的网易云音乐第三方桌面客户端。界面设计参考 [YesPlayMusic](https://github.com/qier222/YesPlayMusic)。
 
-![image-20230805200420161](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052004341.png)
+HaloMusic 是一个开源的网易云音乐桌面客户端，通过内置的本地代理服务调用网易云音乐接口，支持听歌、歌单、歌手、专辑、MV、搜索、每日推荐、私人 FM 等常用功能。
 
-![image-20230805200437409](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052004536.png)
+> ⚠️ **免责声明**：本项目仅供个人学习、研究与技术交流使用，请勿用于任何商业及非法用途。音乐版权归网易云音乐及各版权方所有。因使用本项目产生的一切后果由使用者自行承担。
 
-![image-20230805200510229](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052005325.png)
+## 界面预览
 
-![image-20230805200523833](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052005926.png)
+![首页](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052004587.png)
+![歌单](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052004341.png)
+![播放器](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052005325.png)
+![搜索](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052012679.png)
 
-![image-20230805200546151](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052005232.png)
+## 功能特性
 
-![image-20230805201011337](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052010435.png)
+- 🎵 音乐播放：队列播放、单曲循环 / 列表循环 / 随机播放、音量记忆、音质切换、歌词同步滚动
+- 📚 音乐库：歌单、专辑、歌手、排行榜、每日推荐、私人 FM、MV 播放
+- 🔍 搜索：单曲 / 专辑 / 歌手 / 歌单 / MV / 用户多类型搜索
+- 👤 账号：二维码 / 手机号登录，收藏与「我喜欢的音乐」同步
+- 🖥️ 桌面体验：无边框自绘标题栏、系统托盘级的窗口控制、本地代理规避跨域与 Referer 限制
+- 🔒 安全模型：`contextIsolation: true` + `nodeIntegration: false` + preload 桥接 + CSP 注入，渲染进程不接触 Node API
+- 🌙 深色模式与本地字体（Barlow），完全离线可用，无外网字体 / 脚本依赖
 
-![image-20230805201204496](https://pic-lxxx.oss-cn-shanghai.aliyuncs.com/202308052012679.png)
+## 技术栈
 
-## 从代码运行
+| 分类 | 技术 |
+| --- | --- |
+| 桌面框架 | Electron 45（主进程 + preload + 自绘窗口） |
+| 前端框架 | Vue 3.5（`<script setup>` + TypeScript）、Vue Router 4、Pinia 3 |
+| 构建工具 | Vite 6、`vite-plugin-electron`、`vue-tsc` |
+| 样式 | Tailwind CSS 4（`@tailwindcss/postcss`）+ daisyUI 5 + SCSS |
+| 状态 / 工具 | `@vueuse/core`、axios、dayjs、js-cookie |
+| 本地服务 | Express（静态资源 + 反向代理）、[NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi) |
+| 打包 | electron-builder（Windows NSIS / macOS DMG / Linux AppImage） |
+| 质量 | ESLint 9（flat config）、Prettier、Vitest |
 
-1. `git clone git@github.com:zorroe/HaloMusic.git`
-2. `cd HaloMusic`
-3. `npm i`
-4. `npm run dev`
+## 目录结构
 
->electron 国内镜像 `npm config set electron_mirror=https://registry.npmmirror.com/-/binary/electron/`
+```
+HaloMusic
+├─ electron/                 # Electron 主进程与 preload
+│  ├─ main/index.ts          # 窗口、生命周期、IPC、CSP、本地服务编排
+│  ├─ preload/index.ts       # contextBridge 暴露 window.halo
+│  └─ electron-env.d.ts
+├─ public/                   # 不被构建处理的静态资源（logo、favicon）
+├─ src/
+│  ├─ api/                   # 网易云音乐接口封装
+│  ├─ assets/                # 样式（css）、字体（fonts）、图标（icons）
+│  ├─ components/            # 通用组件与布局组件（Header/Footer/Menubar/Player…）
+│  ├─ router/                # 路由与登录守卫
+│  ├─ store/                 # Pinia store（用户、搜索、播放器）
+│  ├─ types/                 # 接口数据类型定义
+│  ├─ utils/                 # request、bridge、player、lyric、common
+│  ├─ views/                 # 页面（首页 / 歌单 / 专辑 / 歌手 / 搜索 / MV / 我的）
+│  ├─ App.vue
+│  ├─ main.ts
+│  └─ style.scss
+├─ tests/                    # Vitest 单元测试
+├─ index.html
+├─ vite.config.ts
+├─ electron-builder.json5
+└─ package.json
+```
 
-## 可执行文件
+## 快速开始
 
+### 环境要求
 
+- Node.js >= 20（推荐 22 / 24）
+- npm >= 10（仓库提交 `package-lock.json`，推荐 `npm ci`）
+- Windows / macOS / Linux
 
+### 安装依赖
 
+```bash
+npm install
+```
 
-## 📜 开源许可
+> 国内网络建议在 `.npmrc` 中保留 `electron_mirror=https://npmmirror.com/mirrors/electron/`，
+> Electron 二进制在首次运行 `npm run dev` 时按需下载（Electron >= 45 不再在 install 阶段下载）。
 
-本项目仅供个人学习研究使用，禁止用于商业及非法用途。
+### 开发
 
-基于 [MIT license](https://opensource.org/licenses/MIT) 许可进行开源。
+```bash
+npm run dev
+```
 
-## API来源
+Vite 开发服务器监听 `http://127.0.0.1:3344`，并自动启动 Electron 主进程与 preload 构建。
 
-API 源代码来自 [Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)
+### 构建与打包
+
+```bash
+npm run typecheck   # 渲染进程 + 主进程类型检查
+npm run build       # typecheck + vite build + electron-builder 安装包
+npm run build:dist  # 跳过类型检查，直接构建前端产物并打包
+```
+
+构建产物：
+
+- 渲染进程：`dist/`
+- 主进程 / preload：`dist-electron/`
+- 安装包：`release/<version>/`
+
+> 注意：`electron-builder` 体积大且耗时，仅在需要出安装包时执行。
+
+### 测试与代码质量
+
+```bash
+npm test            # vitest run
+npm run lint        # eslint .
+npm run lint:fix    # eslint . --fix
+npm run format      # prettier --write .
+npm run preview     # 预览已构建的前端产物
+```
+
+## 端口说明
+
+| 端口 | 服务 | 说明 |
+| --- | --- | --- |
+| `3344` | Vite Dev Server | 仅开发模式使用，绑定 `127.0.0.1`，`strictPort: true` |
+| `16666` | NeteaseCloudMusicApi | 本地网易云音乐 API 服务，主进程启动，仅监听 `127.0.0.1` |
+| `17777` | Express 本地代理 | 生产环境加载 `dist` 静态资源并将 `/api` 代理到 `16666`，仅监听 `127.0.0.1` |
+
+> 端口被占用时应用会通过 `dialog.showErrorBox` 明确报错并退出，不会静默失败。
+
+## 常见问题（FAQ）
+
+**Q：启动后白屏 / 一直加载？**
+A：先确认 `dist` 与 `dist-electron` 是否已构建（`npm run build:dist` 或 `npm run dev`）。生产模式下窗口加载的是 `http://127.0.0.1:17777`，若 Express 端口被占用会直接报错退出。
+
+**Q：登录二维码不显示 / 接口报错？**
+A：确认 16666 端口可用，且网络可访问网易云音乐接口。部分接口需要登录 Cookie，请重新登录。
+
+**Q：播放提示「暂无资源」？**
+A：受版权或会员限制，部分歌曲（含 VIP / 试听歌曲）无法获取音频流，客户端会自动跳过并提示。
+
+**Q：`npm install` 出现 ERESOLVE？**
+A：本项目依赖已适配 peer 约束，请使用仓库自带的 `package-lock.json`（`npm ci`）。不要使用 `--legacy-peer-deps` 绕过；若仍报错请附上完整日志提 issue。
+
+**Q：国内安装 Electron 很慢？**
+A：`.npmrc` 已配置 `electron_mirror` 指向 npmmirror。若仍失败，可临时设置环境变量 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/` 后重新执行。
+
+**Q：每次执行 npm 命令都提示 `Unknown project config "electron_mirror"`？**
+A：这是 npm 11 对项目级未知配置项的提示，`electron_mirror` 是给 `@electron/get` 用的镜像变量（会以 `npm_config_electron_mirror` 传给依赖安装脚本），**不影响安装与运行**，可忽略。若不想看到该提示，可删掉 `.npmrc` 中的这一行，改用环境变量 `ELECTRON_MIRROR` 注入。
+
+**Q：渲染进程能用 Node API 吗？**
+A：不能，也不应该。安全模型已开启 `contextIsolation`，渲染进程通过 `window.halo`（preload 暴露）访问窗口控制、打开外链等能力，详见 `src/utils/bridge.ts`。
+
+## 许可证与 API 来源
+
+- 本项目基于 [MIT License](./LICENSE) 开源。
+- API 源代码来自 [Binaryify/NeteaseCloudMusicApi](https://github.com/Binaryify/NeteaseCloudMusicApi)，遵循其原项目许可。
+- 界面设计参考 [YesPlayMusic](https://github.com/qier222/YesPlayMusic)。
+
+> 本项目仅供个人学习研究使用，禁止用于商业及非法用途。

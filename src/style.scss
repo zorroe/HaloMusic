@@ -1,12 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+// 全局通用样式（Tailwind 4 入口见 src/assets/css/tailwind.css，本文件保持纯 CSS）
 .button-primary {
-  @apply rounded active:transform active:scale-90 active:duration-200 px-2 py-1 cursor-pointer;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
   transition: all 300ms linear;
+
   &:hover {
     background-color: rgba(229, 231, 235, 0.5);
+  }
+
+  &:active {
+    transform: scale(0.9);
+    transition-duration: 200ms;
   }
 }
 
@@ -42,11 +47,23 @@
 }
 
 .ea-link {
-  @apply text-gray-800 cursor-pointer hover:underline active:text-black;
+  color: #1f2937;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:active {
+    color: #000;
+  }
 }
 
 .text-lv1 {
-  @apply font-bold text-2xl my-4;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  margin: 1rem 0;
 }
 
 .ea-btn-primary {

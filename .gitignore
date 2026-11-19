@@ -7,15 +7,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build output
 dist
 dist-ssr
 dist-electron
 release
+coverage
+*.tsbuildinfo
+
+# Local config / env
 *.local
+.vscode/.debug.env
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
-.vscode/.debug.env
 .idea
 .DS_Store
 *.suo
@@ -24,7 +34,6 @@ release
 *.sln
 *.sw?
 
-# lockfile
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
+# ESLint / Prettier caches
+.eslintcache
+.prettiercache

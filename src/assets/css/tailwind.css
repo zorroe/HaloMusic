@@ -1,0 +1,10 @@
+/*
+ * Tailwind CSS 4 入口样式。
+ *
+ * 约定：全局只有本文件包含 `@import "tailwindcss"`，
+ * Vue SFC 的 <style> 中不允许使用 `@apply`（改用纯 CSS / 工具类）。
+ */
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default;
+}

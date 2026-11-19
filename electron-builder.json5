@@ -1,23 +1,22 @@
 /**
+ * electron-builder 打包配置
  * @see https://www.electron.build/configuration/configuration
  */
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "YourAppID",
+  "appId": "com.halomusic.app",
+  "productName": "HaloMusic",
+  "copyright": "Copyright © 2025-2026 HaloMusic",
   "asar": true,
   "directories": {
     "output": "release/${version}"
   },
   "files": [
+    "dist",
     "dist-electron",
-    "dist"
+    "!**/*.map"
   ],
-  "mac": {
-    "artifactName": "${productName}_${version}.${ext}",
-    "target": [
-      "dmg"
-    ]
-  },
+  "artifactName": "${productName}-${version}-${arch}.${ext}",
   "win": {
     "target": [
       {
@@ -27,12 +26,28 @@
         ]
       }
     ],
-    "artifactName": "${productName}_${version}.${ext}"
+    "icon": "public/favicon.ico",
+    "artifactName": "${productName}-Setup-${version}.${ext}"
   },
   "nsis": {
     "oneClick": false,
     "perMachine": false,
+    "allowElevation": true,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false
+  },
+  "mac": {
+    "target": [
+      "dmg"
+    ],
+    "category": "public.app-category.music",
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
+  },
+  "linux": {
+    "target": [
+      "AppImage"
+    ],
+    "category": "AudioVideo",
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
   }
 }
