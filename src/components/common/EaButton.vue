@@ -1,24 +1,36 @@
 <template>
-  <label class="ea-button btn-animation" :class="[props.type, props.size]">
+  <label
+    class="ea-button btn-animation"
+    :class="[props.type, props.size]">
     <slot></slot>
   </label>
 </template>
 
 <script setup lang="ts">
 interface Props {
-  type: "primary" | "danger" | "info";
-  size: "small" | "normal" | "large";
+  type?: 'primary' | 'danger' | 'info'
+  size?: 'small' | 'normal' | 'large'
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  type: "primary",
-  size: "normal",
-});
+  type: 'primary',
+  size: 'normal',
+})
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .ea-button {
-  @apply flex items-center justify-center mb-1 py-1 px-2 rounded-md gap-1 cursor-pointer w-fit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-bottom: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  gap: 0.25rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 300ms;
 }
 
 /* 按钮类型 */

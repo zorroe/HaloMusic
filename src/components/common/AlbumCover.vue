@@ -2,55 +2,58 @@
   <div class="flex flex-col w-48 h-64">
     <div class="cover group cursor-pointer">
       <lmg
-        :src="picUrl"
+        :src="props.data.picUrl"
         :width="300"
         :height="300"
         class="w-48 h-48 rounded-xl"
-        @click="routeTo(`/album/${props.data.id}`)"
-      ></lmg>
+        @click="routeTo(`/album/${props.data.id}`)"></lmg>
       <icon-park
         :icon="PlayOne"
         fill="white"
         theme="filled"
         :size="24"
         class="cover-play group-hover:opacity-100"
-        @click="playAllByAlbumId(props.data.id)"
-      ></icon-park>
+        title="播放全部"
+        @click.stop="handlePlayAll"></icon-park>
     </div>
     <div
-      class="text-left w-min max-w-full text-base font-bold hover:decoration-black hover:underline cursor-pointer truncate"
-    >
+      class="text-left max-w-full text-base font-bold hover:decoration-black hover:underline cursor-pointer truncate"
+      @click="routeTo(`/album/${props.data.id}`)">
       {{ props.data.name }}
     </div>
     <div
-      class="text-left w-min max-w-full text-xs text-gray-500 truncate flex gap-1 cursor-pointer"
-    >
+      class="text-left max-w-full text-xs text-gray-500 truncate flex gap-1 cursor-pointer">
       <span
-        v-for="item in props.data.artists"
+        v-for="artist in props.data.artists"
+        :key="artist.id"
         class="hover:underline"
-        v-text="item.name"
-      ></span>
+        @click="routeTo(`/artist/${artist.id}`)"
+        >{{ artist.name }}</span
+      >
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { AlbumBaseInfo } from "@/types/albumRel";
-import {playAllByAlbumId} from "@/api/album"
-import { routeTo } from "@/utils/common";
-import { PlayOne } from "@icon-park/vue-next";
-import { computed } from "vue";
+import { PlayOne } from '@icon-park/vue-next'
+import type { AlbumBaseInfo } from '@/types/albumRel'
+import { playAllByAlbumId } from '@/api/album'
+import { routeTo } from '@/utils/common'
 
 /* 专辑封面图组件 */
 interface Props {
-  data: AlbumBaseInfo;
+  data?: AlbumBaseInfo
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  data: () => ({} as AlbumBaseInfo),
-});
+  data: () => ({}) as AlbumBaseInfo,
+})
 
-const picUrl = computed(() => props.data.picUrl);
+const handlePlayAll = () => {
+  playAllByAlbumId(props.data.id).catch((error: unknown) => {
+    console.error('[HaloMusic] play album failed:', error)
+  })
+}
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped></style>

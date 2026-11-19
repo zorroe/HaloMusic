@@ -1,128 +1,205 @@
 <template>
-  <div class="w-full inline-flex justify-center items-center">
+  <div
+    v-if="!loaded && !loadFailed"
+    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
+    <div class="page-spinner"></div>
+    <div class="text-base">正在加载歌手歌曲…</div>
+  </div>
+  <div
+    v-else-if="loadFailed"
+    class="flex flex-col items-center justify-center gap-4 py-40">
+    <div class="text-xl font-bold">歌曲列表加载失败</div>
+    <div class="text-base text-gray-500">请检查网络后重试</div>
+    <ea-button
+      type="primary"
+      @click="loadAll">
+      <div class="text-base font-bold">重新加载</div>
+    </ea-button>
+  </div>
+  <div
+    v-else
+    class="flex flex-col w-full gap-4">
+    <div class="flex items-baseline justify-between gap-4">
+      <div class="text-lv1 !my-2">
+        {{ artistName ? `${artistName}的全部歌曲` : '全部歌曲' }}
+      </div>
+      <div class="text-sm text-gray-500">共 {{ total }} 首</div>
+    </div>
+    <music-table :data="tracks"></music-table>
     <div
-      class="inline-flex items-center justify-center gap-3"
       v-if="totalPage > 1"
-    >
-      <div
-        class="inline-flex h-8 w-8 items-center cursor-pointer transition-all duration-300 justify-center rounded border border-gray-100 bg-white text-gray-900 rtl:rotate-180"
-        @click="prePage"
-        :class="{
-          'cursor-not-allowed': currentPage === 1,
-          'hover:bg-gray-200': currentPage !== 1,
-        }"
-      >
-        <span class="sr-only">Next Page</span>
+      class="w-full inline-flex justify-center items-center gap-3 py-4">
+      <button
+        type="button"
+        class="page-btn"
+        :class="{ 'page-btn--disabled': currentPage === 1 }"
+        :disabled="currentPage === 1"
+        aria-label="上一页"
+        @click="prePage">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-3 w-3"
-          :class="{ 'text-gray-300': currentPage === 1 }"
           viewBox="0 0 20 20"
-          fill="currentColor"
-        >
+          fill="currentColor">
           <path
             fill-rule="evenodd"
             d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-            clip-rule="evenodd"
-          />
+            clip-rule="evenodd" />
         </svg>
-      </div>
+      </button>
       <p class="text-xs text-gray-900">
         {{ currentPage }}
-        <span class="mx-0.25">/</span>
+        <span class="mx-1">/</span>
         {{ totalPage }}
       </p>
-
-      <div
-        class="inline-flex h-8 w-8 items-center transition-all duration-300 cursor-pointer justify-center rounded border border-gray-100 bg-white text-gray-900 rtl:rotate-180"
-        @click="nextPage"
-        :class="{
-          'cursor-not-allowed': currentPage === totalPage,
-          'hover:bg-gray-200': currentPage !== totalPage,
-        }"
-      >
-        <span class="sr-only">Next Page</span>
+      <button
+        type="button"
+        class="page-btn"
+        :class="{ 'page-btn--disabled': currentPage === totalPage }"
+        :disabled="currentPage === totalPage"
+        aria-label="下一页"
+        @click="nextPage">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-3 w-3"
-          :class="{ 'text-gray-300': currentPage === totalPage }"
           viewBox="0 0 20 20"
-          fill="currentColor"
-        >
+          fill="currentColor">
           <path
             fill-rule="evenodd"
             d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-            clip-rule="evenodd"
-          />
+            clip-rule="evenodd" />
         </svg>
-      </div>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeRouteUpdate, useRoute } from "vue-router";
-import { ref, onMounted, computed } from "vue";
-import { getArtistDetailApi, getSongsByArtistIdApi } from "@/api/artist";
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { getArtistDetailApi, getSongsByArtistIdApi } from '@/api/artist'
+import type { MusicBaseInfo } from '@/types/musicRel'
+import notify from '@/components/common/notification/notify'
+import { mapSong } from '@/views/shared/mappers'
 
-const artistId = ref("");
-const route = useRoute();
+defineOptions({
+  name: 'artistTrack',
+})
 
-const updateId = () => {
-  getArtistInfo();
-  getAllTracks();
-};
+const route = useRoute()
 
-const total = ref(0);
-const currentPage = ref(1);
-const pageSize = ref(50);
+const PAGE_SIZE = 50
 
-const totalPage = computed(() => {
-  return Math.ceil(total.value / pageSize.value);
-});
+const artistId = computed(() => String(route.params.id ?? ''))
+const artistName = ref('')
+const tracks = ref<MusicBaseInfo[]>([])
+const total = ref(0)
+const currentPage = ref(1)
+const loaded = ref(false)
+const loadFailed = ref(false)
+const loadingPage = ref(false)
 
-onBeforeRouteUpdate(async (to, from) => {
-  //仅当 id 更改时才获取用户，例如仅 query 或 hash 值已更改
-  if (to.params.id !== from.params.id) {
-    artistId.value = to.params.id as string;
-    updateId();
-  }
-});
+const totalPage = computed(() =>
+  Math.max(1, Math.ceil(total.value / PAGE_SIZE))
+)
 
-// 1. 获取歌手信息
 const getArtistInfo = async () => {
-  const res = await getArtistDetailApi({ id: artistId.value });
-  console.log(res);
-};
+  const { data } = await getArtistDetailApi({ id: artistId.value })
+  artistName.value = data?.artist?.name ?? ''
+}
 
-// 2. 获取歌手所有歌曲
 const getAllTracks = async () => {
-  const params = {
+  const { songs, total: count } = await getSongsByArtistIdApi({
     id: artistId.value,
-    limit: pageSize.value,
-    offset: (currentPage.value - 1) * pageSize.value,
-  };
-  const res = (await getSongsByArtistIdApi(params)) as any;
-  total.value = res.total;
-};
+    limit: PAGE_SIZE,
+    offset: (currentPage.value - 1) * PAGE_SIZE,
+  })
+  tracks.value = (songs ?? []).map(mapSong)
+  total.value = typeof count === 'number' ? count : tracks.value.length
+}
+
+const loadAll = async () => {
+  loaded.value = false
+  loadFailed.value = false
+  try {
+    await Promise.all([getArtistInfo(), getAllTracks()])
+    loaded.value = true
+  } catch (error) {
+    console.error('[HaloMusic] load artist tracks failed:', error)
+    loadFailed.value = true
+    notify({ message: '歌曲列表加载失败，请稍后重试', type: 'error' })
+  }
+}
+
+const changePage = async (page: number) => {
+  if (loadingPage.value) return
+  const next = Math.min(Math.max(1, page), totalPage.value)
+  if (next === currentPage.value) return
+  loadingPage.value = true
+  currentPage.value = next
+  try {
+    await getAllTracks()
+  } catch (error) {
+    console.error('[HaloMusic] load tracks page failed:', error)
+    notify({ message: '翻页失败，请稍后重试', type: 'error' })
+  } finally {
+    loadingPage.value = false
+  }
+}
 
 const prePage = () => {
-  currentPage.value = currentPage.value - 1 > 0 ? currentPage.value - 1 : 1;
-  getAllTracks();
-};
+  void changePage(currentPage.value - 1)
+}
 
 const nextPage = () => {
-  currentPage.value =
-    currentPage.value + 1 < totalPage.value
-      ? currentPage.value + 1
-      : totalPage.value;
-  getAllTracks();
-};
+  void changePage(currentPage.value + 1)
+}
 
-onMounted(() => {
-  artistId.value = route.params.id as string;
-  updateId();
-});
+// 该页被 keep-alive 缓存，切换到另一个歌手时仅 params 变化，需要重新拉取
+watch(artistId, () => {
+  currentPage.value = 1
+  loadAll()
+})
+
+onMounted(loadAll)
 </script>
 
-<style scoped></style>
+<style scoped>
+.page-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--color-primary, #335eea);
+  border-radius: 50%;
+  animation: page-spin 0.8s linear infinite;
+}
+
+@keyframes page-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #f3f4f6;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #111827;
+  cursor: pointer;
+  transition: all 300ms;
+}
+
+.page-btn:hover:not(.page-btn--disabled) {
+  background-color: #e5e7eb;
+}
+
+.page-btn--disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+</style>

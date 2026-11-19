@@ -7,24 +7,23 @@
         theme="filled"
         :size="24"
         class="cover-play group-hover:opacity-100 peer"
-        @click="playAllByPlayListId(props.data.id)"></icon-park>
+        title="播放全部"
+        @click.stop="handlePlayAll"></icon-park>
       <lmg
-        :src="picUrl"
+        :src="props.data.picUrl"
         :width="300"
         :height="300"
         class="w-48 h-48 rounded-xl peer-hover:shadow-xl hover:shadow-xl"
         @click="routeTo(`/playlist/${props.data.id}`)"></lmg>
     </div>
     <div class="flex items-center justify-end px-1">
-      <div class="flex-grow text-xs text-gray-400" v-if="props.data.creator">
+      <div
+        v-if="props.data.creator"
+        class="flex-grow text-xs text-gray-400 min-w-0 truncate">
         <span> by: </span>
         <span
           class="hover:underline active:text-gray-600 cursor-pointer"
-          @click="
-            openUrl(
-              `https://music.163.com/#/user/home?id=${props.data.creator?.id}`
-            )
-          ">
+          @click="handleOpenCreator">
           {{ props.data.creator?.nickname }}
         </span>
       </div>
@@ -41,40 +40,46 @@
     </div>
     <div
       class="w-min max-w-full cursor-pointer px-1 text-center text-base font-bold hover:decoration-black hover:underline truncate"
-      @click="`/playlist/${props.data.id}`">
+      @click="routeTo(`/playlist/${props.data.id}`)">
       {{ props.data.name }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { PlayListBaseInfo } from "@/types/playListRel";
-import { PlayOne } from "@icon-park/vue-next";
-import { computed } from "vue";
-import { openUrl, routeTo } from "@/utils/common";
-import { playAllByPlayListId } from "@/api/playList";
+import { computed } from 'vue'
+import { PlayOne } from '@icon-park/vue-next'
+import type { PlayListBaseInfo } from '@/types/playListRel'
+import { openUrl, routeTo } from '@/utils/common'
+import { playAllByPlayListId } from '@/api/playList'
 
 /* 歌单封面图组件 */
 interface Props {
-  data: PlayListBaseInfo;
+  data?: PlayListBaseInfo
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  data: () => ({} as PlayListBaseInfo),
-});
-
-const picUrl = computed(() => props.data.picUrl);
+  data: () => ({}) as PlayListBaseInfo,
+})
 
 const playCount = computed(() => {
-  const count = props.data.playCount;
-  if (count < 10000) {
-    return count;
-  } else if (count < 100000000) {
-    return (count / 10000).toFixed(1) + "万";
-  } else {
-    return (count / 100000000).toFixed(1) + "亿";
-  }
-});
+  const count = props.data.playCount ?? 0
+  if (count < 10000) return count
+  if (count < 100000000) return `${(count / 10000).toFixed(1)}万`
+  return `${(count / 100000000).toFixed(1)}亿`
+})
+
+const handlePlayAll = () => {
+  playAllByPlayListId(props.data.id).catch((error: unknown) => {
+    console.error('[HaloMusic] play playlist failed:', error)
+  })
+}
+
+const handleOpenCreator = () => {
+  const creatorId = props.data.creator?.id
+  if (!creatorId) return
+  openUrl(`https://music.163.com/#/user/home?id=${creatorId}`)
+}
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped></style>

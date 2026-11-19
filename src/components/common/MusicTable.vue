@@ -2,63 +2,66 @@
   <div class="flex flex-col w-full">
     <div
       v-for="item in props.data"
-      class="flex items-center rounded h-16 hover:bg-gray-100 hover:bg-opacity-60 gap-4 group"
+      :key="item.id"
+      class="music-row flex items-center rounded h-16 hover:bg-gray-100/60 gap-4 group"
       :class="{ playing: item.id == curMusicId }"
-      @dblclick="playerStore.playOne(item.id + '')">
+      @dblclick="handlePlay(item)">
       <lmg
+        v-if="props.showCover"
         :src="item.picUrl"
         :width="100"
         :height="100"
-        class="w-12 h-12 rounded"
-        v-if="props.showCover"></lmg>
-      <div class="flex flex-col flex-grow justify-center px-2">
-        <div class="font-bold cursor-default">{{ item.name }}</div>
+        class="w-12 h-12 rounded" />
+      <div class="flex flex-col flex-grow justify-center px-2 min-w-0">
+        <div class="font-bold cursor-default truncate">{{ item.name }}</div>
         <div class="flex gap-1 text-sm">
           <span
-            class="ea-link"
             v-for="singer in item.singers"
-            @click="routeTo(`/artist/${singer.id}`)"
+            :key="singer.id"
+            class="ea-link"
+            @click.stop="routeTo(`/artist/${singer.id}`)"
             >{{ singer.name }}</span
           >
         </div>
       </div>
-      <div class="w-1/3 text-base cursor-pointer">
+      <div class="w-1/3 text-base cursor-pointer truncate">
         <span
           class="hover:underline"
-          @click="routeTo(`/album/${item.album?.id}`)"
+          @click.stop="routeTo(`/album/${item.album?.id}`)"
           >{{ item.album?.name }}</span
         >
       </div>
       <icon-park
         :icon="Like"
-        :theme="likeMusicIds.indexOf(item.id) == -1 ? 'outline' : 'filled'"
+        :theme="liked(item.id) ? 'filled' : 'outline'"
         :size="16"
         class="subscribe-icon btn-animation"
-        :class="{ 'no-liked': likeMusicIds.indexOf(item.id) == -1 }"
-        @click="handleLikeMusic(item)" />
-      <div class="flex w-12 text-base">
-        {{ item.duration }}
+        :class="{ 'no-liked': !liked(item.id) }"
+        :title="liked(item.id) ? '取消喜欢' : '喜欢'"
+        @click.stop="handleLikeMusic(item)" />
+      <div class="flex w-12 text-base justify-end">
+        {{ displayDuration(item.duration) }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { likeMusicApi } from '@/api/music'
-import { MusicBaseInfo } from '@/types/musicRel'
-import { saveLikeMusicIds, routeTo } from '@/utils/common'
+import { computed } from 'vue'
 import { Like } from '@icon-park/vue-next'
-import { computed, ref } from 'vue'
+import type { MusicBaseInfo } from '@/types/musicRel'
+import { routeTo, formatTrackTime } from '@/utils/common'
 import { usePlayerStore } from '@/store/playerStore'
+import { useLikeStore } from '@/store/index'
 import pinia from '@/store/store'
+import notify from '@/components/common/notification/notify'
 
-const playerStore = usePlayerStore(pinia)
+defineOptions({
+  name: 'musicTable',
+})
 
-const curMusicId = computed(() => playerStore.current.currentSong?.id)
-
-/* 歌单封面图组件 */
 interface Props {
-  data: MusicBaseInfo[]
+  data?: MusicBaseInfo[]
   showCover?: boolean
 }
 
@@ -67,27 +70,52 @@ const props = withDefaults(defineProps<Props>(), {
   showCover: true,
 })
 
-const likeMusicIds = ref(
-  JSON.parse(localStorage.getItem('likeMusicIds') || '[]')
-)
+const playerStore = usePlayerStore(pinia)
+const likeStore = useLikeStore(pinia)
+
+const curMusicId = computed(() => playerStore.current.currentSong?.id)
+
+const liked = (id: number) => likeStore.isLiked(id)
+
+/**
+ * duration 在历史数据里既可能是 "4:03" 字符串，也可能是原始毫秒数，
+ * 这里统一收敛：数字按毫秒格式化，字符串原样展示。
+ */
+const displayDuration = (duration: MusicBaseInfo['duration'] | number) => {
+  if (typeof duration === 'number') {
+    return duration > 999
+      ? formatTrackTime(Math.round(duration / 1000))
+      : formatTrackTime(duration)
+  }
+  return duration ?? ''
+}
+
+const handlePlay = (music: MusicBaseInfo) => {
+  playerStore.playOne(music.id + '')
+}
 
 const handleLikeMusic = async (music: MusicBaseInfo) => {
-  await likeMusicApi({
-    id: music.id,
-    like: likeMusicIds.value.indexOf(music.id) == -1 ? true : false,
-  })
-  await saveLikeMusicIds()
-  likeMusicIds.value = JSON.parse(localStorage.getItem('likeMusicIds') || '[]')
+  try {
+    await likeStore.toggleLike(music.id)
+  } catch (error) {
+    console.error('[HaloMusic] toggle like failed:', error)
+    notify({ message: '操作失败，请稍后重试', type: 'error' })
+  }
 }
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .subscribe-icon {
   color: rgb(51, 94, 234);
-  @apply rounded-full p-1;
+  padding: 0.25rem;
+  border-radius: 9999px;
 }
 
 .no-liked {
-  @apply invisible group-hover:visible;
+  visibility: hidden;
+}
+
+.group:hover .no-liked {
+  visibility: visible;
 }
 </style>

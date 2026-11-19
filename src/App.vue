@@ -13,8 +13,8 @@
       </router-view>
     </div>
     <div
-      class="footer"
-      v-show="playerStore.current.idx !== -1">
+      v-show="playerStore.current.idx !== -1"
+      class="footer">
       <Footer />
     </div>
   </div>
@@ -22,14 +22,20 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import Header from '@/components/layout/Header.vue'
 import Footer from '@/components/layout/Footer.vue'
+import Modals from '@/components/layout/Modals.vue'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
-import { onMounted } from 'vue'
+import { checkLoginStatus } from '@/utils/common'
 
 const playerStore = usePlayerStore(pinia)
 
+/**
+ * 不缓存的页面：每次进入都需要重新拉数据或重新走流程的页面。
+ * 必须与各页面 `defineOptions({ name })` 完全一致，否则 keep-alive 会失效。
+ */
 const excludes = [
   'artist',
   'playlist',
@@ -42,6 +48,10 @@ const excludes = [
 
 onMounted(() => {
   playerStore.initPlayer()
+  // 登录态校验只在这里做一次（Header 不再重复请求）
+  checkLoginStatus().catch(error => {
+    console.error('[HaloMusic] check login status failed:', error)
+  })
 })
 </script>
 

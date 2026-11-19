@@ -1,6 +1,23 @@
 <template>
   <div
-    v-show="loaded"
+    v-if="!loaded && !loadFailed"
+    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
+    <div class="page-spinner"></div>
+    <div class="text-base">正在加载专辑…</div>
+  </div>
+  <div
+    v-else-if="loadFailed"
+    class="flex flex-col items-center justify-center gap-4 py-40">
+    <div class="text-xl font-bold">专辑加载失败</div>
+    <div class="text-base text-gray-500">可能是网络异常或专辑不存在</div>
+    <ea-button
+      type="primary"
+      @click="getAlbum">
+      <div class="text-base font-bold">重新加载</div>
+    </ea-button>
+  </div>
+  <div
+    v-else
     class="flex flex-col w-full px-4 h-64 gap-8">
     <div class="flex my-4 gap-8">
       <lmg
@@ -14,16 +31,12 @@
           Singer by
           <span
             class="ea-link"
-            @click="routeTo(`/artist/${albumInfo?.artist.id}`)"
-            >{{ albumInfo?.artist.name }}</span
+            @click="routeTo(`/artist/${albumInfo?.artist?.id}`)"
+            >{{ albumInfo?.artist?.name }}</span
           >
         </div>
         <div class="text-sm">
-          {{
-            `${dayjs(albumInfo?.publishTime).format('YYYY')} · ${
-              albumInfo?.size
-            }首歌`
-          }}
+          {{ albumMeta }}
         </div>
         <div class="flex flex-grow gap-4 items-end">
           <ea-button @click="playMusicByAlbumId">
@@ -34,7 +47,7 @@
               class="rounded-full p-1" />
             <div class="text-lg font-bold">播放</div>
           </ea-button>
-          <ea-button>
+          <ea-button :title="isSub ? '已收藏' : '未收藏'">
             <icon-park
               :icon="Like"
               :theme="isSub ? 'filled' : 'outline'"
@@ -51,67 +64,103 @@
 </template>
 
 <script setup lang="ts">
-import { getAlbumApi } from '@/api/album'
-import router from '@/router'
-import { AlbumInfo } from '@/types/albumRel'
-import { MusicBaseInfo } from '@/types/musicRel'
 import { computed, onMounted, ref } from 'vue'
-import { Like, PlayOne } from '@icon-park/vue-next'
+import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
+import { Like, PlayOne } from '@icon-park/vue-next'
+import { getAlbumApi } from '@/api/album'
+import type { AlbumInfo } from '@/types/albumRel'
+import type { MusicBaseInfo } from '@/types/musicRel'
 import { routeTo } from '@/utils/common'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
-
-const playerStore = usePlayerStore(pinia)
+import notify from '@/components/common/notification/notify'
+import { mapSong } from '@/views/shared/mappers'
 
 defineOptions({
   name: 'album',
 })
 
+const route = useRoute()
+const playerStore = usePlayerStore(pinia)
+
 const loaded = ref(false)
-const albumId = ref<string>('')
+const loadFailed = ref(false)
+const albumId = computed(() => String(route.params.id ?? ''))
 const albumSongs = ref<MusicBaseInfo[]>([])
 const albumInfo = ref<AlbumInfo>()
-const subAlbums = JSON.parse(localStorage.getItem('subAlbumIds') || '[]')
 
-const isSub = computed(() => {
-  return subAlbums.some((item: number) => item == albumInfo.value?.id)
+const readSubAlbumIds = (): number[] => {
+  try {
+    const parsed: unknown = JSON.parse(
+      localStorage.getItem('subAlbumIds') || '[]'
+    )
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .map(item => Number(item))
+      .filter(id => Number.isFinite(id))
+  } catch {
+    return []
+  }
+}
+
+const subAlbumIds = ref<number[]>(readSubAlbumIds())
+
+const isSub = computed(() =>
+  subAlbumIds.value.some(id => id === albumInfo.value?.id)
+)
+
+const albumMeta = computed(() => {
+  const album = albumInfo.value
+  if (!album) return ''
+  const year =
+    album.publishTime && Number.isFinite(album.publishTime)
+      ? dayjs(album.publishTime).format('YYYY')
+      : ''
+  const size = `${album.size}首歌`
+  return year ? `${year} · ${size}` : size
 })
 
 const getAlbum = async () => {
-  const { songs, album } = await getAlbumApi({ id: albumId.value })
-  albumInfo.value = album
-
-  songs.forEach((song: any) => {
-    albumSongs.value?.push({
-      id: song.id,
-      name: song.name,
-      picUrl: song.al.picUrl,
-      singers: song.ar.map((singer: any) => {
-        return {
-          id: singer.id,
-          name: singer.name,
-        }
-      }),
-      duration: dayjs(song.dt).format('mm:ss'),
-      album: {
-        id: song.al.id,
-        name: song.al.name,
-      },
-    })
-  })
+  loaded.value = false
+  loadFailed.value = false
+  try {
+    const { songs, album } = await getAlbumApi({ id: albumId.value })
+    albumInfo.value = album
+    albumSongs.value = (songs ?? []).map(mapSong)
+    loaded.value = true
+  } catch (error) {
+    console.error('[HaloMusic] load album failed:', error)
+    loadFailed.value = true
+    notify({ message: '专辑加载失败，请稍后重试', type: 'error' })
+  }
 }
 
-const playMusicByAlbumId = async () => {
-  const ids = albumSongs.value.map((item: MusicBaseInfo) => item.id)
+const playMusicByAlbumId = () => {
+  const ids = albumSongs.value.map(item => item.id)
+  if (!ids.length) {
+    notify({ message: '专辑里还没有歌曲', type: 'warning' })
+    return
+  }
   playerStore.playMulti(ids.join(','))
 }
 
-onMounted(async () => {
-  albumId.value = router.currentRoute.value.params.id as string
-  await getAlbum()
-  loaded.value = true
-})
+onMounted(getAlbum)
 </script>
 
-<style scoped></style>
+<style scoped>
+.page-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: var(--color-primary, #335eea);
+  border-radius: 50%;
+  animation: page-spin 0.8s linear infinite;
+}
+
+@keyframes page-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
