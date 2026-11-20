@@ -1,9 +1,11 @@
 <template>
   <div class="personal-fm">
     <img
+      v-if="bgImg"
       :src="bgImg"
       class="personal-fm__bg"
-      alt="私人FM背景" />
+      alt=""
+      @error="handleBgError" />
     <span
       class="personal-fm__shade"
       aria-hidden="true"></span>
@@ -34,16 +36,15 @@ import { PlayOne } from '@icon-park/vue-next'
 import { personFmApi } from '@/api/music'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
+import { normalizeImageUrl } from '@/views/shared/mappers'
 
 const playerStore = usePlayerStore(pinia)
 
-/** 请求失败时的兜底背景（本地静态资源，避免外链不可用导致卡片空掉） */
-const FALLBACK_BG = '/logo.svg'
-
-const bgImg = ref<string>(FALLBACK_BG)
+/** 没有可用封面时用品牌渐变兜底，卡片不会出现破图/空块 */
+const bgImg = ref<string>('')
 
 /**
- * 只负责取背景封面：接口失败/结构异常都保留兜底图，
+ * 只负责取背景封面：接口失败/结构异常都保留渐变兜底，
  * 真正播放由播放器 store 的 playFm 负责（它有完整的失败回退逻辑）。
  */
 const loadFmCover = async () => {
@@ -56,10 +57,18 @@ const loadFmCover = async () => {
       first as { al?: { picUrl?: unknown } } | undefined
     )?.al?.picUrl
     const picUrl = first?.album?.picUrl ?? legacyPicUrl
-    if (typeof picUrl === 'string' && picUrl) bgImg.value = picUrl
+    // 统一转 https：生产环境 CSP 只放行 https 图片，http 封面会加载失败
+    const normalized =
+      typeof picUrl === 'string' && picUrl ? normalizeImageUrl(picUrl) : ''
+    if (normalized) bgImg.value = normalized
   } catch {
-    bgImg.value = FALLBACK_BG
+    bgImg.value = ''
   }
+}
+
+/** 封面加载失败（CSP / 防盗链）时退回渐变，不留破图 */
+const handleBgError = () => {
+  bgImg.value = ''
 }
 
 const handlePlayFm = () => {
@@ -80,7 +89,12 @@ onMounted(() => {
   min-height: 168px;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  background-color: var(--color-secondary-bg);
+  /* 无封面时的品牌渐变兜底（有封面时会被图片盖住） */
+  background-image: linear-gradient(
+    130deg,
+    var(--color-primary) 0%,
+    color-mix(in srgb, var(--color-primary) 45%, var(--color-body-bg)) 100%
+  );
   color: var(--color-on-primary);
 }
 
