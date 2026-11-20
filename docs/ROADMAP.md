@@ -151,16 +151,28 @@
 - `prefers-reduced-motion: reduce` 下所有动效自动关闭；
 - `typecheck` / `lint` / `test` / `build` 全绿，DevTools Performance 面板切换页面帧率 ≥ 55fps。
 
-### Phase 2 —— 体验与桌面能力（3–5 天）
+### Phase 2 —— 体验与桌面能力（3–5 天）🟡 **主体已完成，余下见下**
 
 **范围**：A2 队列只存 id、A3 AbortController、A4/B1 虚拟滚动、B2 空态统一、B3 深色模式、B7 右键菜单、B10 基础无障碍、C4 歌词模糊、C9 浮层动效统一、D1 媒体键、D3 托盘、D4 窗口状态。
 
+**已交付**：
+- **D1 全局媒体键**：`globalShortcut` 三键（播放暂停/下一首/上一首）→ `halo:media-key` IPC → preload 白名单校验 → `bindMediaKeys()` → playerStore；被其它应用占用时只 warn 不阻断。
+- **D3 系统托盘**：托盘图标 + 五项菜单（显示主窗口/播放暂停/上一首/下一首/退出），单击显隐窗口，退出时 `destroy()`。
+- **D4 窗口状态记忆**：`userData/window-state.json` 持久化宽高/位置/最大化；启动校验最小尺寸与多屏 `workArea`（外接屏拔掉时回退居中），300ms 防抖 + close/before-quit flush。
+- **A2 队列持久化只存 id**：`player-queue-v2`（ids + currentId），启动批量回填并按序重排；旧 `player-playlist` 迁移（字段齐全零网络复用、脏数据先落 ids 再回填）；`playOne` 前非阻塞重试离线场景。
+- **A3 导航作用域请求取消**：`rotateNavigationScope()` 在 `router.afterEach` 旋转 AbortController，仅取消页面级 GET；播放/登录/喜欢等 10 类应用级请求用 `withoutAbortOnNavigate()` 标记保留；取消归一化为 `ApiError.isCanceled` 且不重试/不跳登录/不提示；视图层 19 处 catch 统一走 `handleRequestError()` 静默取消。
+- **C9 浮层动效统一**：Modal（fade+pop，Esc 关闭、多弹窗栈、焦点移入/归还、Tab 圈定）、Drawer（遮罩 fade 与内容 320ms slide 分离）、Toast（滑入/滑出状态机 + `animationend` 后卸载 + 35ms 错峰 + 超限退场后淘汰）。
+- **B10 部分**：`:focus-visible` 焦点环、Modal 焦点管理、Esc 关闭。
+- **C4**：歌词模糊/聚焦已在 Phase 1 完成。
+
+**剩余（下一批）**：A4 列表虚拟滚动（需引入 `vue-virtual-scroller`）、B3 深色模式落地（跨全站硬编码颜色变量化）、B7 列表右键上下文菜单、B8 搜索历史、B10 键盘导航补齐。
+
 **验收标准**
-- 1000+ 首歌单滚动 60fps（DevTools 无长任务 > 50ms）；
-- 快速连续切页无旧数据回写（`AbortController` 生效，网络面板可见 canceled）；
-- 深色模式可切换并跟随系统，无白色闪块；
-- 媒体键可控制播放/切歌；关闭窗口可选进托盘；
-- 重启后窗口位置/大小保持。
+- ✅ 快速连续切页无旧数据回写（30 个单测中含自定义 adapter 验证在途 GET 被取消且不重试）；
+- ✅ 媒体键可控制播放/切歌；托盘菜单可用；
+- ✅ 重启后窗口位置/大小保持（已实测生成 `window-state.json`）；
+- ⬜ 1000+ 首歌单滚动 60fps（待虚拟滚动）；
+- ⬜ 深色模式可切换并跟随系统。
 
 ### Phase 3 —— 平台化（1–2 周）
 
