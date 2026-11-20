@@ -49,7 +49,7 @@ const ringStyle = computed(() => ({
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--color-secondary);
+  color: var(--color-text-muted);
 }
 
 .ea-loading--block {
@@ -58,21 +58,22 @@ const ringStyle = computed(() => ({
   justify-content: center;
   align-items: center;
   gap: 14px;
-  padding: 120px 0;
+  padding: 96px 0;
 }
 
 .ea-loading__ring {
   display: inline-block;
   border-style: solid;
-  border-radius: 50%;
-  border-color: color-mix(in srgb, var(--color-secondary) 26%, transparent);
+  border-radius: var(--radius-full);
+  border-color: color-mix(in srgb, var(--color-text-subtle) 30%, transparent);
   border-top-color: var(--color-primary);
   animation: halo-spin var(--motion-spin, 800ms) linear infinite;
   flex: none;
 }
 
 .ea-loading__text {
-  font-size: 14px;
+  font-size: 0.8125rem;
   line-height: 1.4;
+  color: var(--color-text-muted);
 }
 </style>

@@ -1,57 +1,111 @@
 <template>
-  <!-- 加载骨架：保留页面大标题的版式留白 + 与歌单行高一致的列表 -->
-  <div
-    v-if="!loaded && !loadFailed"
-    class="flex flex-col"
-    aria-busy="true">
-    <div class="special-playlist">
-      <div class="flex justify-center">
+  <div class="page">
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">每日推荐</h1>
+        <p class="page-subtitle">根据你的音乐口味生成，每天 6:00 更新</p>
+      </div>
+    </header>
+
+    <!-- 加载骨架 -->
+    <template v-if="!loaded && !loadFailed">
+      <div
+        class="daily-hero card-surface skeleton-hero"
+        aria-busy="true">
+        <div class="skeleton-hero__text">
+          <ea-skeleton
+            variant="text"
+            width="10rem"
+            height="24px" />
+          <ea-skeleton
+            variant="text"
+            width="16rem"
+            height="16px" />
+        </div>
         <ea-skeleton
           variant="rect"
-          width="min(90%, 32rem)"
-          height="88px"
-          radius="12px" />
+          width="7.5rem"
+          height="34px"
+          radius="9999px" />
       </div>
-      <div class="flex justify-center">
-        <ea-skeleton
-          variant="text"
-          width="18rem"
-          class="mt-7 mb-[54px]" />
-      </div>
-    </div>
-    <div class="flex flex-col">
-      <ea-skeleton
-        v-for="index in 10"
-        :key="`skeleton-recommend-${index}`"
-        variant="row" />
-    </div>
-  </div>
-  <ea-empty
-    v-else-if="loadFailed"
-    title="每日推荐加载失败"
-    description="请检查网络后重试"
-    action-text="重新加载"
-    @action="getRecommendSongs" />
-  <template v-else>
-    <div class="special-playlist">
-      <div class="title gradient">每日歌曲推荐</div>
-      <div class="subtitle">根据你的音乐口味生成 · 每天6:00更新</div>
-    </div>
-    <music-table
-      v-if="recommendSongList.length"
-      :data="recommendSongList"></music-table>
+      <section class="section">
+        <div class="section-head">
+          <ea-skeleton
+            variant="text"
+            width="6rem"
+            height="22px" />
+        </div>
+        <div class="skeleton-list">
+          <ea-skeleton
+            v-for="index in 10"
+            :key="`skeleton-recommend-${index}`"
+            variant="row" />
+        </div>
+      </section>
+    </template>
+
     <ea-empty
-      v-else
-      title="今天还没有推荐歌曲"
-      description="稍后再来看看吧" />
-  </template>
+      v-else-if="loadFailed"
+      title="每日推荐加载失败"
+      description="请检查网络后重试"
+      action-text="重新加载"
+      @action="getRecommendSongs" />
+
+    <template v-else>
+      <!-- 紧凑 hero：标题 + 日期 + 播放全部 -->
+      <div class="daily-hero card-surface">
+        <div class="daily-hero__text">
+          <span class="daily-hero__eyebrow">{{ todayLabel }}</span>
+          <span class="daily-hero__title">为你精选的今日歌单</span>
+          <span class="daily-hero__desc muted">
+            {{
+              recommendSongList.length
+                ? `根据你的音乐口味生成 · 共 ${recommendSongList.length} 首`
+                : '根据你的音乐口味生成'
+            }}
+          </span>
+        </div>
+        <button
+          v-if="recommendSongList.length"
+          type="button"
+          class="pill-btn pill-btn--primary"
+          @click="handlePlayAll">
+          <icon-park
+            :icon="PlayOne"
+            :size="16"
+            theme="filled"
+            fill="currentColor" />
+          播放全部
+        </button>
+      </div>
+
+      <section
+        v-if="recommendSongList.length"
+        class="section">
+        <div class="section-head">
+          <h2 class="section-title">歌曲列表</h2>
+          <span class="muted section-meta">共 {{ recommendSongList.length }} 首</span>
+        </div>
+        <music-table :data="recommendSongList"></music-table>
+      </section>
+
+      <ea-empty
+        v-else
+        title="今天还没有推荐歌曲"
+        description="稍后再来看看吧" />
+    </template>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onActivated, onMounted, ref } from 'vue'
+import { computed, onActivated, onMounted, ref } from 'vue'
+import { PlayOne } from '@icon-park/vue-next'
 import { getRecommendSongsApi } from '@/api/music'
 import type { MusicBaseInfo } from '@/types/musicRel'
 import { handleRequestError } from '@/utils/common'
+import { usePlayerStore } from '@/store/playerStore'
+import pinia from '@/store/store'
+import notify from '@/components/common/notification/notify'
 import { mapSong } from '@/views/shared/mappers'
 
 defineOptions({
@@ -61,10 +115,25 @@ defineOptions({
 /** keep-alive 静默刷新阈值：距上次加载超过 5 分钟才在重新激活时后台重拉 */
 const SILENT_REFRESH_INTERVAL_MS = 5 * 60 * 1000
 
+const playerStore = usePlayerStore(pinia)
+
 /* 每日推荐歌曲页面 */
 const recommendSongList = ref<MusicBaseInfo[]>([])
 const loaded = ref(false)
 const loadFailed = ref(false)
+
+/** 页面日期（如「11月20日 星期五」），只影响展示 */
+const todayLabel = computed(() => {
+  const now = new Date()
+  const date = new Intl.DateTimeFormat('zh-CN', {
+    month: 'long',
+    day: 'numeric',
+  }).format(now)
+  const weekday = new Intl.DateTimeFormat('zh-CN', {
+    weekday: 'long',
+  }).format(now)
+  return `${date} ${weekday}`
+})
 
 /** keep-alive 静默刷新状态：上次加载时间 / 上次是否失败 / 是否正在静默刷新 */
 let lastLoadedAt = 0
@@ -101,6 +170,16 @@ const getRecommendSongs = async (silent = false) => {
   }
 }
 
+/** 播放全部：与列表内双击播放同一入口，空列表时不发请求 */
+const handlePlayAll = () => {
+  const ids = recommendSongList.value.map(item => item.id)
+  if (!ids.length) {
+    notify({ message: '每日推荐还没准备好', type: 'warning' })
+    return
+  }
+  playerStore.playMulti(ids.join(','))
+}
+
 onMounted(() => {
   void getRecommendSongs()
 })
@@ -116,56 +195,64 @@ onActivated(() => {
 </script>
 
 <style scoped>
-.special-playlist {
-  margin-top: 192px;
-  margin-bottom: 128px;
-  border-radius: 1.25em;
-  text-align: center;
+/* 紧凑 hero：背景取品牌色到卡片的柔和渐变 */
+.daily-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 22px 24px;
+  background: linear-gradient(
+    120deg,
+    var(--color-primary-bg),
+    var(--color-card-bg) 70%
+  );
 }
 
-@keyframes letterSpacing4 {
-  from {
-    letter-spacing: 0px;
-  }
-
-  to {
-    letter-spacing: 4px;
-  }
+.daily-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
-@keyframes letterSpacing1 {
-  from {
-    letter-spacing: 0px;
-  }
-
-  to {
-    letter-spacing: 1px;
-  }
-}
-
-.special-playlist .title {
-  font-size: 84px;
-  line-height: 1.05;
+.daily-hero__eyebrow {
+  font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-  animation-duration: 0.8s;
-  animation-name: letterSpacing4;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: 0.08em;
+  color: var(--color-primary);
 }
 
-.special-playlist .subtitle {
-  font-size: 18px;
-  letter-spacing: 1px;
-  margin: 28px 0 54px 0;
-  animation-duration: 0.8s;
-  animation-name: letterSpacing1;
-  text-transform: uppercase;
+.daily-hero__title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--color-text);
 }
 
-.gradient {
-  background: linear-gradient(to left, #dd2476, #ff512f);
+.daily-hero__desc {
+  font-size: 13px;
+}
+
+.skeleton-hero {
+  align-items: center;
+}
+
+.skeleton-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.section-meta {
+  font-size: 13px;
+  white-space: nowrap;
 }
 </style>

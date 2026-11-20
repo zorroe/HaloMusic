@@ -1,99 +1,127 @@
 <template>
-  <div>
-    <div class="text-6xl font-bold mb-4">发现</div>
-    <div class="flex flex-wrap">
-      <div
-        v-for="btn in btns"
-        :key="btn.name">
-        <ea-button
-          v-if="btn.enable"
-          class="show-btn m-4"
-          :type="activeName == btn.name ? 'primary' : 'info'"
-          @click="handleClick(btn)">
-          <div class="text-lg font-bold">{{ btn.name }}</div>
-        </ea-button>
+  <div class="page">
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">发现</h1>
+        <p class="page-subtitle">按分类浏览歌单，找到下一张想循环的专辑</p>
       </div>
-      <ea-button
-        class="m-4"
-        type="info"
+      <button
+        type="button"
+        class="pill-btn"
+        :aria-expanded="showHidden ? 'true' : 'false'"
         @click="showHidden = !showHidden">
-        <div class="text-lg font-bold">...</div>
-      </ea-button>
+        <icon-park
+          :icon="More"
+          :size="16"
+          theme="outline"
+          fill="currentColor" />
+        分类筛选
+      </button>
+    </header>
+
+    <!-- 分类胶囊 tab 行：只展示用户启用的分类 -->
+    <div
+      class="tab-row"
+      role="tablist"
+      aria-label="歌单分类">
+      <button
+        v-for="btn in visibleTabs"
+        :key="btn.name"
+        type="button"
+        role="tab"
+        class="pill-btn tab-pill"
+        :class="{ 'is-active': activeName === btn.name }"
+        :aria-selected="activeName === btn.name ? 'true' : 'false'"
+        :disabled="loading"
+        @click="handleClick(btn)">
+        {{ btn.name }}
+      </button>
     </div>
+
+    <!-- 分类面板：勾选后进入上方 tab 行 -->
     <Transition name="expand">
       <div
         v-show="showHidden"
-        class="flex flex-col gap-4 my-4 px-4 rounded-lg bg-[var(--color-secondary-bg)] p-8 mx-4">
+        class="category-panel card-surface">
         <div
           v-for="cat in cats"
           :key="cat"
-          class="flex items-center">
-          <div class="min-w-fit mr-6">
-            <div class="text-lg font-bold">{{ cat }}</div>
-          </div>
-          <div class="flex flex-wrap gap-4">
-            <div
+          class="category-group">
+          <span class="category-group-title">{{ cat }}</span>
+          <div class="category-chips">
+            <button
               v-for="label in labels(cat)"
               :key="label.name"
+              type="button"
+              class="pill-btn category-chip"
+              :class="{ 'is-active': label.enable }"
+              :aria-pressed="label.enable ? 'true' : 'false'"
               @click="handleVisible(label)">
-              <div
-                class="cat-item-hidden"
-                :class="{ 'cat-item-active': label.enable }">
-                {{ label.name }}
-              </div>
-            </div>
+              {{ label.name }}
+            </button>
           </div>
         </div>
       </div>
     </Transition>
+
+    <!-- 首屏骨架 -->
     <div
       v-if="loading && !playListList.length"
-      class="grid-cols-5 grid place-items-center gap-8 mx-16 mt-12"
+      class="grid-cards"
       aria-busy="true">
       <ea-skeleton
         v-for="index in 10"
         :key="`skeleton-explore-${index}`"
-        variant="card"
-        width="12rem" />
+        variant="card" />
     </div>
+
     <ea-empty
       v-else-if="loadFailed"
       title="歌单加载失败"
       description="请检查网络后重试"
       action-text="重新加载"
       @action="retry" />
+
     <template v-else>
       <ea-empty
         v-if="!playListList.length"
         title="这个分类下暂时没有歌单"
         description="换个分类看看吧" />
-      <div
+
+      <section
         v-else
-        class="grid-cols-5 grid place-items-center gap-8 mx-16 mt-12"
+        class="section"
         :aria-busy="loading ? 'true' : 'false'">
-        <play-list-cover
-          v-for="item in playListList"
-          :key="item.id"
-          :data="item"></play-list-cover>
-      </div>
+        <div class="section-head">
+          <h2 class="section-title">{{ listTitle }}</h2>
+          <span class="muted section-meta">共 {{ playListList.length }} 张</span>
+        </div>
+        <div class="grid-cards">
+          <play-list-cover
+            v-for="item in playListList"
+            :key="item.id"
+            :data="item"></play-list-cover>
+        </div>
+      </section>
+
       <div
         v-show="showMoreBtn"
-        class="flex justify-center items-center my-4">
-        <ea-button
-          type="info"
+        class="load-more-row">
+        <button
+          type="button"
+          class="pill-btn"
           :disabled="loading"
           @click="loadMore">
-          <div class="text-lg font-bold">
-            {{ loading ? '加载中…' : '加载更多' }}
-          </div>
-        </ea-button>
+          {{ loading ? '加载中…' : '加载更多' }}
+        </button>
       </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onActivated, onMounted, ref } from 'vue'
+import { computed, onActivated, onMounted, ref } from 'vue'
+import { More } from '@icon-park/vue-next'
 import { useLocalStorage } from '@vueuse/core'
 import { playlistBigCats, playlistCategories } from './btns'
 import type { PlaylistCategory } from './btns'
@@ -119,6 +147,19 @@ const showMoreBtn = ref(false)
 const activeName = ref('全部')
 const loading = ref(false)
 const loadFailed = ref(false)
+
+/** 顶部胶囊 tab：与旧逻辑一致，只展示被用户启用的分类 */
+const visibleTabs = computed(() => btns.value.filter(item => item.enable))
+
+/** 列表区标题：不同分类的语义不同（排行榜不是歌单） */
+const listTitle = computed(() => {
+  const name = activeName.value
+  if (name === '全部') return '全部歌单'
+  if (name === '排行榜' || name === '推荐歌单' || name === '精品歌单') {
+    return name
+  }
+  return `${name}歌单`
+})
 
 /** keep-alive 静默刷新阈值：距上次加载超过 5 分钟才在重新激活时后台重拉当前分类 */
 const SILENT_REFRESH_INTERVAL_MS = 5 * 60 * 1000
@@ -379,28 +420,108 @@ onActivated(() => {
 </script>
 
 <style scoped>
-.cat-item-hidden {
-  border-radius: 0.375rem;
-  padding: 0.25rem 1rem;
-  cursor: pointer;
+/* 分类胶囊 tab 行 */
+.tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.cat-item-hidden:hover {
-  color: var(--color-primary);
+.tab-pill {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.tab-pill.is-active {
   background-color: var(--color-primary-bg);
-}
-
-.cat-item-active {
+  border-color: transparent;
   color: var(--color-primary);
 }
 
+.tab-pill:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* 分类筛选面板 */
+.category-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px;
+}
+
+.category-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.category-group-title {
+  flex: none;
+  width: 52px;
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-chip {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.category-chip.is-active {
+  background-color: var(--color-primary-bg);
+  border-color: transparent;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.section-meta {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.load-more-row {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 8px;
+}
+
+/* 展开/收起分类面板：只动 opacity + transform */
 .expand-enter-active,
 .expand-leave-active {
-  transition: all 0.5s ease-in-out;
+  transition:
+    opacity var(--motion-base) var(--ease-standard),
+    transform var(--motion-base) var(--ease-standard);
 }
 
 .expand-enter-from,
 .expand-leave-to {
   opacity: 0;
+  transform: translateY(-6px);
+}
+
+@media (max-width: 900px) {
+  .category-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .category-group-title {
+    width: auto;
+    padding-top: 0;
+  }
 }
 </style>

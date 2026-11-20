@@ -78,39 +78,44 @@ const blockStyle = computed(() => {
 </script>
 
 <style scoped>
+/* 卡片骨架：比例与封面卡片一致（正方形封面 + 标题 + 副标题） */
 .ea-skeleton-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
 .ea-skeleton-card__cover {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .ea-skeleton-card__line {
-  height: 12px;
-  width: 82%;
+  height: 10px;
+  width: 78%;
+  border-radius: var(--radius-sm);
 }
 
 .ea-skeleton-card__line--short {
-  width: 52%;
+  width: 46%;
 }
 
+/* 行骨架：与 MusicTable 行高（52px）保持一致，避免加载完成后的跳动 */
 .ea-skeleton-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  height: 64px;
-  padding: 0 8px;
+  gap: 12px;
+  height: 52px;
+  padding: 0 12px;
 }
 
 .ea-skeleton-row__cover {
-  width: 48px;
-  height: 48px;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
   flex: none;
 }
 
@@ -123,35 +128,37 @@ const blockStyle = computed(() => {
 }
 
 .ea-skeleton-row__line {
-  height: 12px;
-  width: 60%;
+  height: 10px;
+  width: 58%;
+  border-radius: var(--radius-sm);
 }
 
 .ea-skeleton-row__line--short {
-  width: 32%;
+  width: 30%;
 }
 
 .ea-skeleton-row__tail {
   width: 40px;
-  height: 12px;
+  height: 10px;
+  border-radius: var(--radius-sm);
   flex: none;
 }
 
 .ea-skeleton-rect {
   width: 100%;
   height: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .ea-skeleton-circle {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .ea-skeleton-text {
   width: 100%;
-  height: 12px;
-  border-radius: 4px;
+  height: 10px;
+  border-radius: 6px;
 }
 </style>

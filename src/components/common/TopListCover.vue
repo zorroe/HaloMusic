@@ -1,23 +1,24 @@
 <template>
-  <div class="flex flex-col w-48 h-64">
-    <div class="cover group cursor-pointer">
+  <div class="cover-card">
+    <div class="cover-card__media group">
       <lmg
         :src="props.data.picUrl"
         :width="300"
         :height="300"
-        class="cover-img w-48 h-48 rounded-xl"
-        @click="routeTo(`/playlist/${props.data.id}`)"></lmg>
+        class="cover-card__img"
+        @click="routeTo(`/playlist/${props.data.id}`)" />
       <icon-park
         :icon="PlayOne"
-        fill="white"
+        fill="currentColor"
         theme="filled"
-        :size="24"
-        class="cover-play group-hover:opacity-100"
+        :size="20"
+        class="cover-play"
         title="播放全部"
         @click.stop="handlePlayAll"></icon-park>
     </div>
     <div
-      class="text-center text-base font-bold hover:decoration-[var(--color-text)] hover:underline truncate cursor-pointer"
+      class="cover-card__title"
+      :title="props.data.name"
       @click="routeTo(`/playlist/${props.data.id}`)">
       {{ props.data.name }}
     </div>
@@ -30,7 +31,7 @@ import type { PlayListBaseInfo } from '@/types/playListRel'
 import { playAllByPlayListId } from '@/api/playList'
 import { routeTo } from '@/utils/common'
 
-/* 排行榜封面图组件 */
+/* 排行榜封面图组件（接口保持不变：data） */
 interface Props {
   data?: PlayListBaseInfo
 }
@@ -47,17 +48,51 @@ const handlePlayAll = () => {
 </script>
 
 <style scoped>
-/* hover 时封面微放大 + 阴影加深，只动 transform / box-shadow / opacity */
-.cover-img {
+.cover-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.cover-card__media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: var(--color-secondary-bg);
   transition:
     transform var(--motion-base) var(--ease-standard),
-    box-shadow var(--motion-base) var(--ease-standard),
-    opacity var(--motion-base) var(--ease-standard);
+    box-shadow var(--motion-base) var(--ease-standard);
 }
 
-.cover:hover .cover-img {
-  transform: scale(1.04);
-  box-shadow: 0 14px 32px var(--color-shadow-strong);
+.cover-card__media:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
 }
 
+.cover-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.cover-card__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cover-card__title:hover {
+  color: var(--color-primary);
+}
 </style>

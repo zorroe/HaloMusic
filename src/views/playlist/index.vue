@@ -1,160 +1,195 @@
 <template>
-  <!-- 加载骨架：头部信息区（封面 + 标题/作者/统计行）+ 与真实行高一致的 20 行 -->
-  <div
-    v-if="!loaded && !loadFailed"
-    class="flex flex-col w-full px-4 gap-8"
-    aria-busy="true">
-    <div class="flex my-4 gap-4">
-      <div class="w-64 flex-none">
+  <div class="page">
+    <!-- 加载骨架：统一详情页头的形状 + 与真实行高一致的歌曲骨架 -->
+    <div v-if="!loaded && !loadFailed" class="page-loading" aria-busy="true">
+      <div class="detail-head">
         <ea-skeleton
           variant="rect"
-          height="16rem"
-          radius="12px" />
-      </div>
-      <div class="flex flex-col gap-4 flex-1 min-w-0 py-2">
-        <ea-skeleton
-          variant="rect"
-          width="18rem"
-          height="32px" />
-        <ea-skeleton
-          variant="text"
-          width="12rem" />
-        <ea-skeleton
-          variant="text"
-          width="16rem" />
-        <ea-skeleton
-          variant="text"
-          width="60%" />
-        <ea-skeleton
-          variant="text"
-          width="48%" />
-        <div class="flex gap-4 mt-auto pb-2">
+          :width="176"
+          :height="176"
+          radius="var(--radius-lg)"
+        />
+        <div class="detail-info">
           <ea-skeleton
             variant="rect"
-            width="7rem"
-            height="40px"
-            radius="9999px" />
-          <ea-skeleton
-            variant="rect"
-            :width="40"
-            :height="40"
-            radius="9999px" />
-        </div>
-      </div>
-    </div>
-    <div class="flex flex-col">
-      <ea-skeleton
-        v-for="index in 20"
-        :key="`skeleton-track-${index}`"
-        variant="row" />
-    </div>
-  </div>
-  <ea-empty
-    v-else-if="loadFailed"
-    title="歌单加载失败"
-    description="可能是网络异常或歌单不存在"
-    action-text="重新加载"
-    @action="loadAll" />
-  <div
-    v-else
-    class="flex flex-col w-full px-4 h-64 gap-8">
-    <div class="flex my-4 gap-4">
-      <lmg
-        :src="playListDetail?.coverImgUrl"
-        :width="300"
-        :height="300"
-        class="w-64 h-64 rounded-xl"></lmg>
-      <div class="flex flex-col gap-4 truncate pl-4">
-        <div class="flex items-center gap-4 font-bold text-2xl my-2">
-          <div v-show="!isEdit">
-            {{ playListDetail?.name }}
+            width="4.5rem"
+            height="20px"
+            radius="var(--radius-full)"
+          />
+          <ea-skeleton variant="rect" width="18rem" height="34px" />
+          <ea-skeleton variant="text" width="55%" />
+          <ea-skeleton variant="text" width="70%" />
+          <div class="detail-actions">
+            <ea-skeleton
+              variant="rect"
+              width="7.5rem"
+              height="34px"
+              radius="var(--radius-full)"
+            />
+            <ea-skeleton
+              variant="rect"
+              width="6rem"
+              height="34px"
+              radius="var(--radius-full)"
+            />
           </div>
-          <input
-            v-show="isEdit"
-            ref="playlistNameInputRef"
-            v-model="newName"
-            type="text"
-            placeholder="请输入歌单名"
-            class="playlist-name-input"
-            @blur="handleBlur"
-            @keydown.enter="confirmEdit" />
-          <icon-park
-            v-if="isOwner"
-            :icon="Edit"
-            theme="filled"
-            :size="24"
-            class="cursor-pointer hover:bg-[var(--color-hover)] rounded-full p-1 transition-all duration-300"
-            title="编辑歌单名"
-            @click="handleEdit"></icon-park>
-        </div>
-
-        <div>
-          <span>Created By </span>
-          <span
-            class="ea-link"
-            @click="handleOpenCreator"
-            >{{ playListDetail?.creator?.nickname }}</span
-          >
-        </div>
-        <div class="text-[var(--color-text-muted)] text-sm">
-          <span>最后更新于</span>
-          <span>{{ updateTimeText }}</span>
-          <span> · </span>
-          <span>{{ `${playListDetail?.trackCount ?? 0}首` }}</span>
-        </div>
-        <div class="text-[var(--color-text-muted)] text-sm inline-block playlist-detail">
-          {{ playListDetail?.description }}
-        </div>
-        <div class="flex flex-grow gap-4 items-end">
-          <ea-button @click="handlePlayAll"
-            ><icon-park
-              :icon="PlayOne"
-              theme="filled"
-              :size="20"
-              class="rounded-full p-1" />
-            <div class="text-lg font-bold">播放</div></ea-button
-          >
-          <ea-button
-            v-if="!isOwner"
-            :title="playListDetail?.subscribed ? '取消收藏' : '收藏'"
-            @click="handleSubscribePlayList">
-            <icon-park
-              :icon="Like"
-              :theme="playListDetail?.subscribed ? 'filled' : 'outline'"
-              :size="20"
-              class="rounded-full p-1" />
-          </ea-button>
-          <ea-button
-            v-else
-            for="delete-modal"
-            type="danger">
-            <icon-park
-              :icon="Delete"
-              theme="outline"
-              :size="20"
-              class="rounded-full p-1" />
-            <div class="text-lg font-bold">删除</div>
-          </ea-button>
         </div>
       </div>
+      <div class="flex flex-col">
+        <ea-skeleton
+          v-for="index in 12"
+          :key="`skeleton-track-${index}`"
+          variant="row"
+        />
+      </div>
     </div>
-    <music-table
-      v-if="musicTableData.length"
-      :data="musicTableData"></music-table>
+
     <ea-empty
-      v-else
-      title="歌单里还没有歌曲"
-      description="去发现页看看别的歌单吧" />
+      v-else-if="loadFailed"
+      title="歌单加载失败"
+      description="可能是网络异常或歌单不存在"
+      action-text="重新加载"
+      @action="loadAll"
+    />
+
+    <template v-else>
+      <!-- 统一详情页头：大封面 + 类型徽标 / 标题 / 元信息 / 可折叠简介 / 操作区 -->
+      <header class="page-head">
+        <div class="detail-head">
+          <div class="detail-cover">
+            <lmg
+              :src="playListDetail?.coverImgUrl"
+              :width="400"
+              :height="400"
+              class="w-full h-full object-cover"
+            />
+          </div>
+
+          <div class="detail-info">
+            <span class="detail-badge">歌单</span>
+
+            <div class="detail-title-row">
+              <h1
+                v-show="!isEdit"
+                class="page-title detail-title"
+                :title="playListDetail?.name"
+              >
+                {{ playListDetail?.name }}
+              </h1>
+              <input
+                v-show="isEdit"
+                ref="playlistNameInputRef"
+                v-model="newName"
+                type="text"
+                placeholder="请输入歌单名"
+                class="playlist-name-input"
+                @blur="handleBlur"
+                @keydown.enter="confirmEdit"
+              />
+              <button
+                v-if="isOwner"
+                type="button"
+                class="detail-icon-btn"
+                title="编辑歌单名"
+                aria-label="编辑歌单名"
+                @click="handleEdit"
+              >
+                <icon-park :icon="Edit" theme="filled" :size="18" />
+              </button>
+            </div>
+
+            <p class="page-subtitle">
+              <span>创建者</span>
+              <span class="ea-link" @click="handleOpenCreator">{{
+                playListDetail?.creator?.nickname
+              }}</span>
+              <template v-if="updateTimeText">
+                <span class="detail-dot">·</span>
+                <span>最后更新于 {{ updateTimeText }}</span>
+              </template>
+              <span class="detail-dot">·</span>
+              <span>共 {{ trackCount }} 首</span>
+            </p>
+
+            <template v-if="descriptionText">
+              <p
+                ref="descRef"
+                class="detail-desc"
+                :class="{ 'detail-desc--expanded': descExpanded }"
+              >
+                {{ descriptionText }}
+              </p>
+              <button
+                v-if="descOverflow"
+                type="button"
+                class="detail-desc-toggle"
+                @click="descExpanded = !descExpanded"
+              >
+                {{ descExpanded ? '收起' : '展开' }}
+              </button>
+            </template>
+
+            <div class="detail-actions">
+              <button
+                type="button"
+                class="pill-btn pill-btn--primary"
+                @click="handlePlayAll"
+              >
+                <icon-park :icon="PlayOne" theme="filled" :size="16" />
+                播放全部
+              </button>
+              <button
+                v-if="!isOwner"
+                type="button"
+                class="pill-btn"
+                :title="playListDetail?.subscribed ? '取消收藏' : '收藏'"
+                @click="handleSubscribePlayList"
+              >
+                <icon-park
+                  :icon="Like"
+                  :theme="playListDetail?.subscribed ? 'filled' : 'outline'"
+                  :size="16"
+                />
+                {{ playListDetail?.subscribed ? '已收藏' : '收藏' }}
+              </button>
+              <button
+                v-else
+                type="button"
+                class="pill-btn pill-btn--danger"
+                title="删除歌单"
+                @click="openDeleteModal"
+              >
+                <icon-park :icon="Delete" :size="16" />
+                删除歌单
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- 歌曲列表 -->
+      <section class="section">
+        <div class="section-head">
+          <h2 class="section-title">歌曲列表</h2>
+          <span class="muted detail-count">{{ songsMeta }}</span>
+        </div>
+        <music-table v-if="musicTableData.length" :data="musicTableData" />
+        <ea-empty
+          v-else
+          title="歌单里还没有歌曲"
+          description="去发现页看看别的歌单吧"
+        />
+      </section>
+    </template>
+
+    <ea-modal id="delete-modal" @confirm="handleDeletePlayList">
+      <div class="font-bold">确定删除此歌单吗？</div>
+    </ea-modal>
   </div>
-  <ea-modal
-    id="delete-modal"
-    @confirm="handleDeletePlayList">
-    <div class="font-bold">确定删除此歌单吗？</div>
-  </ea-modal>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import { Delete, Edit, Like, PlayOne } from '@icon-park/vue-next'
@@ -203,6 +238,66 @@ const updateTimeText = computed(() => {
   return dayjs(time).format('YYYY-MM-DD')
 })
 
+const trackCount = computed(
+  () => playListDetail.value?.trackCount ?? musicTableData.value.length
+)
+
+const descriptionText = computed(() => {
+  const description = playListDetail.value?.description
+  return typeof description === 'string' ? description.trim() : ''
+})
+
+/** 把 MusicTable 里的 `m:ss` 时长累加成列表总时长文案 */
+const parseDurationSeconds = (duration: string | number): number => {
+  if (typeof duration === 'number') {
+    if (!Number.isFinite(duration) || duration <= 0) return 0
+    return duration > 999 ? duration / 1000 : duration
+  }
+  if (!duration) return 0
+  const parts = String(duration)
+    .split(':')
+    .map((part) => Number(part))
+  if (parts.some((part) => !Number.isFinite(part))) return 0
+  if (parts.length === 2) return parts[0] * 60 + parts[1]
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  return 0
+}
+
+const totalDurationText = computed(() => {
+  const totalSeconds = musicTableData.value.reduce(
+    (sum, music) => sum + parseDurationSeconds(music.duration),
+    0
+  )
+  if (totalSeconds <= 0) return ''
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.round((totalSeconds % 3600) / 60)
+  if (hours > 0) return `${hours} 小时 ${minutes} 分钟`
+  return `${Math.max(1, minutes)} 分钟`
+})
+
+const songsMeta = computed(() => {
+  const count = `${musicTableData.value.length} 首`
+  return totalDurationText.value
+    ? `共 ${count} · ${totalDurationText.value}`
+    : `共 ${count}`
+})
+
+// ---------------- 简介折叠：只折叠 2 行，超出才显示「展开 / 收起」 ----------------
+const descRef = ref<HTMLElement | null>(null)
+const descExpanded = ref(false)
+const descOverflow = ref(false)
+
+/** 展开状态下不重新测量，避免把「展开」按钮测没 */
+const measureDesc = () => {
+  const element = descRef.value
+  if (!element || descExpanded.value) return
+  descOverflow.value = element.scrollHeight - element.clientHeight > 1
+}
+
+const handleResize = () => {
+  measureDesc()
+}
+
 const loadDetail = async () => {
   const { playlist } = await getPlayListDetailApi({ id: playListId.value })
   playListDetail.value = playlist
@@ -217,9 +312,13 @@ const loadSongs = async () => {
 const loadAll = async () => {
   loaded.value = false
   loadFailed.value = false
+  descExpanded.value = false
+  descOverflow.value = false
   try {
     await Promise.all([loadDetail(), loadSongs()])
     loaded.value = true
+    await nextTick()
+    measureDesc()
   } catch (error) {
     console.error('[HaloMusic] load playlist failed:', error)
     loadFailed.value = true
@@ -234,7 +333,7 @@ const handleOpenCreator = () => {
 }
 
 const handlePlayAll = () => {
-  const ids = musicTableData.value.map(music => music.id)
+  const ids = musicTableData.value.map((music) => music.id)
   if (!ids.length) {
     notify({ message: '歌单里还没有歌曲', type: 'warning' })
     return
@@ -282,6 +381,12 @@ const handleDeletePlayList = async () => {
   }
 }
 
+/** 打开删除确认弹窗：ea-modal 用隐藏 checkbox 作为开关，点它即可触发 change */
+const openDeleteModal = () => {
+  const toggle = document.getElementById('delete-modal')
+  if (toggle instanceof HTMLInputElement) toggle.click()
+}
+
 const handleSubscribePlayList = async () => {
   try {
     await subscribePlayListApi({
@@ -295,31 +400,182 @@ const handleSubscribePlayList = async () => {
   }
 }
 
-onMounted(loadAll)
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+  void loadAll()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+})
 </script>
 
 <style scoped>
+/* ---------------- 统一详情页头 ---------------- */
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px;
+  width: 100%;
+  min-width: 0;
+}
+
+.detail-cover {
+  flex: none;
+  width: 176px;
+  height: 176px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-secondary-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.detail-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 260px;
+}
+
+.detail-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.detail-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-icon-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+.detail-icon-btn:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text);
+}
+
+.detail-dot {
+  margin: 0 6px;
+  color: var(--color-text-subtle);
+}
+
+.detail-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.detail-desc--expanded {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.detail-desc-toggle {
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  color: var(--color-primary);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detail-desc-toggle:hover {
+  text-decoration: underline;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+/* 危险操作：沿用胶囊按钮的尺寸，只换配色 */
+.pill-btn--danger {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 38%, transparent);
+  background-color: var(--color-card-bg);
+}
+
+.pill-btn--danger:hover {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-bg);
+}
+
+.detail-count {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 歌单名内联编辑 */
 .playlist-name-input {
   min-width: 240px;
-  padding: 4px 8px;
+  padding: 2px 8px;
   border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  outline: none;
   background-color: var(--color-input-bg);
   color: var(--color-text);
-  font-size: 20px;
-  font-weight: 700;
-  outline: none;
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .playlist-name-input:focus {
   border-color: var(--color-primary);
-}
-
-.playlist-detail {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 </style>

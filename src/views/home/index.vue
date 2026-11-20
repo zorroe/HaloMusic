@@ -1,142 +1,177 @@
 <template>
-  <!-- 加载骨架：尺寸与真实首页一一对应，避免内容就绪后大幅跳动 -->
-  <div
-    v-if="loading"
-    class="flex flex-col"
-    aria-busy="true">
-    <ea-skeleton
-      variant="rect"
-      width="7rem"
-      height="32px"
-      class="my-4" />
-    <div class="grid grid-cols-5 gap-8 mb-8">
-      <ea-skeleton
-        v-for="index in 10"
-        :key="`skeleton-playlist-${index}`"
-        variant="card"
-        width="12rem" />
-    </div>
-    <div class="flex gap-8 mb-8">
+  <div class="page">
+    <!-- 页面标题区：左右两端对齐，右侧可放页面级操作 -->
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">发现音乐</h1>
+        <p class="page-subtitle">每日推荐、精选歌单与排行榜，一屏直达</p>
+      </div>
+    </header>
+
+    <!-- 加载骨架：与真实版式一一对应 -->
+    <template v-if="loading">
       <div
-        v-for="index in 2"
-        :key="`skeleton-banner-${index}`"
-        class="w-1/2">
+        class="hero-row"
+        aria-busy="true">
         <ea-skeleton
           variant="rect"
-          height="12rem"
-          radius="16px" />
-      </div>
-    </div>
-    <ea-skeleton
-      variant="rect"
-      width="7rem"
-      height="32px"
-      class="my-4" />
-    <div class="grid grid-cols-6 gap-3">
-      <div
-        v-for="index in 6"
-        :key="`skeleton-artist-${index}`"
-        class="flex flex-col items-center gap-2">
+          height="210px"
+          radius="16px"
+          class="hero-skeleton" />
         <ea-skeleton
-          variant="circle"
-          :width="160"
-          :height="160" />
-        <ea-skeleton
-          variant="text"
-          width="6rem" />
+          variant="rect"
+          height="210px"
+          radius="16px"
+          class="hero-skeleton" />
       </div>
-    </div>
-    <ea-skeleton
-      variant="rect"
-      width="7rem"
-      height="32px"
-      class="my-4" />
-    <div class="grid grid-cols-5 gap-4">
-      <ea-skeleton
-        v-for="index in 10"
-        :key="`skeleton-album-${index}`"
-        variant="card"
-        width="12rem" />
-    </div>
-    <ea-skeleton
-      variant="rect"
-      width="7rem"
-      height="32px"
-      class="my-4" />
-    <div class="grid grid-cols-5 gap-4">
-      <ea-skeleton
-        v-for="index in 5"
-        :key="`skeleton-toplist-${index}`"
-        variant="card"
-        width="12rem" />
-    </div>
-  </div>
-  <ea-empty
-    v-else-if="failedAll"
-    title="首页加载失败"
-    description="请检查网络后重试"
-    action-text="重新加载"
-    @action="loadAll" />
-  <ea-empty
-    v-else-if="nothingToShow"
-    title="暂时没有推荐内容"
-    description="稍后再来看看吧" />
-  <div
-    v-else
-    class="flex flex-col">
-    <div class="text-lv1">推荐歌单</div>
-    <div class="grid-cols-5 grid place-content-between gap-8 mb-8">
-      <play-list-cover
-        v-for="item in recommendPlayList"
-        :key="item.id"
-        :data="item"></play-list-cover>
-    </div>
-    <div class="flex h-48 gap-8">
-      <div
-        class="flex items-end rounded-2xl w-1/2 relative overflow-hidden cursor-pointer"
-        @click="routeTo('/recommendMusic')">
-        <img
-          v-if="recommendBg"
-          :src="recommendBg"
-          class="recommend"
-          alt="" />
-        <div id="mask"></div>
-        <div class="ml-4 mb-4 text-7xl w-48 font-bold text-white z-50">
-          每日推荐
+      <section class="section">
+        <div class="section-head">
+          <ea-skeleton
+            variant="text"
+            width="8rem"
+            height="22px" />
         </div>
-        <div class="flex-1"></div>
-        <icon-park
-          :icon="PlayOne"
-          fill="white"
-          theme="filled"
-          :size="24"
-          title="播放每日推荐"
-          @click="handlePlayMultiRecommend"
-          class="mr-4 mb-4 p-2 z-50 rounded-full transition-all text-white bg-white/20 hover:bg-white/40 active:scale-90"></icon-park>
+        <div class="grid-cards">
+          <ea-skeleton
+            v-for="index in 10"
+            :key="`skeleton-playlist-${index}`"
+            variant="card" />
+        </div>
+      </section>
+      <section class="section">
+        <div class="section-head">
+          <ea-skeleton
+            variant="text"
+            width="8rem"
+            height="22px" />
+        </div>
+        <div class="grid-cards grid-cards--sm">
+          <ea-skeleton
+            v-for="index in 6"
+            :key="`skeleton-artist-${index}`"
+            variant="card" />
+        </div>
+      </section>
+    </template>
+
+    <ea-empty
+      v-else-if="failedAll"
+      title="首页加载失败"
+      description="请检查网络后重试"
+      action-text="重新加载"
+      @action="loadAll" />
+    <ea-empty
+      v-else-if="nothingToShow"
+      title="暂时没有推荐内容"
+      description="稍后再来看看吧" />
+
+    <template v-else>
+      <!-- 快捷入口：每日推荐 + 私人 FM -->
+      <div class="hero-row">
+        <div
+          class="hero-card card-surface daily-card"
+          :class="{ 'daily-card--image': recommendBg }">
+          <img
+            v-if="recommendBg"
+            :src="recommendBg"
+            class="daily-bg"
+            alt="" />
+          <span
+            class="daily-shade"
+            aria-hidden="true"></span>
+          <div class="daily-body">
+            <span class="daily-eyebrow">每日推荐</span>
+            <span class="daily-title">为你精选的今日歌单</span>
+            <span class="daily-meta">
+              {{
+                recommendSongList.length
+                  ? `共 ${recommendSongList.length} 首 · 每天 6:00 更新`
+                  : '每天 6:00 更新'
+              }}
+            </span>
+            <div class="daily-actions">
+              <button
+                type="button"
+                class="pill-btn pill-btn--primary"
+                @click="handlePlayMultiRecommend">
+                <icon-park
+                  :icon="PlayOne"
+                  :size="16"
+                  theme="filled"
+                  fill="currentColor" />
+                播放全部
+              </button>
+              <button
+                type="button"
+                class="pill-btn"
+                @click="routeTo('/recommendMusic')">
+                查看全部
+              </button>
+            </div>
+          </div>
+        </div>
+        <person-fm class="hero-card card-surface fm-card" />
       </div>
-      <person-fm class="w-1/2"></person-fm>
-    </div>
-    <div class="text-lv1">推荐歌手</div>
-    <div class="grid-cols-6 grid place-content-between gap-3">
-      <artist-cover
-        v-for="item in recommendArtist"
-        :key="item.id"
-        :data="item"></artist-cover>
-    </div>
-    <div class="text-lv1">新专速递</div>
-    <div class="grid-cols-5 grid place-content-between gap-4">
-      <album-cover
-        v-for="item in albumNewest"
-        :key="item.id"
-        :data="item"></album-cover>
-    </div>
-    <div class="text-lv1">排行榜</div>
-    <div class="grid-cols-5 grid place-content-between gap-4">
-      <top-list-cover
-        v-for="item in topList"
-        :key="item.id"
-        :data="item"></top-list-cover>
-    </div>
+
+      <section
+        v-if="recommendPlayList.length"
+        class="section">
+        <div class="section-head">
+          <h2 class="section-title">推荐歌单</h2>
+          <span class="muted section-meta">为你挑选</span>
+        </div>
+        <div class="grid-cards">
+          <play-list-cover
+            v-for="item in recommendPlayList"
+            :key="item.id"
+            :data="item"></play-list-cover>
+        </div>
+      </section>
+
+      <section
+        v-if="recommendArtist.length"
+        class="section">
+        <div class="section-head">
+          <h2 class="section-title">推荐歌手</h2>
+        </div>
+        <div class="grid-cards grid-cards--sm">
+          <artist-cover
+            v-for="item in recommendArtist"
+            :key="item.id"
+            :data="item"></artist-cover>
+        </div>
+      </section>
+
+      <section
+        v-if="albumNewest.length"
+        class="section">
+        <div class="section-head">
+          <h2 class="section-title">最新音乐</h2>
+          <span class="muted section-meta">新专速递</span>
+        </div>
+        <div class="grid-cards">
+          <album-cover
+            v-for="item in albumNewest"
+            :key="item.id"
+            :data="item"></album-cover>
+        </div>
+      </section>
+
+      <section
+        v-if="topList.length"
+        class="section">
+        <div class="section-head">
+          <h2 class="section-title">排行榜</h2>
+          <span class="muted section-meta">实时热度</span>
+        </div>
+        <div class="grid-cards">
+          <top-list-cover
+            v-for="item in topList"
+            :key="item.id"
+            :data="item"></top-list-cover>
+        </div>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -161,6 +196,7 @@ import { isCanceledError } from '@/utils/request'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import notify from '@/components/common/notification/notify'
+import PersonFm from '@/components/common/PersonalFm.vue'
 import {
   mapAlbum,
   mapArtist,
@@ -326,33 +362,127 @@ onActivated(() => {
 </script>
 
 <style scoped>
-.recommend {
+/* 快捷入口行：每日推荐卡 + 私人 FM 卡等宽 */
+.hero-row {
+  display: flex;
+  gap: 20px;
+}
+
+.hero-card {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 210px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+}
+
+.hero-skeleton {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* 每日推荐卡：有封面图时铺图 + 压暗，保证文字可读 */
+.daily-card {
+  border: 1px solid var(--color-border);
+  background: linear-gradient(
+    120deg,
+    var(--color-primary-bg),
+    var(--color-card-bg)
+  );
+}
+
+.daily-bg {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
-  animation: move 38s infinite;
-  animation-direction: alternate;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.04);
+  transition: transform var(--motion-slow) var(--ease-standard);
+}
+
+.daily-card:hover .daily-bg {
+  transform: scale(1.08);
+}
+
+.daily-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--color-mask) 92%, transparent) 0%,
+    color-mix(in srgb, var(--color-mask) 45%, transparent) 62%,
+    transparent 100%
+  );
+}
+
+.daily-body {
+  position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 100%;
+  padding: 20px 22px;
 }
 
-#mask {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+.daily-card--image .daily-body {
+  color: var(--color-on-primary);
+}
+
+.daily-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.86;
+}
+
+.daily-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.daily-meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.daily-card--image .daily-meta {
+  color: color-mix(in srgb, var(--color-on-primary) 78%, transparent);
+}
+
+.daily-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* 私人 FM 组件由公共组件提供，这里只控制它在英雄区的尺寸 */
+.fm-card {
   width: 100%;
-  height: 400px;
-  background-color: var(--color-image-mask);
-  z-index: 2;
 }
 
-@keyframes move {
-  0% {
-    transform: translateY(0);
+.section-meta {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* 窄窗口下改为纵向堆叠，避免两个快捷卡被压扁 */
+@media (max-width: 1080px) {
+  .hero-row {
+    flex-direction: column;
   }
-  100% {
-    transform: translateY(-50%);
+
+  .hero-card,
+  .hero-skeleton {
+    flex: none;
+    width: 100%;
+    height: 200px;
   }
 }
 </style>

@@ -1,19 +1,28 @@
 <template>
-  <div v-if="currentMusic.length">
-    <div class="text-lv1">正在播放</div>
-    <div>
-      <music-table :data="currentMusic"></music-table>
-    </div>
-    <div class="text-lv1">即将播放</div>
-    <div>
-      <music-table :data="showPlayList"></music-table>
-    </div>
-  </div>
   <div
-    v-else
-    class="text-[var(--color-text-muted)] text-center py-16">
-    播放列表还是空的，去挑首歌吧
+    v-if="currentMusic.length"
+    class="cur-playlist">
+    <section class="cur-playlist__section">
+      <div class="cur-playlist__head">
+        <h3 class="cur-playlist__title">正在播放</h3>
+      </div>
+      <music-table :data="currentMusic"></music-table>
+    </section>
+    <section
+      v-if="showPlayList.length"
+      class="cur-playlist__section">
+      <div class="cur-playlist__head">
+        <h3 class="cur-playlist__title">即将播放</h3>
+        <span class="cur-playlist__count">{{ showPlayList.length }} 首</span>
+      </div>
+      <music-table :data="showPlayList"></music-table>
+    </section>
   </div>
+  <ea-empty
+    v-else
+    compact
+    title="播放列表还是空的"
+    description="去挑首歌吧" />
 </template>
 
 <script setup lang="ts">
@@ -49,4 +58,38 @@ const showPlayList = computed<MusicBaseInfo[]>(() => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.cur-playlist {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cur-playlist__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cur-playlist__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cur-playlist__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.cur-playlist__count {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+</style>

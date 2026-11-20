@@ -33,52 +33,79 @@ const handleKeydown = (event: KeyboardEvent): void => {
 </script>
 
 <style scoped>
+/* 统一胶囊按钮：圆角、字号、过渡全部走设计 token；type/size 类名保持不变 */
 .ea-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   width: fit-content;
-  margin-bottom: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  gap: 0.25rem;
-  border-radius: 0.375rem;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
   cursor: pointer;
   user-select: none;
-  transition: all 300ms;
+  font-weight: 600;
+  color: var(--color-text);
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.ea-button:active {
+  transform: scale(0.97);
 }
 
 /* 按钮类型 */
-.primary {
-  background-color: var(--color-primary-bg);
-  color: var(--color-primary);
+.ea-button.primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
-.danger {
+.ea-button.primary:hover {
+  background-color: var(--color-primary);
+  filter: brightness(1.06);
+}
+
+.ea-button.danger {
   background-color: var(--color-danger-bg);
   color: var(--color-danger);
 }
 
-.info {
+.ea-button.danger:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--color-danger) 20%,
+    transparent
+  );
+}
+
+.ea-button.info {
   background-color: var(--color-secondary-bg);
   color: var(--color-text-muted);
 }
 
+.ea-button.info:hover {
+  background-color: var(--color-hover);
+  color: var(--color-text);
+}
+
 /* 按钮大小 */
-.small {
-  min-width: 60px;
-  height: 32px;
-  font-size: 14px;
+.ea-button.small {
+  height: 30px;
+  font-size: 0.8125rem;
 }
 
-.normal {
-  min-width: 80px;
+.ea-button.normal {
+  height: 34px;
+  font-size: 0.875rem;
+}
+
+.ea-button.large {
   height: 40px;
-  font-size: 16px;
-}
-
-.large {
-  min-width: 100px;
-  height: 48px;
-  font-size: 18px;
+  font-size: 0.9375rem;
+  padding: 0 20px;
 }
 </style>

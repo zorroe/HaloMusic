@@ -1,17 +1,30 @@
 <template>
-  <div class="flex items-end rounded-2xl w-1/2 relative overflow-hidden">
-    <img :src="bgImg" class="recommend" alt="私人FM背景" />
-    <div id="mask"></div>
-    <div class="ml-4 mb-4 text-7xl w-48 font-bold text-white z-50">私人FM</div>
-    <div class="flex-1"></div>
-    <icon-park
-      :icon="PlayOne"
-      fill="white"
-      theme="filled"
-      :size="24"
-      @click="handlePlayFm"
-      class="mr-4 mb-4 p-2 z-50 rounded-full transition-all text-white bg-white/20 hover:bg-white/40 active:scale-90"
-    ></icon-park>
+  <div class="personal-fm">
+    <img
+      :src="bgImg"
+      class="personal-fm__bg"
+      alt="私人FM背景" />
+    <span
+      class="personal-fm__shade"
+      aria-hidden="true"></span>
+    <div class="personal-fm__body">
+      <span class="personal-fm__eyebrow">私人 FM</span>
+      <span class="personal-fm__title">为你持续推荐</span>
+      <span class="personal-fm__meta">根据听歌口味随机播放，不限数量</span>
+      <div class="personal-fm__actions">
+        <button
+          type="button"
+          class="pill-btn personal-fm__play"
+          @click="handlePlayFm">
+          <icon-park
+            :icon="PlayOne"
+            :size="15"
+            theme="filled"
+            fill="currentColor" />
+          开始播放
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -59,33 +72,89 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.recommend {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* 尺寸由使用方（英雄区卡片）控制，这里只保证铺满并裁切 */
+.personal-fm {
+  position: relative;
+  display: flex;
   width: 100%;
-  animation: move 38s infinite;
-  animation-direction: alternate;
+  min-height: 168px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-secondary-bg);
+  color: var(--color-on-primary);
+}
+
+.personal-fm__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--motion-slow) var(--ease-standard);
+}
+
+.personal-fm:hover .personal-fm__bg {
+  transform: scale(1.04);
+}
+
+.personal-fm__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--color-mask) 94%, transparent) 0%,
+    color-mix(in srgb, var(--color-mask) 52%, transparent) 58%,
+    transparent 100%
+  );
+}
+
+.personal-fm__body {
+  position: relative;
   z-index: 1;
-}
-
-#mask {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 6px;
   width: 100%;
-  height: 400px;
-  background-color: var(--color-image-mask);
-  z-index: 2;
+  padding: 20px 22px;
 }
 
-@keyframes move {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-50%);
-  }
+.personal-fm__eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.86;
+}
+
+.personal-fm__title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.personal-fm__meta {
+  font-size: 13px;
+  color: color-mix(in srgb, var(--color-on-primary) 78%, transparent);
+}
+
+.personal-fm__actions {
+  margin-top: 10px;
+}
+
+/* 叠在图片上的主按钮：半透明白 + 模糊，深浅色主题都成立 */
+.personal-fm__play {
+  border-color: transparent;
+  background-color: color-mix(in srgb, var(--color-on-primary) 18%, transparent);
+  color: var(--color-on-primary);
+  backdrop-filter: blur(6px);
+}
+
+.personal-fm__play:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--color-on-primary) 30%,
+    transparent
+  );
 }
 </style>

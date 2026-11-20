@@ -157,17 +157,18 @@ onBeforeUnmount(() => {
 <style scoped>
 .ea-context-menu {
   position: fixed;
-  z-index: 9600;
+  /* 高于播放队列抽屉（9998/9999），保证抽屉里的列表也能看到菜单 */
+  z-index: 10000;
   min-width: 168px;
   max-width: 260px;
   max-height: 60vh;
   overflow-y: auto;
   padding: 6px;
   border: 1px solid var(--color-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background-color: var(--color-card-bg-strong);
   color: var(--color-text);
-  box-shadow: 0 12px 32px var(--color-shadow-strong);
+  box-shadow: var(--shadow-lg);
   user-select: none;
 }
 

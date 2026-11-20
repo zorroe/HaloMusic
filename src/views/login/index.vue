@@ -1,45 +1,65 @@
 <template>
-  <div class="flex flex-col items-center">
-    <div class="mt-8 font-bold text-2xl cursor-default">登录网易云账号</div>
-    <div class="relative w-48 h-48 mt-8">
-      <img
-        v-if="imgSrc"
-        :src="imgSrc"
-        class="w-48 h-48 opacity-0 rounded-2xl"
-        alt="登录二维码"
-        @load="addCls" />
-      <div
-        v-else
-        class="w-48 h-48 rounded-2xl bg-[var(--color-secondary-bg)] flex items-center justify-center">
-        <ea-loading
-          v-if="loading"
-          :size="28" />
-        <div
-          v-else
-          class="text-sm text-[var(--color-text-muted)]">
-          二维码加载失败
+  <div class="login-page">
+    <section class="login-card card-surface">
+      <div class="login-brand">
+        <img
+          class="login-logo"
+          src="/logo.svg"
+          alt="" />
+        <div class="login-brand__text">
+          <h1 class="login-title">登录 HaloMusic</h1>
+          <p class="login-subtitle">
+            使用网易云音乐 App 扫码登录，同步你的歌单与收藏
+          </p>
         </div>
       </div>
-    </div>
-    <div class="mt-4 text-base font-bold">
-      打开<span
-        class="text-[var(--color-primary)] cursor-pointer hover:underline"
-        @click="openUrl('https://music.163.com/#/download')"
-        >网易云音乐</span
-      >扫码登录
-    </div>
-    <div
-      v-if="tipMessage"
-      class="mt-2 text-sm text-[var(--color-text-muted)]">
-      {{ tipMessage }}
-    </div>
-    <ea-button
-      v-if="qrFailed"
-      type="primary"
-      class="mt-4"
-      @click="startLogin">
-      <div class="text-base font-bold">重新获取二维码</div>
-    </ea-button>
+
+      <div class="login-qr">
+        <img
+          v-if="imgSrc"
+          :src="imgSrc"
+          class="login-qr__img"
+          alt="登录二维码"
+          @load="addCls" />
+        <div
+          v-else
+          class="login-qr__placeholder">
+          <ea-loading
+            v-if="loading"
+            text="二维码加载中" />
+          <span
+            v-else
+            class="login-qr__failed">
+            二维码加载失败
+          </span>
+        </div>
+      </div>
+
+      <p
+        v-if="tipMessage"
+        class="login-tip">
+        {{ tipMessage }}
+      </p>
+
+      <button
+        v-if="qrFailed"
+        type="button"
+        class="pill-btn pill-btn--primary login-retry"
+        @click="startLogin">
+        重新获取二维码
+      </button>
+
+      <p class="login-help">
+        打开
+        <button
+          type="button"
+          class="login-link"
+          @click="openUrl('https://music.163.com/#/download')">
+          网易云音乐
+        </button>
+        App 扫码登录
+      </p>
+    </section>
   </div>
 </template>
 
@@ -185,8 +205,128 @@ onBeforeUnmount(clearTimer)
 </script>
 
 <style scoped>
-.gradual-appear {
+/* 登录页：窗口内居中的单卡片 */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: clamp(16px, 7vh, 72px) 0;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(420px, 100%);
+  padding: 28px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.login-logo {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+}
+
+.login-brand__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.login-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.login-subtitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.login-qr {
+  display: flex;
+  justify-content: center;
+}
+
+.login-qr__img,
+.login-qr__placeholder {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-lg);
+}
+
+.login-qr__img {
+  display: block;
+  object-fit: contain;
+  opacity: 0;
+}
+
+.login-qr__img.gradual-appear {
   opacity: 1;
-  transition: opacity var(--motion-slow) var(--ease-standard);
+  transition: opacity var(--motion-base) var(--ease-standard);
+}
+
+.login-qr__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: var(--color-secondary-bg);
+  color: var(--color-text-muted);
+}
+
+.login-qr__failed {
+  font-size: 0.8125rem;
+}
+
+.login-tip {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.login-retry {
+  align-self: center;
+}
+
+.login-help {
+  margin: 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.login-link {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-link:hover {
+  text-decoration: underline;
 }
 </style>

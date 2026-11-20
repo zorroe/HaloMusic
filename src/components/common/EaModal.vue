@@ -378,21 +378,23 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   background-color: var(--color-mask);
+  backdrop-filter: blur(2px);
   cursor: pointer;
 }
 
 .ea-modal-box {
   position: relative;
   z-index: 1;
+  width: min(440px, 92vw);
   min-width: 320px;
-  max-width: 88vw;
-  max-height: 80vh;
+  max-height: min(80vh, 720px);
   overflow: auto;
-  padding: 1.5rem;
-  border-radius: 1rem;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
   background-color: var(--color-card-bg-strong);
   color: var(--color-text);
-  box-shadow: 0 20px 40px var(--color-shadow-strong);
+  box-shadow: var(--shadow-lg);
   opacity: 0;
   transform: translateY(8px) scale(0.98);
 }
@@ -408,13 +410,14 @@ onBeforeUnmount(() => {
 }
 
 .ea-modal-content {
-  font-size: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
 }
 
 .ea-modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 10px;
+  margin-top: 22px;
 }
 </style>

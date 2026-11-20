@@ -1,58 +1,159 @@
 <template>
-  <div class="flex flex-col gap-4">
-    <ea-empty
-      v-if="!searchKey"
-      title="搜点什么吧"
-      description="在右上角搜索框输入关键词开始搜索" />
-    <!-- 结果区骨架：标题行 + 与歌曲行高一致的 5 行 -->
-    <div
-      v-else-if="loadingUI"
-      class="flex flex-col gap-4"
-      aria-busy="true">
-      <div class="flex items-center gap-3 my-2">
-        <ea-skeleton
-          variant="text"
-          width="12rem"
-          height="20px" />
-        <ea-skeleton
-          variant="text"
-          width="6rem"
-          height="20px" />
+  <div class="page">
+    <header class="page-head">
+      <div>
+        <h1 class="page-title">搜索</h1>
+        <p class="page-subtitle">
+          <template v-if="searchKey">“{{ searchKey }}”的搜索结果</template>
+          <template v-else>在顶部搜索框输入关键词，搜索歌曲、歌手、专辑、歌单与 MV</template>
+        </p>
       </div>
-      <ea-skeleton
-        v-for="index in 5"
-        :key="`skeleton-search-${index}`"
-        variant="row" />
-    </div>
+      <span
+        v-if="searchKey && !loadingUI && !searchFailed && !isEmpty"
+        class="muted result-total">
+        共 {{ totalCount }} 条结果
+      </span>
+    </header>
+
+    <!-- 最近搜索：初始 / 失败 / 无结果时出现，不打扰正常结果 -->
+    <section
+      v-if="showSearchHistory"
+      class="section"
+      aria-label="最近搜索">
+      <div class="section-head">
+        <h2 class="section-title">最近搜索</h2>
+        <button
+          type="button"
+          class="pill-btn history-clear"
+          @click="clearSearchHistory">
+          清空历史
+        </button>
+      </div>
+      <div class="chip-row">
+        <button
+          v-for="key in searchHistory"
+          :key="key"
+          type="button"
+          class="pill-btn history-chip"
+          :title="`重新搜索 ${key}`"
+          @click="handleSearchHistoryClick(key)">
+          {{ key }}
+        </button>
+      </div>
+    </section>
+
+    <!-- 未输入关键词 -->
+    <template v-if="!searchKey">
+      <ea-empty
+        title="开始搜索"
+        description="在顶部搜索框输入歌曲、歌手、专辑或歌单关键词" />
+    </template>
+
+    <!-- 加载中：类型 tab 骨架 + 列表行骨架 -->
+    <section
+      v-else-if="loadingUI"
+      class="section">
+      <div
+        class="tab-row"
+        aria-busy="true">
+        <ea-skeleton
+          v-for="index in 4"
+          :key="`skeleton-search-tab-${index}`"
+          variant="rect"
+          width="5.5rem"
+          height="34px"
+          radius="9999px" />
+      </div>
+      <div class="skeleton-list">
+        <ea-skeleton
+          v-for="index in 6"
+          :key="`skeleton-search-${index}`"
+          variant="row" />
+      </div>
+    </section>
+
     <ea-empty
       v-else-if="searchFailed"
       title="搜索失败"
       description="请检查网络后重试"
       action-text="重新搜索"
       @action="retrySearch" />
-    <ea-empty
-      v-else-if="isEmpty"
-      title="没有找到相关内容"
-      description="换个关键词试试" />
+
+    <template v-else-if="isEmpty">
+      <ea-empty
+        title="没有找到相关内容"
+        description="换个关键词试试" />
+    </template>
+
     <template v-else>
-      <div v-if="artists.length">
-        <div class="text-2xl my-2">
-          <span class="font-bold">{{ searchKey }}</span>
-          <span>相关歌手</span>
+      <!-- 结果类型 tab：只展示有数据的类型 -->
+      <div
+        class="tab-row"
+        role="tablist"
+        aria-label="搜索结果类型">
+        <button
+          v-for="tab in typeTabs"
+          :key="tab.key"
+          type="button"
+          role="tab"
+          class="pill-btn tab-pill"
+          :class="{ 'is-active': activeType === tab.key }"
+          :aria-selected="activeType === tab.key ? 'true' : 'false'"
+          @click="selectType(tab.key)">
+          {{ tab.label }}
+          <span class="tab-count">{{ tab.count }}</span>
+        </button>
+      </div>
+
+      <!-- 单曲 -->
+      <section
+        v-if="activeType === 'song'"
+        class="section">
+        <music-table
+          :data="songs"
+          :showCover="false"></music-table>
+        <div
+          v-show="songs.length < songCount"
+          class="load-more-row">
+          <button
+            type="button"
+            class="pill-btn"
+            :disabled="loadMoreLoading === 'song'"
+            @click="loadMore('song', songs.length)">
+            {{ loadMoreLoading === 'song' ? '加载中…' : '加载更多单曲' }}
+          </button>
         </div>
-        <div class="grid-cols-5 grid place-items-center gap-8 mt-4">
+      </section>
+
+      <!-- 歌手 -->
+      <section
+        v-else-if="activeType === 'artist'"
+        class="section">
+        <div class="grid-cards grid-cards--sm">
           <artist-cover
-            v-for="item in artists.slice(0, 5)"
+            v-for="item in artists"
             :key="item.id"
             :data="item"></artist-cover>
         </div>
-      </div>
-      <div v-if="playlists.length">
-        <div class="text-2xl my-2">
-          <span class="font-bold">{{ searchKey }}</span>
-          <span>相关歌单</span>
+      </section>
+
+      <!-- 专辑 -->
+      <section
+        v-else-if="activeType === 'album'"
+        class="section">
+        <div class="grid-cards">
+          <album-cover
+            v-for="item in albums"
+            :key="item.id"
+            :data="item"></album-cover>
         </div>
-        <div class="grid-cols-5 grid place-items-center gap-8 mt-4">
+      </section>
+
+      <!-- 歌单 -->
+      <section
+        v-else-if="activeType === 'playlist'"
+        class="section">
+        <div class="grid-cards">
           <play-list-cover
             v-for="item in playlists"
             :key="item.id"
@@ -60,87 +161,41 @@
         </div>
         <div
           v-show="playlists.length < playlistCount"
-          class="flex justify-center items-center">
-          <ea-button
-            type="info"
+          class="load-more-row">
+          <button
+            type="button"
+            class="pill-btn"
+            :disabled="loadMoreLoading === 'playlist'"
             @click="loadMore('playlist', playlists.length)">
-            <div class="text-lg font-bold">
-              {{ loadMoreLoading === 'playlist' ? '加载中…' : '加载更多歌单' }}
-            </div>
-          </ea-button>
+            {{ loadMoreLoading === 'playlist' ? '加载中…' : '加载更多歌单' }}
+          </button>
         </div>
-      </div>
-      <div v-if="songs.length">
-        <div class="text-2xl my-2">
-          <span class="font-bold">{{ searchKey }}</span>
-          <span>相关歌曲</span>
-        </div>
-        <music-table
-          :data="songs"
-          :showCover="false"></music-table>
-        <div
-          v-show="songs.length < songCount"
-          class="flex justify-center items-center">
-          <ea-button
-            type="info"
-            @click="loadMore('song', songs.length)">
-            <div class="text-lg font-bold">
-              {{ loadMoreLoading === 'song' ? '加载中…' : '加载更多歌曲' }}
-            </div>
-          </ea-button>
-        </div>
-      </div>
-      <div v-if="mvs.length">
-        <div class="text-2xl my-2">
-          <span class="font-bold">{{ searchKey }}</span>
-          <span>相关MV</span>
-        </div>
-        <div class="grid-cols-4 grid place-items-center gap-4">
+      </section>
+
+      <!-- MV -->
+      <section
+        v-else-if="activeType === 'mv'"
+        class="section">
+        <div class="grid-cards grid-cards--lg">
           <mv-cover
-            v-for="item in mvs.slice(0, 8)"
+            v-for="item in mvs"
             :key="item.id"
             :data="item"></mv-cover>
         </div>
-      </div>
-      <div v-if="userprofiles.length">
-        <div class="text-2xl my-2">
-          <span class="font-bold">{{ searchKey }}</span>
-          <span>相关用户</span>
-        </div>
-        <div class="grid-cols-5 grid place-items-center gap-4">
+      </section>
+
+      <!-- 用户 -->
+      <section
+        v-else-if="activeType === 'user'"
+        class="section">
+        <div class="grid-cards grid-cards--sm">
           <user-cover
-            v-for="item in userprofiles.slice(0, 5)"
+            v-for="item in userprofiles"
             :key="item.userId"
             :data="item"></user-cover>
         </div>
-      </div>
+      </section>
     </template>
-    <!-- 搜索历史：只在「没有可看结果」的状态下展示，不替换上面的空态组件 -->
-    <section
-      v-if="showSearchHistory"
-      class="search-history"
-      aria-label="最近搜索">
-      <div class="search-history__header">
-        <span class="search-history__title">最近搜索</span>
-        <button
-          type="button"
-          class="search-history__clear"
-          @click="clearSearchHistory">
-          清空历史
-        </button>
-      </div>
-      <div class="search-history__chips">
-        <button
-          v-for="key in searchHistory"
-          :key="key"
-          type="button"
-          class="search-history__chip"
-          :title="`重新搜索 ${key}`"
-          @click="handleSearchHistoryClick(key)">
-          {{ key }}
-        </button>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -154,9 +209,11 @@ import { isCanceledError } from '@/utils/request'
 import type { MusicBaseInfo } from '@/types/musicRel'
 import type { PlayListBaseInfo } from '@/types/playListRel'
 import type { ArtistBaseInfo } from '@/types/artistRel'
+import type { AlbumBaseInfo } from '@/types/albumRel'
 import type { MvBaseInfo } from '@/types/mvRel'
 import type { UserProfile } from '@/types/userRel'
 import {
+  mapAlbum,
   mapArtist,
   mapMv,
   mapPlayList,
@@ -213,6 +270,9 @@ const songs = computed<MusicBaseInfo[]>(() =>
 const playlists = computed<PlayListBaseInfo[]>(() =>
   (result.value.playlist?.s ?? []).map(mapPlayList)
 )
+const albums = computed<AlbumBaseInfo[]>(() =>
+  (result.value.album?.s ?? []).map(mapAlbum)
+)
 const mvs = computed<MvBaseInfo[]>(() =>
   (result.value.mv?.s ?? []).map(mapMv)
 )
@@ -224,6 +284,50 @@ const userprofiles = computed<UserProfile[]>(() =>
 
 const songCount = computed(() => result.value.song?.count ?? 0)
 const playlistCount = computed(() => result.value.playlist?.count ?? 0)
+const artistCount = computed(() => result.value.artist?.count ?? 0)
+const albumCount = computed(() => result.value.album?.count ?? 0)
+const mvCount = computed(() => result.value.mv?.count ?? 0)
+const userCount = computed(() => result.value.userprofile?.count ?? 0)
+
+/* --------------------------------------------------------------------------
+ * 结果类型 tab：只展示有数据的类型；结果变化导致当前类型消失时自动切到第一个
+ * ------------------------------------------------------------------------ */
+type ResultTabKey = 'song' | 'artist' | 'album' | 'playlist' | 'mv' | 'user'
+
+interface ResultTab {
+  key: ResultTabKey
+  label: string
+  count: number
+}
+
+const typeTabs = computed<ResultTab[]>(() => {
+  const all: ResultTab[] = [
+    { key: 'song', label: '单曲', count: songCount.value },
+    { key: 'artist', label: '歌手', count: artistCount.value },
+    { key: 'album', label: '专辑', count: albumCount.value },
+    { key: 'playlist', label: '歌单', count: playlistCount.value },
+    { key: 'mv', label: 'MV', count: mvCount.value },
+    { key: 'user', label: '用户', count: userCount.value },
+  ]
+  return all.filter(tab => tab.count > 0)
+})
+
+const totalCount = computed(() =>
+  typeTabs.value.reduce((total, tab) => total + tab.count, 0)
+)
+
+const activeType = ref<ResultTabKey>('song')
+
+/** 切换结果类型（tab 点击） */
+const selectType = (key: ResultTabKey) => {
+  activeType.value = key
+}
+
+watch(typeTabs, tabs => {
+  if (!tabs.some(tab => tab.key === activeType.value)) {
+    activeType.value = tabs[0]?.key ?? 'song'
+  }
+})
 
 const isEmpty = computed(() => {
   const sections = result.value
@@ -320,6 +424,7 @@ const handleSearchHistoryClick = (key: string) => {
 const runSearch = async () => {
   const key = searchStore.searchKey
   if (!key) return
+  searchPending.value = false
   addSearchHistory(key)
   searching.value = true
   searchFailed.value = false
@@ -358,6 +463,7 @@ const enqueueSearch = () => {
 /** 错误态「重新搜索」：复用串行队列再跑一次当前关键词 */
 const retrySearch = () => {
   searchFailed.value = false
+  searchPending.value = true
   enqueueSearch()
 }
 
@@ -402,69 +508,70 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.search-history {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px 4px 8px;
-  border-top: 1px solid var(--color-border);
-}
-
-.search-history__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.search-history__title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text-muted);
-}
-
-.search-history__clear {
-  padding: 2px 4px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--color-text-subtle);
-  font-size: 13px;
-  cursor: pointer;
-  transition: color var(--motion-fast) var(--ease-standard);
-}
-
-.search-history__clear:hover {
-  color: var(--color-text);
-}
-
-.search-history__chips {
+/* 结果类型 / 分类胶囊 tab 行 */
+.tab-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.search-history__chip {
-  max-width: 100%;
-  padding: 5px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 9999px;
-  background-color: var(--color-secondary-bg);
-  color: var(--color-text);
-  font-size: 14px;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background-color var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+.tab-pill {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
 }
 
-.search-history__chip:hover {
-  border-color: var(--color-primary);
+.tab-pill.is-active {
   background-color: var(--color-primary-bg);
+  border-color: transparent;
   color: var(--color-primary);
+}
+
+.tab-count {
+  margin-left: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.72;
+}
+
+/* 最近搜索 chips */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-chip {
+  max-width: 100%;
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.history-clear {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.result-total {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.load-more-row {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 </style>

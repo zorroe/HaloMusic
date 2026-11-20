@@ -3,24 +3,34 @@
     长列表（>80 首）自动走窗口化渲染，短列表保持整表渲染；
     行渲染只有一份，通过 EaVirtualList 的默认插槽复用。
   -->
-  <ea-virtual-list
-    :items="props.data"
-    :item-height="ROW_HEIGHT"
-    :threshold="VIRTUAL_THRESHOLD">
-    <template #default="{ item }">
-      <div
-        class="music-row flex items-center rounded h-16 hover:bg-[var(--color-hover)] gap-4 group"
-        :class="{ playing: item.id == curMusicId }"
-        @contextmenu.prevent="handleContextMenu($event, item)"
-        @dblclick="handlePlay(item)">
-        <lmg
-          v-if="props.showCover"
-          :src="item.picUrl"
-          :width="100"
-          :height="100"
-          class="w-12 h-12 rounded" />
-        <div class="flex flex-col flex-grow justify-center px-2 min-w-0">
-          <div class="flex items-center gap-2 min-w-0">
+  <div class="music-table">
+    <div
+      v-if="props.data.length"
+      class="music-table__head">
+      <span class="music-col music-col--index">#</span>
+      <span
+        v-if="props.showCover"
+        class="music-col music-col--cover"
+        aria-hidden="true"></span>
+      <span class="music-col music-col--main">歌曲</span>
+      <span class="music-col music-col--album">专辑</span>
+      <span
+        class="music-col music-col--like"
+        aria-hidden="true"></span>
+      <span class="music-col music-col--duration">时长</span>
+    </div>
+
+    <ea-virtual-list
+      :items="props.data"
+      :item-height="ROW_HEIGHT"
+      :threshold="VIRTUAL_THRESHOLD">
+      <template #default="{ item, index }">
+        <div
+          class="music-row group"
+          :class="{ playing: item.id == curMusicId }"
+          @contextmenu.prevent="handleContextMenu($event, item)"
+          @dblclick="handlePlay(item)">
+          <span class="music-col music-col--index">
             <span
               v-if="item.id == curMusicId"
               class="music-bars"
@@ -30,45 +40,66 @@
               <i class="music-bar"></i>
               <i class="music-bar"></i>
             </span>
-            <div class="font-bold cursor-default truncate min-w-0">
+            <span
+              v-else
+              class="music-row__index"
+              >{{ index + 1 }}</span
+            >
+          </span>
+          <span
+            v-if="props.showCover"
+            class="music-col music-col--cover">
+            <lmg
+              :src="item.picUrl"
+              :width="80"
+              :height="80"
+              class="music-row__cover" />
+          </span>
+          <div class="music-col music-col--main">
+            <div
+              class="music-row__name"
+              :title="item.name">
               {{ item.name }}
             </div>
+            <div class="music-row__artists">
+              <span
+                v-for="singer in item.singers"
+                :key="singer.id"
+                class="ea-link"
+                @click.stop="routeTo(`/artist/${singer.id}`)"
+                >{{ singer.name }}</span
+              >
+            </div>
           </div>
-          <div class="flex gap-1 text-sm">
+          <div class="music-col music-col--album">
             <span
-              v-for="singer in item.singers"
-              :key="singer.id"
-              class="ea-link"
-              @click.stop="routeTo(`/artist/${singer.id}`)"
-              >{{ singer.name }}</span
+              class="music-row__album-link"
+              :title="item.album?.name"
+              @click.stop="routeTo(`/album/${item.album?.id}`)"
+              >{{ item.album?.name }}</span
             >
           </div>
+          <span class="music-col music-col--like">
+            <icon-park
+              :icon="Like"
+              :theme="liked(item.id) ? 'filled' : 'outline'"
+              :size="16"
+              class="music-row__like"
+              :class="{
+                'is-liked': liked(item.id),
+                'heart-pop': isLikePopping(item.id),
+              }"
+              :title="liked(item.id) ? '取消喜欢' : '喜欢'"
+              @click.stop="handleLikeMusic(item)"
+              @animationend="handleLikePopEnd(item.id)" />
+          </span>
+          <span class="music-col music-col--duration">
+            {{ displayDuration(item.duration) }}
+          </span>
         </div>
-        <div class="w-1/3 text-base cursor-pointer truncate">
-          <span
-            class="hover:underline"
-            @click.stop="routeTo(`/album/${item.album?.id}`)"
-            >{{ item.album?.name }}</span
-          >
-        </div>
-        <icon-park
-          :icon="Like"
-          :theme="liked(item.id) ? 'filled' : 'outline'"
-          :size="16"
-          class="subscribe-icon btn-animation"
-          :class="{
-            'no-liked': !liked(item.id),
-            'heart-pop': isLikePopping(item.id),
-          }"
-          :title="liked(item.id) ? '取消喜欢' : '喜欢'"
-          @click.stop="handleLikeMusic(item)"
-          @animationend="handleLikePopEnd(item.id)" />
-        <div class="flex w-12 text-base justify-end">
-          {{ displayDuration(item.duration) }}
-        </div>
-      </div>
-    </template>
-  </ea-virtual-list>
+      </template>
+    </ea-virtual-list>
+  </div>
 
   <ea-context-menu
     :items="contextMenuItems"
@@ -107,8 +138,8 @@ const props = withDefaults(defineProps<Props>(), {
   showCover: true,
 })
 
-/** 行高（px）：必须与行 DOM 的 h-16 一致，虚拟列表按此计算窗口 */
-const ROW_HEIGHT = 64
+/** 行高（px）：必须与行的 CSS 高度一致，虚拟列表按此计算窗口 */
+const ROW_HEIGHT = 52
 /** 超过该行数才启用窗口化，短列表保持整表渲染 */
 const VIRTUAL_THRESHOLD = 80
 
@@ -239,12 +270,6 @@ const handleContextMenuSelect = (key: string) => {
 }
 
 /**
- * 下一首播放：把这首歌插入当前播放队列的下一首，不打断正在播放的歌。
- * 播放器 store 暂未提供「插队」公开方法，这里用公开的 playlist / current / playByIndex 组合：
- * - 队列为空（无当前曲）时没有「下一首」的概念，直接播放；
- * - 已在队列中的歌先摘出来再插到当前曲之后，避免重复。
- */
-/**
  * 「下一首播放」：优先走 store 的 insertNext（会持久化队列、重置随机池）；
  * 队列为空时没有「下一首」概念，插入后直接播放。
  */
@@ -310,28 +335,183 @@ const copySongLink = async (music: MusicBaseInfo) => {
 </script>
 
 <style scoped>
-.subscribe-icon {
+/* ===========================================================================
+ * 歌曲表格：表头 + 紧凑行（52px）+ 当前播放高亮
+ * 列宽类在表头与行之间共用，保证列对齐
+ * ========================================================================= */
+.music-table {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.music-table__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.music-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.music-row:hover {
+  background-color: var(--color-hover);
+}
+
+/* 当前播放行：主色底 + 主色文字（全局 .playing 已有同款语义，这里再显式兜底） */
+.music-row.playing {
+  background-color: var(--color-primary-bg);
   color: var(--color-primary);
-  padding: 0.25rem;
-  border-radius: 9999px;
+}
+
+/* 列宽 */
+.music-col {
+  min-width: 0;
+}
+
+.music-col--index {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: none;
+  width: 28px;
+  font-size: 0.75rem;
+  color: var(--color-text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+.music-col--cover {
+  flex: none;
+  width: 40px;
+}
+
+.music-col--main {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.music-col--album {
+  flex: 0 1 26%;
+  overflow: hidden;
+}
+
+.music-col--like {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+}
+
+.music-col--duration {
+  flex: none;
+  width: 52px;
+  text-align: right;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 行内容 */
+.music-row__index {
+  line-height: 1;
+}
+
+.music-row__cover {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.music-row__name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.music-row__artists {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+.music-row__artists .ea-link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.music-row__artists .ea-link:hover {
+  color: var(--color-primary);
+}
+
+.music-row__album-link {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.music-row__album-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/* 喜欢：未喜欢时默认低调且不可误点，hover 行才显现；已喜欢常亮 */
+.music-row__like {
+  color: var(--color-primary);
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition: opacity var(--motion-fast) var(--ease-standard);
+}
+
+.music-row:hover .music-row__like {
+  opacity: 0.6;
+  pointer-events: auto;
+}
+
+.music-row__like:hover,
+.music-row__like.is-liked {
+  opacity: 1;
+}
+
+.music-row__like.is-liked {
+  pointer-events: auto;
 }
 
 /* 喜欢切换成功后的心跳反馈，animationend 后由脚本移除 class */
 .heart-pop {
   animation: halo-heart-pop var(--motion-slow) var(--ease-spring) both;
-}
-
-.no-liked {
-  visibility: hidden;
-}
-
-.group:hover .no-liked {
-  visibility: visible;
-}
-
-/* 行 hover：只过渡背景色，不做位移，避免牵动布局 */
-.music-row {
-  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 /* 当前播放行的 3 根动感音条 */
@@ -363,5 +543,18 @@ const copySongLink = async (music: MusicBaseInfo) => {
 /* 暂停时音条静止，恢复播放后从当前相位继续摆动 */
 .music-bars.is-paused .music-bar {
   animation-play-state: paused;
+}
+
+/* 窄窗口 / 窄容器（播放队列抽屉）下隐藏专辑列，保证歌曲名与歌手不被压缩 */
+@media (max-width: 900px) {
+  .music-col--album {
+    display: none;
+  }
+}
+
+@container (max-width: 680px) {
+  .music-col--album {
+    display: none;
+  }
 }
 </style>

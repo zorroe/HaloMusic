@@ -68,27 +68,35 @@ watch(displaySrc, () => {
 </script>
 
 <style scoped>
+/* 懒加载图片：未加载完成前保持透明，加载完成后按 token 时长淡入 */
 .lmg {
   opacity: 0;
-  transition: all 300ms linear;
+  transition: opacity var(--motion-base) var(--ease-standard);
 }
 
 .lmg.gradual-appear {
   opacity: 1;
 }
 
-.lmg.gradual-appear:active {
-  transform: scale(0.95);
-}
-
+/* 失败 / 空地址统一用弱化表面兜底，避免出现浏览器裂图 */
 .lmg--error,
 .lmg--placeholder {
   opacity: 1;
   background-color: var(--color-secondary-bg);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23bbbbbb'%3E%3Cpath d='M12 3v10.55A4 4 0 1014 17V7h4V3h-6z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 40%;
+}
+
+.lmg--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lmg--placeholder::after {
+  content: '♪';
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-subtle);
+  opacity: 0.72;
 }
 
 .lmg--error {

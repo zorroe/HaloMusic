@@ -1,22 +1,5 @@
 <template>
   <div class="footer-root">
-    <div class="progress-bar">
-      <vue-slider
-        v-model="progress"
-        :min="0"
-        :max="sliderMax"
-        :interval="1"
-        :lazy="true"
-        :drag-on-click="true"
-        :duration="0"
-        :disabled="playerStore.duration <= 0"
-        :tooltip-formatter="formatDuration"
-        :height="2"
-        :dot-size="12"
-      >
-      </vue-slider>
-    </div>
-
     <div class="ea-footer">
       <div class="footer-song">
         <img
@@ -40,31 +23,63 @@
         </div>
       </div>
 
-      <div class="footer-controls">
-        <icon-park
-          :icon="LeftOne"
-          :size="20"
-          theme="filled"
-          fill="currentColor"
-          class="footer-icon btn-animation"
-          @click="playerStore.playPrev"
-        ></icon-park>
-        <icon-park
-          :icon="playIcon"
-          :size="36"
-          theme="filled"
-          fill="currentColor"
-          class="footer-icon btn-animation"
-          @click="playerStore.togglePlay"
-        ></icon-park>
-        <icon-park
-          :icon="RightOne"
-          :size="20"
-          theme="filled"
-          fill="currentColor"
-          class="footer-icon btn-animation"
-          @click="playerStore.playNext"
-        ></icon-park>
+      <div class="footer-center">
+        <div class="footer-controls">
+          <icon-park
+            :icon="LeftOne"
+            :size="18"
+            theme="filled"
+            fill="currentColor"
+            class="footer-icon"
+            title="上一首"
+            @click="playerStore.playPrev"
+          ></icon-park>
+          <button
+            type="button"
+            class="footer-play"
+            :title="playerStore.paused ? '播放' : '暂停'"
+            @click="playerStore.togglePlay"
+          >
+            <icon-park
+              :icon="playIcon"
+              :size="20"
+              theme="filled"
+              fill="currentColor"
+            ></icon-park>
+          </button>
+          <icon-park
+            :icon="RightOne"
+            :size="18"
+            theme="filled"
+            fill="currentColor"
+            class="footer-icon"
+            title="下一首"
+            @click="playerStore.playNext"
+          ></icon-park>
+        </div>
+
+        <div class="footer-progress">
+          <span class="footer-time">{{
+            formatDuration(playerStore.currentTime)
+          }}</span>
+          <div class="footer-progress-bar">
+            <vue-slider
+              v-model="progress"
+              :min="0"
+              :max="sliderMax"
+              :interval="1"
+              :lazy="true"
+              :drag-on-click="true"
+              :duration="0"
+              :disabled="playerStore.duration <= 0"
+              :tooltip-formatter="formatDuration"
+              :height="2"
+              :dot-size="10"
+            >
+            </vue-slider>
+          </div>
+          <span class="footer-time">{{ formatDuration(playerStore.duration) }}</span>
+        </div>
       </div>
 
       <div class="footer-tools">
@@ -231,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   Check,
   Delete,
@@ -349,6 +364,21 @@ const changeDrawerStatus = (status: boolean) => {
   drawerShow.value = status
 }
 
+/**
+ * 侧边栏的「播放队列」入口通过 window 事件打开抽屉，
+ * 避免为了一个 UI 开关去改 store（与播放页定时面板同一思路）。
+ */
+const OPEN_QUEUE_EVENT = 'halo:open-queue'
+const handleOpenQueueEvent = () => changeDrawerStatus(true)
+
+onMounted(() => {
+  window.addEventListener(OPEN_QUEUE_EVENT, handleOpenQueueEvent)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(OPEN_QUEUE_EVENT, handleOpenQueueEvent)
+})
+
 const isCurrentSong = (music: SongDetail): boolean =>
   String(music?.id) === String(song.value?.id ?? '')
 
@@ -388,58 +418,59 @@ const handleSelectQuality = async (level: SongLevel) => {
 </script>
 
 <style scoped>
+/* ===========================================================================
+ * 底部播放条（72px，三栏：歌曲信息 / 控制与进度 / 工具）
+ * ========================================================================= */
 .footer-root {
   display: flex;
   flex-direction: column;
   width: 100%;
+  height: 100%;
   color: var(--color-text);
 }
 
-.progress-bar {
-  margin-top: -6px;
-  margin-bottom: -6px;
-  top: 0;
-  width: 100%;
-  position: fixed;
-  z-index: 9001;
-}
-
 .ea-footer {
-  height: 64px;
-  border-radius: 0 0 4px 4px;
-  padding: 0 32px;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
   align-items: center;
+  gap: 20px;
+  height: 100%;
+  padding: 0 20px;
 }
 
+/* ---------------- 左：歌曲信息 ---------------- */
 .footer-song {
   display: flex;
   align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .footer-cover {
-  width: 40px;
-  height: 40px;
-  margin-right: 16px;
-  border-radius: 9999px;
-  cursor: pointer;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
   object-fit: cover;
+  cursor: pointer;
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.footer-cover:hover {
+  transform: scale(1.06);
 }
 
 .footer-song-info {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 144px;
+  gap: 3px;
+  min-width: 0;
 }
 
 .footer-song-name {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
-  width: 100%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -447,40 +478,108 @@ const handleSelectQuality = async (level: SongLevel) => {
 
 .footer-song-singers {
   display: flex;
-  gap: 8px;
-  font-size: 12px;
-  width: 100%;
+  gap: 6px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------------- 中：控制 + 进度 ---------------- */
+.footer-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .footer-controls {
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
-  flex-grow: 1;
-  gap: 16px;
-}
-
-.footer-tools {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .footer-icon {
-  padding: 4px;
-  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition:
     background-color var(--motion-fast) var(--ease-standard),
-    transform var(--motion-base) var(--ease-spring),
-    scale var(--motion-base) var(--ease-spring);
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-base) var(--ease-spring);
 }
 
 .footer-icon:hover {
   background-color: var(--color-hover);
+  color: var(--color-text);
+}
+
+.footer-icon:active {
+  transform: scale(0.92);
+}
+
+.footer-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--motion-base) var(--ease-spring),
+    filter var(--motion-fast) var(--ease-standard);
+}
+
+.footer-play:hover {
+  filter: brightness(1.08);
+  transform: scale(1.05);
+}
+
+.footer-play:active {
+  transform: scale(0.95);
+}
+
+.footer-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.footer-progress-bar {
+  flex: 1;
+  min-width: 0;
+}
+
+.footer-time {
+  flex: none;
+  min-width: 38px;
+  font-size: 0.6875rem;
+  color: var(--color-text-subtle);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* ---------------- 右：工具 ---------------- */
+.footer-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
 }
 
 .quality-trigger {
@@ -497,8 +596,10 @@ const handleSelectQuality = async (level: SongLevel) => {
   gap: 4px;
   border: 0;
   background-color: transparent;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   font-family: inherit;
+  font-size: 0.6875rem;
+  cursor: pointer;
 }
 
 .footer-timer.is-active {
@@ -506,41 +607,30 @@ const handleSelectQuality = async (level: SongLevel) => {
 }
 
 .footer-timer-text {
-  font-size: 12px;
+  font-size: 0.6875rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .footer-volume {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 8px;
-  width: 128px;
+  gap: 6px;
+  color: var(--color-text-muted);
 }
 
 .volume-bar {
   width: 84px;
 }
 
-/* 进度条 / 音量条 hover 时滑块圆点轻微放大（vue-slider 内部结构） */
-.progress-bar :deep(.vue-slider-dot-handle),
-.volume-bar :deep(.vue-slider-dot-handle) {
-  transition: transform var(--motion-fast) var(--ease-standard);
-}
-
-.progress-bar:hover :deep(.vue-slider-dot-handle),
-.volume-bar:hover :deep(.vue-slider-dot-handle) {
-  transform: scale(1.15);
-}
-
 /* ---------------- 播放队列抽屉 ---------------- */
 .playlist-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .playlist-summary {
@@ -550,101 +640,72 @@ const handleSelectQuality = async (level: SongLevel) => {
 }
 
 .playlist-title {
-  font-size: 18px;
+  font-size: 1rem;
   font-weight: 700;
 }
 
 .playlist-meta {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
 .playlist-clear {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
+  height: 28px;
+  padding: 0 12px;
   border: 1px solid var(--color-border);
-  background-color: var(--color-input-bg);
-  color: var(--color-text);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.75rem;
   cursor: pointer;
   transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .playlist-clear:hover:not(:disabled) {
   background-color: var(--color-hover);
+  color: var(--color-text);
 }
 
 .playlist-clear:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+}
+
+.playlist-empty {
+  padding: 32px 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
 }
 
 .playlist-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  padding: 6px 0;
 }
 
 .playlist-item {
   display: flex;
-  gap: 12px;
-  width: 100%;
-  height: 44px;
   align-items: center;
-  justify-content: space-between;
-  border-radius: 8px;
-  padding: 0 12px;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
   cursor: default;
   transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .playlist-item:hover {
-  background-color: var(--color-primary-bg);
-}
-
-.playlist-item.playing {
-  background-color: var(--color-primary-bg);
-  color: var(--color-primary);
-}
-
-/* 当前播放曲的动感音条（与 MusicTable 同一套 class，本文件独立作用域） */
-.music-bars {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 12px;
-}
-
-.music-bar {
-  width: 3px;
-  height: 12px;
-  border-radius: 1px;
-  background-color: currentColor;
-  transform-origin: bottom;
-  animation: halo-bar-bounce 0.9s var(--ease-in-out) infinite;
-}
-
-.music-bar:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.music-bar:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-/* 暂停时音条静止，恢复播放后从当前相位继续摆动 */
-.music-bars.is-paused .music-bar {
-  animation-play-state: paused;
+  background-color: var(--color-hover);
 }
 
 .playlist-index {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
   width: 20px;
+  flex: none;
   text-align: center;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-subtle);
+  font-variant-numeric: tabular-nums;
 }
 
 .playlist-main {
@@ -652,40 +713,40 @@ const handleSelectQuality = async (level: SongLevel) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .playlist-name {
-  font-size: 14px;
-  font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .playlist-singers {
   display: flex;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--color-text-muted);
+  gap: 6px;
   overflow: hidden;
   white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
 }
 
 .playlist-duration {
-  font-size: 12px;
-  color: var(--color-text-muted);
+  flex: none;
+  font-size: 0.6875rem;
+  color: var(--color-text-subtle);
   font-variant-numeric: tabular-nums;
 }
 
 .playlist-remove {
-  cursor: pointer;
+  flex: none;
   color: var(--color-text-subtle);
+  cursor: pointer;
   opacity: 0;
-  flex-shrink: 0;
-  transition:
-    opacity var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+  transition: opacity var(--motion-fast) var(--ease-standard);
 }
 
 .playlist-item:hover .playlist-remove {
@@ -696,54 +757,73 @@ const handleSelectQuality = async (level: SongLevel) => {
   color: var(--color-danger);
 }
 
-.playlist-empty {
+.fm-playing {
   padding: 32px 0;
   text-align: center;
-  font-size: 14px;
-  color: var(--color-text-subtle);
-}
-
-.fm-playing {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  min-height: 200px;
-  font-size: 16px;
+  font-size: 0.875rem;
   color: var(--color-text-muted);
 }
 
-/* ---------------- 音质选择 ---------------- */
+/* 当前播放行的音条 */
+.music-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.music-bar {
+  width: 2px;
+  background-color: var(--color-primary);
+  animation: halo-bar-bounce 0.9s ease-in-out infinite;
+}
+
+.music-bar:nth-child(1) {
+  animation-delay: -0.2s;
+}
+
+.music-bar:nth-child(2) {
+  animation-delay: -0.5s;
+}
+
+.music-bar:nth-child(3) {
+  animation-delay: -0.1s;
+}
+
+.music-bars.is-paused .music-bar {
+  animation-play-state: paused;
+  height: 4px;
+}
+
+/* ---------------- 音质选择弹窗 ---------------- */
 .quality-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 260px;
+  gap: 14px;
+  min-width: 280px;
 }
 
 .quality-title {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
-  margin-bottom: 4px;
 }
 
 .quality-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .quality-option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 0;
-  border-radius: 8px;
-  background-color: transparent;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--color-text);
-  font-size: 14px;
+  font-family: inherit;
   text-align: left;
   cursor: pointer;
   transition: background-color var(--motion-fast) var(--ease-standard);
@@ -754,18 +834,23 @@ const handleSelectQuality = async (level: SongLevel) => {
 }
 
 .quality-option.active {
-  color: var(--color-primary);
+  border-color: var(--color-primary);
   background-color: var(--color-primary-bg);
-  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.quality-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .quality-desc {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 0.6875rem;
   color: var(--color-text-subtle);
 }
 
 .quality-check {
-  flex-shrink: 0;
+  color: var(--color-primary);
 }
 </style>

@@ -5,275 +5,319 @@
     description="登录后即可查看你的音乐库"
     action-text="去登录"
     @action="routeTo('/login')" />
-  <!-- 音乐库整体骨架：头像 + 标题 + 我喜欢卡片 + 最近喜欢小行 + tab 栏 + 卡片网格 -->
+
+  <!-- 首屏骨架：个人信息卡 + 我喜欢 + 胶囊 tab + 卡片网格 -->
   <div
     v-else-if="!isLoaded"
-    class="flex flex-col w-full gap-4"
+    class="page"
     aria-busy="true">
-    <div class="flex gap-4 items-center">
+    <section class="card-surface profile-card profile-card--skeleton">
       <ea-skeleton
         variant="circle"
-        :width="40"
-        :height="40" />
-      <ea-skeleton
-        variant="rect"
-        width="18rem"
-        height="30px" />
-      <ea-skeleton
-        variant="circle"
-        :width="26"
-        :height="26" />
-    </div>
-    <div class="flex gap-4 items-start">
-      <ea-skeleton
-        variant="rect"
-        width="33%"
-        height="12rem"
-        radius="12px" />
-      <div class="grid grid-cols-3 gap-1 w-2/3">
-        <div
-          v-for="index in 12"
-          :key="`skeleton-like-${index}`"
-          class="flex items-center gap-2 py-1">
-          <ea-skeleton
-            variant="rect"
-            :width="32"
-            :height="32"
-            radius="4px" />
-          <div class="flex flex-col gap-1 flex-1 min-w-0">
-            <ea-skeleton
-              variant="text"
-              width="70%" />
-            <ea-skeleton
-              variant="text"
-              width="45%" />
-          </div>
-        </div>
+        :width="72"
+        :height="72" />
+      <div class="profile-body">
+        <ea-skeleton
+          variant="rect"
+          width="12rem"
+          height="22px" />
+        <ea-skeleton
+          variant="text"
+          width="16rem" />
+        <ea-skeleton
+          variant="text"
+          width="10rem" />
       </div>
-    </div>
-    <div class="me-tabs">
+    </section>
+    <section class="section">
+      <ea-skeleton
+        variant="rect"
+        height="168px"
+        radius="16px" />
+    </section>
+    <div class="tab-row">
       <ea-skeleton
         v-for="index in 5"
         :key="`skeleton-tab-${index}`"
-        variant="text"
-        width="5rem"
-        height="28px" />
+        variant="rect"
+        width="6rem"
+        height="32px"
+        radius="9999px" />
     </div>
-    <div class="grid-cols-5 grid gap-4">
+    <div class="grid-cards">
       <ea-skeleton
         v-for="index in 10"
         :key="`skeleton-card-${index}`"
-        variant="card"
-        width="12rem" />
+        variant="card" />
     </div>
   </div>
+
   <ea-empty
     v-else-if="loadFailed"
     title="音乐库加载失败"
     description="请检查网络后重试"
     action-text="重新加载"
     @action="retryLoad" />
+
   <div
     v-else
-    class="flex flex-col w-full gap-4">
-    <div class="flex gap-4 items-center">
+    class="page">
+    <!-- 个人信息卡：头像 + 昵称 + 统计 -->
+    <section class="card-surface profile-card">
       <lmg
-        class="w-10 h-10 rounded-full"
+        class="profile-avatar"
         :src="user.avatarUrl"
-        :width="60"
-        :height="60" />
-      <div class="font-bold text-3xl">{{ `${user.nickname ?? ''}的音乐库` }}</div>
-      <button
-        type="button"
-        class="refresh-btn"
-        title="刷新"
-        :disabled="isRotate"
-        @click="refreshMe">
-        <icon-park
-          :icon="Refresh"
-          :size="18"
-          :class="{ rotating: isRotate }" />
-      </button>
-    </div>
-    <div class="flex gap-4 items-center">
-      <div
-        class="items-between w-1/3 h-48 like-card cursor-pointer">
-        <div
-          class="flex-grow text-sm whitespace-pre-wrap"
-          @click="routeTo(`/playlist/${likePlayListId}`)">
-          {{ randomLyric }}
-        </div>
-        <div class="flex justify-between items-center w-full">
-          <div
-            class="flex flex-col"
-            @click="routeTo(`/playlist/${likePlayListId}`)">
-            <div class="font-bold">我喜欢的音乐</div>
-            <div>{{ `共${likeCount}首` }}</div>
-          </div>
-          <icon-park
-            :icon="PlayOne"
-            fill="white"
-            theme="filled"
-            :size="24"
-            title="播放我喜欢的音乐"
-            class="btn-play"
-            @click.stop="handlePlayLikeList"></icon-park>
-        </div>
-      </div>
-      <div
-        v-if="likeList.length"
-        class="grid-cols-3 grid place-content-center w-2/3 h-48 rounded gap-1">
-        <div
-          v-for="item in likeList.slice(0, 12)"
-          :key="item.id"
-          class="rounded-md like-music flex items-center cursor-pointer py-1"
-          @dblclick="handlePlayOne(item)">
-          <lmg
-            class="w-8 h-8 rounded"
-            :src="item.picUrl"
-            :width="60"
-            :height="60" />
-          <div class="flex flex-col justify-center px-2 min-w-0">
-            <div
-              class="font-bold text-sm overflow-hidden text-ellipsis whitespace-nowrap">
-              {{ item.name }}
-            </div>
-            <div class="text-xs flex gap-1 text-[var(--color-text-muted)] active:text-[var(--color-text)]">
-              <span
-                v-for="ar in item.singers"
-                :key="ar.id"
-                class="hover:underline"
-                @click.stop="routeTo(`/artist/${ar.id}`)">
-                {{ ar.name }}</span
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        v-else
-        class="w-2/3 h-48 flex items-center justify-center">
-        <ea-empty
-          compact
-          title="喜欢列表还是空的"
-          description="在歌曲上点红心，喜欢就会出现在这里" />
-      </div>
-    </div>
-    <div class="me-tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        type="button"
-        :class="{ 'me-tab-active': activeTab === tab.id }"
-        class="me-tab font-bold text-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-        @click="handleClickTab(tab.id)">
-        {{ tab.name }}
-      </button>
-    </div>
-    <div
-      v-if="tabLoading"
-      aria-busy="true">
-      <div
-        v-if="activeTab === '5'"
-        class="flex flex-col">
-        <ea-skeleton
-          v-for="index in 10"
-          :key="`skeleton-history-${index}`"
-          variant="row" />
-      </div>
-      <div
-        v-else
-        class="grid-cols-5 grid gap-4">
-        <ea-skeleton
-          v-for="index in 10"
-          :key="`skeleton-tab-card-${index}`"
-          variant="card"
-          width="12rem" />
-      </div>
-    </div>
-    <template v-else>
-      <div v-show="activeTab === '1'">
-        <div
-          v-if="myPlayList.length"
-          class="grid-cols-5 grid gap-4">
-          <play-list-cover
-            v-for="item in myPlayList"
-            :key="item.id"
-            :data="item"></play-list-cover>
-        </div>
-        <ea-empty
-          v-else
-          compact
-          title="还没有歌单"
-          description="去发现页收藏一些喜欢的歌单吧" />
-      </div>
-      <div v-show="activeTab === '2'">
-        <div
-          v-if="albumSubList.length"
-          class="grid-cols-5 grid place-items-center gap-4">
-          <album-cover
-            v-for="item in albumSubList"
-            :key="item.id"
-            :data="item"></album-cover>
-        </div>
-        <ea-empty
-          v-else
-          compact
-          title="还没有收藏的专辑"
-          description="在专辑页点亮收藏，就会出现在这里" />
-      </div>
-      <div v-show="activeTab === '3'">
-        <div
-          v-if="artistSubList.length"
-          class="grid-cols-6 grid place-items-center gap-3">
-          <artist-cover
-            v-for="item in artistSubList"
-            :key="item.id"
-            :data="item"></artist-cover>
-        </div>
-        <ea-empty
-          v-else
-          compact
-          title="还没有关注的艺人"
-          description="在歌手页点击关注，就会出现在这里" />
-      </div>
-      <div v-show="activeTab === '4'">
-        <div
-          v-if="mvSubList.length"
-          class="flex flex-wrap gap-4">
-          <mv-cover
-            v-for="item in mvSubList"
-            :key="item.id"
-            :data="item"></mv-cover>
-        </div>
-        <ea-empty
-          v-else
-          compact
-          title="还没有收藏的 MV"
-          description="在 MV 页点亮收藏，就会出现在这里" />
-      </div>
-      <div v-show="activeTab === '5'">
-        <div class="me-tabs">
+        :width="144"
+        :height="144" />
+      <div class="profile-body">
+        <div class="profile-head">
+          <h1 class="profile-name">{{ user.nickname || '音乐爱好者' }}</h1>
           <button
-            v-for="tab in sortTabs"
-            :key="tab.id"
             type="button"
-            :class="{ 'me-tab-active': historyType === tab.id }"
-            class="me-tab font-bold text-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-            @click="handleClickSortTab(tab.id)">
-            {{ tab.name }}
+            class="pill-btn pill-btn--icon"
+            title="刷新音乐库"
+            :disabled="isRotate"
+            @click="refreshMe">
+            <icon-park
+              :icon="Refresh"
+              :size="16"
+              :class="{ rotating: isRotate }" />
           </button>
         </div>
-        <music-table
-          v-if="musicHistoryData.length"
-          :data="musicHistoryData"></music-table>
-        <ea-empty
-          v-else
-          compact
-          title="还没有听歌记录"
-          description="多听几首歌再来看看吧" />
+        <p class="profile-signature">{{ signatureText }}</p>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-stat__value">{{ myPlayList.length }}</span>
+            <span class="profile-stat__label">歌单</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat__value">{{ displayCount(likeCount) }}</span>
+            <span class="profile-stat__label">喜欢</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat__value">{{ followCount }}</span>
+            <span class="profile-stat__label">关注</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-stat__value">{{ fansCount }}</span>
+            <span class="profile-stat__label">粉丝</span>
+          </div>
+        </div>
       </div>
-    </template>
+    </section>
+
+    <!-- 我喜欢的音乐 -->
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">我喜欢的音乐</h2>
+        <button
+          type="button"
+          class="pill-btn"
+          @click="handlePlayLikeList">
+          <icon-park
+            :icon="PlayOne"
+            :size="15"
+            theme="filled"
+            fill="currentColor" />
+          播放全部
+        </button>
+      </div>
+
+      <div
+        v-if="likeList.length"
+        class="liked-panel">
+        <div class="liked-quote">
+          <p class="liked-quote__text">{{ randomLyric }}</p>
+          <div class="liked-quote__foot">
+            <div class="liked-quote__meta">
+              <span class="liked-quote__title">我喜欢的音乐</span>
+              <span class="liked-quote__count">{{ likeCount }} 首</span>
+            </div>
+            <button
+              type="button"
+              class="pill-btn liked-quote__play"
+              @click.stop="handlePlayLikeList">
+              <icon-park
+                :icon="PlayOne"
+                :size="14"
+                theme="filled"
+                fill="currentColor" />
+              播放
+            </button>
+          </div>
+        </div>
+
+        <div class="liked-list">
+          <div
+            v-for="item in likeList.slice(0, 12)"
+            :key="item.id"
+            class="liked-track"
+            @dblclick="handlePlayOne(item)">
+            <lmg
+              class="liked-track__cover"
+              :src="item.picUrl"
+              :width="60"
+              :height="60" />
+            <div class="liked-track__body">
+              <div
+                class="liked-track__name"
+                :title="item.name">
+                {{ item.name }}
+              </div>
+              <div class="liked-track__artists">
+                <span
+                  v-for="ar in item.singers"
+                  :key="ar.id"
+                  class="ea-link"
+                  @click.stop="routeTo(`/artist/${ar.id}`)">
+                  {{ ar.name }}</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ea-empty
+        v-else
+        compact
+        title="喜欢列表还是空的"
+        description="在歌曲上点红心，喜欢就会出现在这里" />
+    </section>
+
+    <!-- 音乐库分类：胶囊 tab + 卡片网格 -->
+    <section class="section">
+      <div
+        class="tab-row"
+        role="tablist"
+        aria-label="音乐库分类">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          class="pill-btn tab-pill"
+          :class="{ 'is-active': activeTab === tab.id }"
+          :aria-selected="activeTab === tab.id ? 'true' : 'false'"
+          @click="handleClickTab(tab.id)">
+          {{ tab.name }}
+        </button>
+      </div>
+
+      <div
+        v-if="tabLoading"
+        aria-busy="true">
+        <div
+          v-if="activeTab === '5'"
+          class="skeleton-rows">
+          <ea-skeleton
+            v-for="index in 6"
+            :key="`skeleton-history-${index}`"
+            variant="row" />
+        </div>
+        <div
+          v-else
+          class="grid-cards">
+          <ea-skeleton
+            v-for="index in 8"
+            :key="`skeleton-tab-card-${index}`"
+            variant="card" />
+        </div>
+      </div>
+
+      <template v-else>
+        <div v-show="activeTab === '1'">
+          <div
+            v-if="myPlayList.length"
+            class="grid-cards">
+            <play-list-cover
+              v-for="item in myPlayList"
+              :key="item.id"
+              :data="item"></play-list-cover>
+          </div>
+          <ea-empty
+            v-else
+            compact
+            title="还没有歌单"
+            description="去发现页收藏一些喜欢的歌单吧" />
+        </div>
+
+        <div v-show="activeTab === '2'">
+          <div
+            v-if="albumSubList.length"
+            class="grid-cards">
+            <album-cover
+              v-for="item in albumSubList"
+              :key="item.id"
+              :data="item"></album-cover>
+          </div>
+          <ea-empty
+            v-else
+            compact
+            title="还没有收藏的专辑"
+            description="在专辑页点亮收藏，就会出现在这里" />
+        </div>
+
+        <div v-show="activeTab === '3'">
+          <div
+            v-if="artistSubList.length"
+            class="grid-cards grid-cards--sm">
+            <artist-cover
+              v-for="item in artistSubList"
+              :key="item.id"
+              :data="item"></artist-cover>
+          </div>
+          <ea-empty
+            v-else
+            compact
+            title="还没有关注的艺人"
+            description="在歌手页点击关注，就会出现在这里" />
+        </div>
+
+        <div v-show="activeTab === '4'">
+          <div
+            v-if="mvSubList.length"
+            class="grid-cards grid-cards--lg">
+            <mv-cover
+              v-for="item in mvSubList"
+              :key="item.id"
+              :data="item"></mv-cover>
+          </div>
+          <ea-empty
+            v-else
+            compact
+            title="还没有收藏的 MV"
+            description="在 MV 页点亮收藏，就会出现在这里" />
+        </div>
+
+        <div v-show="activeTab === '5'">
+          <div
+            class="tab-row tab-row--sub"
+            role="tablist"
+            aria-label="听歌排行范围">
+            <button
+              v-for="tab in sortTabs"
+              :key="tab.id"
+              type="button"
+              role="tab"
+              class="pill-btn tab-pill tab-pill--sm"
+              :class="{ 'is-active': historyType === tab.id }"
+              :aria-selected="historyType === tab.id ? 'true' : 'false'"
+              @click="handleClickSortTab(tab.id)">
+              {{ tab.name }}
+            </button>
+          </div>
+          <music-table
+            v-if="musicHistoryData.length"
+            :data="musicHistoryData"></music-table>
+          <ea-empty
+            v-else
+            compact
+            title="还没有听歌记录"
+            description="多听几首歌再来看看吧" />
+        </div>
+      </template>
+    </section>
   </div>
 </template>
 
@@ -354,6 +398,31 @@ const user = computed<Partial<UserProfile>>(() => {
 })
 
 const notLoggedIn = computed(() => !user.value.userId)
+
+const signatureText = computed(() => {
+  const signature = user.value.signature
+  if (typeof signature === 'string' && signature.trim()) return signature.trim()
+  return '在你的音乐库里管理歌单、收藏与听歌排行'
+})
+
+/** 未知/非法数值统一显示占位符，避免出现 NaN */
+const readCount = (value: unknown): string => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return '—'
+  }
+  return String(Math.round(value))
+}
+
+const followCount = computed(() => readCount(user.value.follows))
+const fansCount = computed(() => readCount(user.value.followeds))
+
+/** 计数展示：大于 1 万时折算为「x.x万」 */
+const displayCount = (value: number): string => {
+  const count = Number(value)
+  if (!Number.isFinite(count) || count < 0) return '0'
+  if (count >= 10000) return `${(count / 10000).toFixed(1)}万`
+  return String(Math.round(count))
+}
 
 const tabs = [
   { id: '1', name: '全部歌单' },
@@ -670,89 +739,281 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.btn-play {
-  transition:
-    transform var(--motion-base) var(--ease-spring),
-    background-color var(--motion-fast) var(--ease-standard);
-  background-color: var(--color-primary);
-  border-radius: 9999px;
-  padding: 0.5rem;
-}
-
-.btn-play:hover {
-  transform: scale(1.05);
-}
-
-.btn-play:active {
-  transform: scale(0.95);
-}
-
-.like-card {
+/* ---------------------------------------------------------------------------
+ * 个人信息卡
+ * ------------------------------------------------------------------------- */
+.profile-card {
   display: flex;
-  padding: 1rem;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 24px;
+}
+
+.profile-card--skeleton {
+  min-height: 148px;
+}
+
+.profile-avatar {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+.profile-body {
+  display: flex;
   flex-direction: column;
-  border-radius: 0.75rem;
-  background-color: var(--color-primary-bg);
-  color: var(--color-primary);
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
-.like-music {
-  padding: 4px 8px;
-}
-
-.like-music:hover {
-  background-color: var(--color-hover);
-}
-
-.me-tabs {
+.profile-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid var(--color-border);
+  gap: 12px;
 }
 
-.me-tab {
-  min-width: 80px;
-  padding: 8px 4px;
-  margin-bottom: -1px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  transition:
-    color var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard);
+.profile-name {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.me-tab-active {
+.profile-signature {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 6px;
+}
+
+.profile-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.profile-stat__value {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-stat__label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * 我喜欢的音乐：歌词卡 + 最近喜欢列表
+ * ------------------------------------------------------------------------- */
+.liked-panel {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr);
+  gap: 16px;
+}
+
+.liked-quote {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 168px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    140deg,
+    var(--color-primary-bg),
+    var(--color-card-bg)
+  );
+  border: 1px solid var(--color-border);
   color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
 }
 
-.refresh-btn {
-  display: inline-flex;
+.liked-quote__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--color-text);
+  opacity: 0.92;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.liked-quote__foot {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border: none;
-  border-radius: 9999px;
-  background: transparent;
-  cursor: pointer;
-  color: inherit;
-  transition:
-    background-color var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.refresh-btn:hover {
+.liked-quote__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.liked-quote__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.liked-quote__count {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.liked-quote__play {
+  flex: none;
+}
+
+.liked-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px 12px;
+  align-content: start;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+}
+
+.liked-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: default;
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.liked-track:hover {
   background-color: var(--color-hover);
 }
 
-.refresh-btn:disabled {
-  cursor: default;
+.liked-track__cover {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
 }
 
+.liked-track__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.liked-track__name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liked-track__artists {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.liked-track__artists .ea-link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.liked-track__artists .ea-link:hover {
+  color: var(--color-primary);
+}
+
+/* ---------------------------------------------------------------------------
+ * 胶囊 tab 行
+ * ------------------------------------------------------------------------- */
+.tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tab-row--sub {
+  margin-bottom: 10px;
+}
+
+.tab-pill {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.tab-pill--sm {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.tab-pill.is-active {
+  background-color: var(--color-primary-bg);
+  border-color: transparent;
+  color: var(--color-primary);
+}
+
+/* 骨架 */
+.skeleton-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 刷新按钮旋转（只转一圈，复位由定时器控制） */
 .rotating {
   animation: halo-spin var(--motion-slow) linear;
+}
+
+/* 窄窗口下：我喜欢区域纵向堆叠，统计项更紧凑 */
+@media (max-width: 1080px) {
+  .liked-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-card {
+    align-items: flex-start;
+  }
+
+  .profile-stats {
+    gap: 16px;
+  }
 }
 </style>

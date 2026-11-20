@@ -80,10 +80,149 @@
 
 .text-lv1 {
   font-weight: 700;
-  font-size: 1.5rem;
-  line-height: 2rem;
-  margin: 1rem 0;
+  font-size: 1.125rem;
+  line-height: 1.4;
+  margin: 0;
   color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+/* ===========================================================================
+ * 新版页面骨架（Phase UI 重构）
+ * 页面统一结构：.page > .page-head(.page-title/.page-subtitle) + .section 若干
+ * ========================================================================= */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  width: 100%;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--color-text);
+}
+
+.page-subtitle {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+/* 自适应卡片网格：窗口变宽自动多列，替代写死的 grid-cols-5/6 */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 24px 20px;
+}
+
+.grid-cards--lg {
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+}
+
+.grid-cards--sm {
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 20px 16px;
+}
+
+/* 卡片 / 面板表面 */
+.card-surface {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* 胶囊按钮（页面操作区统一用） */
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+
+  &:hover {
+    background-color: var(--color-hover);
+    border-color: var(--color-border-strong);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.pill-btn--primary {
+  background-color: var(--color-primary);
+  border-color: transparent;
+  color: var(--color-on-primary);
+
+  &:hover {
+    background-color: var(--color-primary);
+    filter: brightness(1.06);
+  }
+}
+
+.pill-btn--icon {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* 页面里的分区标题行（标题 + 右侧操作） */
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.muted {
+  color: var(--color-text-muted);
 }
 
 .ea-btn-primary {

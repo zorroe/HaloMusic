@@ -1,26 +1,36 @@
 <template>
-  <div class="wrapper">
-    <div class="header">
-      <Header />
+  <div
+    class="app-shell"
+    :class="{ 'app-shell--player': hasPlayer }">
+    <aside class="app-sidebar">
+      <AppSidebar />
+    </aside>
+
+    <div class="app-main">
+      <header class="app-topbar">
+        <Header />
+      </header>
+
+      <main class="app-content">
+        <router-view v-slot="{ Component, route }">
+          <Transition
+            name="page"
+            mode="out-in">
+            <keep-alive
+              :max="10"
+              :exclude="excludes">
+              <component
+                :is="Component"
+                :key="route.path" />
+            </keep-alive>
+          </Transition>
+        </router-view>
+      </main>
     </div>
-    <div class="content">
-      <router-view v-slot="{ Component, route }">
-        <Transition
-          name="page"
-          mode="out-in">
-          <keep-alive
-            :max="10"
-            :exclude="excludes">
-            <component
-              :is="Component"
-              :key="route.path" />
-          </keep-alive>
-        </Transition>
-      </router-view>
-    </div>
+
     <div
-      v-show="playerStore.current.idx !== -1"
-      class="footer">
+      v-show="hasPlayer"
+      class="app-playerbar">
       <Footer />
     </div>
   </div>
@@ -28,9 +38,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import Header from '@/components/layout/Header.vue'
 import Footer from '@/components/layout/Footer.vue'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
 import Modals from '@/components/layout/Modals.vue'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
@@ -38,6 +49,9 @@ import { checkLoginStatus } from '@/utils/common'
 import { bindMediaKeys } from '@/utils/mediaKeys'
 
 const playerStore = usePlayerStore(pinia)
+
+/** 有歌曲时才显示底部播放条（grid 行同时收起来，避免留白） */
+const hasPlayer = computed(() => playerStore.current.idx !== -1)
 
 /**
  * 不缓存的页面：每次进入都需要重新拉数据或重新走流程的页面。
@@ -65,42 +79,65 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.wrapper {
-  overflow: hidden;
+/* ===========================================================================
+ * 应用外壳：左侧边栏 + (顶栏 + 内容) + 底部播放条
+ * 用 grid 两行两列，播放条横跨整行；播放条隐藏时第二行高度归零。
+ * ========================================================================= */
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 0;
   height: 100vh;
+  overflow: hidden;
+  background-color: var(--color-shell-bg);
+  transition: grid-template-rows var(--motion-base) var(--ease-standard);
+}
+
+.app-shell--player {
+  grid-template-rows: minmax(0, 1fr) var(--playerbar-height);
+}
+
+.app-sidebar {
+  grid-row: 1;
+  grid-column: 1;
+  overflow: hidden;
+  background-color: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-border);
+}
+
+.app-main {
+  grid-row: 1;
+  grid-column: 2;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
-.content {
-  overflow-y: scroll;
-  overflow-x: hidden;
+.app-topbar {
+  flex: none;
+  height: var(--topbar-height);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-topbar-bg);
+  backdrop-filter: saturate(180%) blur(20px);
+  z-index: 20;
+}
+
+.app-content {
   flex: 1;
-  /* 顶部：应用导航栏高度；底部：Footer 高度 */
-  padding: 56px 40px 64px 40px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--content-padding-y) var(--content-padding-x) 36px;
 }
 
-.header {
-  position: fixed;
-  top: 0px;
-  left: 0px;
-  right: 0px;
-  height: 56px;
-  background: radial-gradient(transparent, rgb(255, 255, 255) 1px);
-  background-size: 2px 2px;
-  backdrop-filter: saturate(180%) blur(50px);
-  z-index: 9000;
-}
-
-.footer {
-  position: fixed;
-  bottom: 0px;
-  left: 0px;
-  right: 0px;
-  height: 64px;
-  background: radial-gradient(transparent, rgb(255, 255, 255) 1px);
-  background-size: 2px 2px;
-  backdrop-filter: saturate(180%) blur(50px);
-  z-index: 9000;
+.app-playerbar {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  height: var(--playerbar-height);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-playerbar-bg);
+  backdrop-filter: saturate(180%) blur(24px);
+  z-index: 30;
 }
 </style>

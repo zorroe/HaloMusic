@@ -63,20 +63,22 @@ const handleShadowClick = (event: MouseEvent) => {
 </script>
 
 <style scoped>
+/* 右侧浮层：避开顶栏与播放条，做成悬浮卡片 */
 .ea-drawer-content {
   position: fixed;
-  width: 30%;
-  max-width: 30%;
-  right: 0px;
-  top: 56px;
-  bottom: 64px;
+  width: min(400px, 34vw);
+  max-width: 34vw;
+  right: 8px;
+  top: calc(var(--topbar-height, 56px) + 8px);
+  bottom: calc(var(--playerbar-height, 72px) + 8px);
   overflow: auto;
   overflow-x: hidden;
-  border-radius: 8px;
-  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
   background-color: var(--color-card-bg);
   color: var(--color-text);
-  box-shadow: 0 20px 48px var(--color-shadow-strong);
+  box-shadow: var(--shadow-lg);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -85,44 +87,59 @@ const handleShadowClick = (event: MouseEvent) => {
 }
 
 .ea-drawer-content-header {
-  font-size: 32px;
-  font-weight: 800;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .ea-drawer-content-header-title {
-  width: 80%;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 700;
   text-align: start;
 }
 
 .ea-drawer-content-header-close {
-  width: 20%;
-  text-align: center;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background-color: var(--color-secondary-bg);
-  transition: background-color var(--motion-fast) var(--ease-standard);
+  border-radius: var(--radius-full);
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
 }
 
 .ea-drawer-content-header-close:hover {
   background-color: var(--color-hover);
+  color: var(--color-text);
 }
 
 .ea-drawer-content-main {
   flex-grow: 1;
+  min-height: 0;
 }
 
 .ea-drawer-body {
   position: fixed;
-  height: 100%;
-  width: 100%;
-  top: 0px;
-  right: 0px;
+  inset: 0;
   display: flex;
-  background: radial-gradient(transparent, var(--color-mask-noise) 1px);
-  background-size: 2px 2px;
-  backdrop-filter: saturate(180%) blur(10px);
+  background-color: var(--color-mask);
+  backdrop-filter: saturate(180%) blur(8px);
   z-index: 9998;
 }
 
