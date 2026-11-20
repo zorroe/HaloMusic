@@ -17,12 +17,12 @@
         @click.stop="handlePlayAll"></icon-park>
     </div>
     <div
-      class="text-left max-w-full text-base font-bold hover:decoration-black hover:underline cursor-pointer truncate"
+      class="text-left max-w-full text-base font-bold hover:decoration-[var(--color-text)] hover:underline cursor-pointer truncate"
       @click="routeTo(`/album/${props.data.id}`)">
       {{ props.data.name }}
     </div>
     <div
-      class="text-left max-w-full text-xs text-gray-500 truncate flex gap-1 cursor-pointer">
+      class="text-left max-w-full text-xs text-[var(--color-text-muted)] truncate flex gap-1 cursor-pointer">
       <span
         v-for="artist in props.data.artists"
         :key="artist.id"
@@ -67,7 +67,7 @@ const handlePlayAll = () => {
 
 .cover:hover .cover-img {
   transform: scale(1.04);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 14px 32px var(--color-shadow-strong);
 }
 
 </style>

@@ -377,7 +377,7 @@ onBeforeUnmount(() => {
 .ea-modal-backdrop {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--color-mask);
   cursor: pointer;
 }
 
@@ -390,9 +390,9 @@ onBeforeUnmount(() => {
   overflow: auto;
   padding: 1.5rem;
   border-radius: 1rem;
-  background-color: #ffffff;
-  color: #111111;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  background-color: var(--color-card-bg-strong);
+  color: var(--color-text);
+  box-shadow: 0 20px 40px var(--color-shadow-strong);
   opacity: 0;
   transform: translateY(8px) scale(0.98);
 }

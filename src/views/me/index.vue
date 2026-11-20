@@ -138,7 +138,7 @@
               class="font-bold text-sm overflow-hidden text-ellipsis whitespace-nowrap">
               {{ item.name }}
             </div>
-            <div class="text-xs flex gap-1 text-gray-600 active:text-gray-800">
+            <div class="text-xs flex gap-1 text-[var(--color-text-muted)] active:text-[var(--color-text)]">
               <span
                 v-for="ar in item.singers"
                 :key="ar.id"
@@ -165,7 +165,7 @@
         :key="tab.id"
         type="button"
         :class="{ 'me-tab-active': activeTab === tab.id }"
-        class="me-tab font-bold text-lg text-gray-600 hover:text-gray-800"
+        class="me-tab font-bold text-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
         @click="handleClickTab(tab.id)">
         {{ tab.name }}
       </button>
@@ -259,7 +259,7 @@
             :key="tab.id"
             type="button"
             :class="{ 'me-tab-active': historyType === tab.id }"
-            class="me-tab font-bold text-lg text-gray-600 hover:text-gray-800"
+            class="me-tab font-bold text-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
             @click="handleClickSortTab(tab.id)">
             {{ tab.name }}
           </button>
@@ -618,7 +618,7 @@ onBeforeUnmount(() => {
   transition:
     transform var(--motion-base) var(--ease-spring),
     background-color var(--motion-fast) var(--ease-standard);
-  background-color: rgb(51, 94, 234);
+  background-color: var(--color-primary);
   border-radius: 9999px;
   padding: 0.5rem;
 }
@@ -636,8 +636,8 @@ onBeforeUnmount(() => {
   padding: 1rem;
   flex-direction: column;
   border-radius: 0.75rem;
-  background-color: rgba(51, 94, 234, 0.2);
-  color: rgb(51, 94, 234);
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .like-music {
@@ -645,14 +645,14 @@ onBeforeUnmount(() => {
 }
 
 .like-music:hover {
-  background-color: rgba(218, 220, 228, 0.4);
+  background-color: var(--color-hover);
 }
 
 .me-tabs {
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .me-tab {
@@ -669,8 +669,8 @@ onBeforeUnmount(() => {
 }
 
 .me-tab-active {
-  color: rgb(51, 94, 234);
-  border-bottom-color: rgb(51, 94, 234);
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 .refresh-btn {
@@ -689,7 +689,7 @@ onBeforeUnmount(() => {
 }
 
 .refresh-btn:hover {
-  background-color: rgba(229, 231, 235, 0.6);
+  background-color: var(--color-hover);
 }
 
 .refresh-btn:disabled {

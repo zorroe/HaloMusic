@@ -49,7 +49,7 @@ const ringStyle = computed(() => ({
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: var(--color-secondary, #7a7a7b);
+  color: var(--color-secondary);
 }
 
 .ea-loading--block {
@@ -65,8 +65,8 @@ const ringStyle = computed(() => ({
   display: inline-block;
   border-style: solid;
   border-radius: 50%;
-  border-color: color-mix(in srgb, var(--color-secondary, #7a7a7b) 26%, transparent);
-  border-top-color: var(--color-primary, #335eea);
+  border-color: color-mix(in srgb, var(--color-secondary) 26%, transparent);
+  border-top-color: var(--color-primary);
   animation: halo-spin var(--motion-spin, 800ms) linear infinite;
   flex: none;
 }

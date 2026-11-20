@@ -74,7 +74,9 @@ const handleShadowClick = (event: MouseEvent) => {
   overflow-x: hidden;
   border-radius: 8px;
   padding: 12px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
+  box-shadow: 0 20px 48px var(--color-shadow-strong);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -97,7 +99,14 @@ const handleShadowClick = (event: MouseEvent) => {
   width: 20%;
   text-align: center;
   cursor: pointer;
-  border: 1px black solid;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-secondary-bg);
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+
+.ea-drawer-content-header-close:hover {
+  background-color: var(--color-hover);
 }
 
 .ea-drawer-content-main {
@@ -111,7 +120,7 @@ const handleShadowClick = (event: MouseEvent) => {
   top: 0px;
   right: 0px;
   display: flex;
-  background: radial-gradient(transparent, rgba(0, 0, 0, 0.1) 1px);
+  background: radial-gradient(transparent, var(--color-mask-noise) 1px);
   background-size: 2px 2px;
   backdrop-filter: saturate(180%) blur(10px);
   z-index: 9998;

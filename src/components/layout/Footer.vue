@@ -45,7 +45,7 @@
           :icon="LeftOne"
           :size="20"
           theme="filled"
-          fill="black"
+          fill="currentColor"
           class="footer-icon btn-animation"
           @click="playerStore.playPrev"
         ></icon-park>
@@ -53,7 +53,7 @@
           :icon="playIcon"
           :size="36"
           theme="filled"
-          fill="black"
+          fill="currentColor"
           class="footer-icon btn-animation"
           @click="playerStore.togglePlay"
         ></icon-park>
@@ -61,7 +61,7 @@
           :icon="RightOne"
           :size="20"
           theme="filled"
-          fill="black"
+          fill="currentColor"
           class="footer-icon btn-animation"
           @click="playerStore.playNext"
         ></icon-park>
@@ -94,7 +94,7 @@
             :icon="volumeIcon"
             :size="18"
             theme="filled"
-            fill="black"
+            fill="currentColor"
             @click="playerStore.toggleMute"
           ></icon-park>
           <div class="volume-bar">
@@ -353,6 +353,7 @@ const handleSelectQuality = async (level: SongLevel) => {
   display: flex;
   flex-direction: column;
   width: 100%;
+  color: var(--color-text);
 }
 
 .progress-bar {
@@ -440,7 +441,7 @@ const handleSelectQuality = async (level: SongLevel) => {
 }
 
 .footer-icon:hover {
-  background-color: rgba(243, 244, 246, 0.5);
+  background-color: var(--color-hover);
 }
 
 .quality-trigger {
@@ -494,22 +495,22 @@ const handleSelectQuality = async (level: SongLevel) => {
 
 .playlist-meta {
   font-size: 12px;
-  color: rgb(107, 114, 128);
+  color: var(--color-text-muted);
 }
 
 .playlist-clear {
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 6px;
-  border: 1px solid rgb(229, 231, 235);
-  background-color: #fff;
-  color: rgb(55, 65, 81);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
   cursor: pointer;
   transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .playlist-clear:hover:not(:disabled) {
-  background-color: rgb(243, 244, 246);
+  background-color: var(--color-hover);
 }
 
 .playlist-clear:disabled {
@@ -537,12 +538,12 @@ const handleSelectQuality = async (level: SongLevel) => {
 }
 
 .playlist-item:hover {
-  background-color: rgb(234, 239, 253);
+  background-color: var(--color-primary-bg);
 }
 
 .playlist-item.playing {
-  background-color: rgb(234, 239, 253);
-  color: rgb(51, 94, 234);
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 /* 当前播放曲的动感音条（与 MusicTable 同一套 class，本文件独立作用域） */
@@ -582,7 +583,7 @@ const handleSelectQuality = async (level: SongLevel) => {
   width: 20px;
   text-align: center;
   font-size: 12px;
-  color: rgb(156, 163, 175);
+  color: var(--color-text-subtle);
 }
 
 .playlist-main {
@@ -605,20 +606,20 @@ const handleSelectQuality = async (level: SongLevel) => {
   display: flex;
   gap: 4px;
   font-size: 12px;
-  color: rgb(107, 114, 128);
+  color: var(--color-text-muted);
   overflow: hidden;
   white-space: nowrap;
 }
 
 .playlist-duration {
   font-size: 12px;
-  color: rgb(107, 114, 128);
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
 .playlist-remove {
   cursor: pointer;
-  color: rgb(156, 163, 175);
+  color: var(--color-text-subtle);
   opacity: 0;
   flex-shrink: 0;
   transition:
@@ -631,14 +632,14 @@ const handleSelectQuality = async (level: SongLevel) => {
 }
 
 .playlist-remove:hover {
-  color: rgb(239, 68, 68);
+  color: var(--color-danger);
 }
 
 .playlist-empty {
   padding: 32px 0;
   text-align: center;
   font-size: 14px;
-  color: rgb(156, 163, 175);
+  color: var(--color-text-subtle);
 }
 
 .fm-playing {
@@ -648,7 +649,7 @@ const handleSelectQuality = async (level: SongLevel) => {
   width: 100%;
   min-height: 200px;
   font-size: 16px;
-  color: rgb(55, 65, 81);
+  color: var(--color-text-muted);
 }
 
 /* ---------------- 音质选择 ---------------- */
@@ -680,7 +681,7 @@ const handleSelectQuality = async (level: SongLevel) => {
   border: 0;
   border-radius: 8px;
   background-color: transparent;
-  color: rgb(17, 24, 39);
+  color: var(--color-text);
   font-size: 14px;
   text-align: left;
   cursor: pointer;
@@ -688,19 +689,19 @@ const handleSelectQuality = async (level: SongLevel) => {
 }
 
 .quality-option:hover {
-  background-color: rgb(243, 244, 246);
+  background-color: var(--color-hover);
 }
 
 .quality-option.active {
-  color: rgb(51, 94, 234);
-  background-color: rgb(234, 239, 253);
+  color: var(--color-primary);
+  background-color: var(--color-primary-bg);
   font-weight: 700;
 }
 
 .quality-desc {
   margin-left: auto;
   font-size: 12px;
-  color: rgb(156, 163, 175);
+  color: var(--color-text-subtle);
 }
 
 .quality-check {

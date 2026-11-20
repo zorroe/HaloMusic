@@ -11,7 +11,7 @@
   </div>
   <div
     v-else
-    class="text-gray-500 text-center py-16">
+    class="text-[var(--color-text-muted)] text-center py-16">
     播放列表还是空的，去挑首歌吧
   </div>
 </template>

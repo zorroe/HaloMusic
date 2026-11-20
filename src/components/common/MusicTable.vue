@@ -3,7 +3,7 @@
     <div
       v-for="item in props.data"
       :key="item.id"
-      class="music-row flex items-center rounded h-16 hover:bg-gray-100/60 gap-4 group"
+      class="music-row flex items-center rounded h-16 hover:bg-[var(--color-hover)] gap-4 group"
       :class="{ playing: item.id == curMusicId }"
       @dblclick="handlePlay(item)">
       <lmg
@@ -141,7 +141,7 @@ const handleLikeMusic = async (music: MusicBaseInfo) => {
 
 <style scoped>
 .subscribe-icon {
-  color: rgb(51, 94, 234);
+  color: var(--color-primary);
   padding: 0.25rem;
   border-radius: 9999px;
 }

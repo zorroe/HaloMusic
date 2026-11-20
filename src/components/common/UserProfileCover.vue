@@ -9,7 +9,7 @@
         @click="handleOpenProfile"></lmg>
     </div>
     <div
-      class="text-center cursor-pointer mt-2 text-base font-bold hover:decoration-black hover:underline truncate"
+      class="text-center cursor-pointer mt-2 text-base font-bold hover:decoration-[var(--color-text)] hover:underline truncate"
       @click="handleOpenProfile">
       {{ props.data.nickname }}
     </div>
@@ -44,6 +44,6 @@ const handleOpenProfile = () => {
 
 .cover:hover .cover-img {
   transform: scale(1.04);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 14px 32px var(--color-shadow-strong);
 }
 </style>

@@ -109,10 +109,10 @@
         class="w-56 h-56 rounded-full"></lmg>
       <div class="flex flex-col gap-4 truncate pl-6 w-full">
         <div class="font-bold text-3xl">{{ artistInfo?.artist?.name }}</div>
-        <div class="text-base text-gray-800">
+        <div class="text-base text-[var(--color-text)]">
           {{ artistInfo?.identify?.imageDesc }}
         </div>
-        <div class="text-sm text-gray-800">
+        <div class="text-sm text-[var(--color-text-muted)]">
           {{
             `${artistInfo?.artist?.musicSize ?? 0}首歌 · ${
               artistInfo?.artist?.albumSize ?? 0

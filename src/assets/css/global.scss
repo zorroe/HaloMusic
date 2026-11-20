@@ -3,84 +3,180 @@
  * 字体文件位于 src/assets/fonts/，不要移动。
  */
 @font-face {
-  font-family: "Barlow";
+  font-family: 'Barlow';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("../fonts/Barlow-Regular.woff2") format("woff2");
+  src: url('../fonts/Barlow-Regular.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Barlow";
+  font-family: 'Barlow';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("../fonts/Barlow-Medium.woff2") format("woff2");
+  src: url('../fonts/Barlow-Medium.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Barlow";
+  font-family: 'Barlow';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("../fonts/Barlow-SemiBold.woff2") format("woff2");
+  src: url('../fonts/Barlow-SemiBold.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Barlow";
+  font-family: 'Barlow';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("../fonts/Barlow-Bold.woff2") format("woff2");
+  src: url('../fonts/Barlow-Bold.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Barlow";
+  font-family: 'Barlow';
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url("../fonts/Barlow-ExtraBold.woff2") format("woff2");
+  src: url('../fonts/Barlow-ExtraBold.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: "Barlow";
+  font-family: 'Barlow';
   font-style: normal;
   font-weight: 900;
   font-display: swap;
-  src: url("../fonts/Barlow-Black.woff2") format("woff2");
+  src: url('../fonts/Barlow-Black.woff2') format('woff2');
 }
 
+/* ---------------------------------------------------------------------------
+ * 主题设计变量（浅色）
+ *
+ * 约定：
+ * - 唯一状态位是 <html data-theme="light|dark">（见 src/utils/theme.ts）；
+ * - 组件里禁止再写 #fff / rgb(0,0,0) 之类的硬编码颜色，统一取这里的变量；
+ * - 品牌蓝 --color-primary 深浅两套保持同色系（深色下提亮以满足对比度）。
+ * ------------------------------------------------------------------------- */
 :root {
+  /* 背景 / 表面 */
   --color-body-bg: #ffffff;
-  --color-text: #000;
+  --color-card-bg: #ffffff;
+  --color-card-bg-strong: #ffffff;
+  --color-secondary-bg: #f5f5f7;
+  --color-input-bg: #ffffff;
+  --color-navbar-bg: rgba(255, 255, 255, 0.86);
+
+  /* 文本 */
+  --color-text: #000000;
+  --color-text-muted: #6b7280;
+  --color-text-subtle: #9ca3af;
+  --color-secondary: #7a7a7b;
+
+  /* 品牌 */
   --color-primary: #335eea;
   --color-primary-bg: #eaeffd;
-  --color-secondary: #7a7a7b;
-  --color-secondary-bg: #f5f5f7;
-  --color-navbar-bg: rgba(255, 255, 255, 0.86);
   --color-primary-bg-for-transparent: rgba(189, 207, 255, 0.28);
   --color-secondary-bg-for-transparent: rgba(209, 209, 214, 0.28);
+  --color-on-primary: #ffffff;
+
+  /* 交互 */
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+  --color-hover: rgba(15, 23, 42, 0.05);
+  --color-active: rgba(15, 23, 42, 0.09);
+
+  /* 功能色 */
+  --color-danger: #f56c6c;
+  --color-danger-bg: rgb(253, 236, 234);
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-info: #1890ff;
+
+  /* 浮层 / 装饰 */
+  --color-mask: rgba(0, 0, 0, 0.4);
+  --color-image-mask: rgba(0, 0, 0, 0.5);
+  --color-scrollbar: rgba(128, 128, 128, 0.38);
+  --color-shadow: rgba(15, 23, 42, 0.16);
+  --color-shadow-strong: rgba(15, 23, 42, 0.24);
+  /* 顶部/底部/播放页的白色噪点纹理 */
+  --color-surface-noise: rgb(255, 255, 255);
+  /* 抽屉遮罩上的暗噪点纹理 */
+  --color-mask-noise: rgba(0, 0, 0, 0.1);
+
   --html-overflow-y: overlay;
 }
 
-[data-theme="dark"] {
-  --color-body-bg: #222222;
-  --color-text: #ffffff;
-  --color-primary: #335eea;
-  --color-primary-bg: #bbcdff;
-  --color-secondary: #7a7a7b;
-  --color-secondary-bg: #323232;
-  --color-navbar-bg: rgba(34, 34, 34, 0.86);
-  --color-primary-bg-for-transparent: rgba(255, 255, 255, 0.12);
+/* ---------------------------------------------------------------------------
+ * 主题设计变量（深色）
+ * 参考值：body #1a1a1c / card #26262a / border #3a3a3f / text #f2f2f3
+ * ------------------------------------------------------------------------- */
+[data-theme='dark'] {
+  /* 背景 / 表面 */
+  --color-body-bg: #1a1a1c;
+  --color-card-bg: #26262a;
+  --color-card-bg-strong: #2f2f34;
+  --color-secondary-bg: #26262a;
+  --color-input-bg: #2b2b30;
+  --color-navbar-bg: rgba(26, 26, 28, 0.86);
+
+  /* 文本 */
+  --color-text: #f2f2f3;
+  --color-text-muted: #a1a1aa;
+  --color-text-subtle: #7c7c86;
+  --color-secondary: #9a9aa3;
+
+  /* 品牌：同色系提亮，保证深色背景上的文字对比度 */
+  --color-primary: #6f8dff;
+  --color-primary-bg: rgba(111, 141, 255, 0.18);
+  --color-primary-bg-for-transparent: rgba(111, 141, 255, 0.24);
   --color-secondary-bg-for-transparent: rgba(255, 255, 255, 0.08);
+  --color-on-primary: #ffffff;
+
+  /* 交互 */
+  --color-border: #3a3a3f;
+  --color-border-strong: #4a4a50;
+  --color-hover: rgba(255, 255, 255, 0.08);
+  --color-active: rgba(255, 255, 255, 0.13);
+
+  /* 功能色 */
+  --color-danger: #ff8a80;
+  --color-danger-bg: rgba(255, 138, 128, 0.16);
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-info: #60a5fa;
+
+  /* 浮层 / 装饰 */
+  --color-mask: rgba(0, 0, 0, 0.62);
+  --color-image-mask: rgba(0, 0, 0, 0.55);
+  --color-scrollbar: rgba(255, 255, 255, 0.24);
+  --color-shadow: rgba(0, 0, 0, 0.5);
+  --color-shadow-strong: rgba(0, 0, 0, 0.62);
+  --color-surface-noise: rgba(255, 255, 255, 0.1);
+  --color-mask-noise: rgba(255, 255, 255, 0.06);
 }
+
+html {
+  background-color: var(--color-body-bg);
+}
+
 #app {
   height: 100%;
   width: 100%;
-  font-family: "Barlow", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "PingFang SC",
-    "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC",
-    "WenQuanYi Micro Hei", sans-serif;
+  font-family:
+    'Barlow',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Helvetica Neue',
+    'PingFang SC',
+    'Microsoft YaHei',
+    'Source Han Sans SC',
+    'Noto Sans CJK SC',
+    'WenQuanYi Micro Hei',
+    sans-serif;
   color: var(--color-text);
   font-size: 18px;
   font-weight: 500;
@@ -89,6 +185,33 @@
 
 body {
   background-color: var(--color-body-bg);
+  color: var(--color-text);
+  transition:
+    background-color var(--motion-base) var(--ease-standard),
+    color var(--motion-base) var(--ease-standard);
+}
+
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+::placeholder {
+  color: var(--color-text-subtle);
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * App.vue 布局壳层的噪点纹理（该文件不在本任务写入范围，这里用更高优先级覆盖：
+ * div.header.header 的 (0,2,1) 高于 scoped .header[data-v-xxx] 的 (0,2,0)）
+ * ------------------------------------------------------------------------- */
+div.header.header,
+div.footer.footer {
+  background-image: radial-gradient(
+    transparent,
+    var(--color-surface-noise) 1px
+  );
+  background-size: 2px 2px;
 }
 
 ::-webkit-scrollbar {
@@ -105,5 +228,5 @@ body {
 ::-webkit-scrollbar-thumb {
   -webkit-border-radius: 10px;
   border-radius: 10px;
-  background: rgba(128, 128, 128, 0.38);
+  background: var(--color-scrollbar);
 }

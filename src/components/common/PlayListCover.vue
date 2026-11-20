@@ -19,10 +19,10 @@
     <div class="flex items-center justify-end px-1">
       <div
         v-if="props.data.creator"
-        class="flex-grow text-xs text-gray-400 min-w-0 truncate">
+        class="flex-grow text-xs text-[var(--color-text-subtle)] min-w-0 truncate">
         <span> by: </span>
         <span
-          class="hover:underline active:text-gray-600 cursor-pointer"
+          class="hover:underline active:text-[var(--color-text-muted)] cursor-pointer"
           @click="handleOpenCreator">
           {{ props.data.creator?.nickname }}
         </span>
@@ -33,13 +33,13 @@
           fill="gray"
           theme="filled"
           :size="10"></icon-park>
-        <div class="cursor-default text-xs text-gray-600 py-1">
+        <div class="cursor-default text-xs text-[var(--color-text-muted)] py-1">
           {{ playCount }}
         </div>
       </div>
     </div>
     <div
-      class="w-min max-w-full cursor-pointer px-1 text-center text-base font-bold hover:decoration-black hover:underline truncate"
+      class="w-min max-w-full cursor-pointer px-1 text-center text-base font-bold hover:decoration-[var(--color-text)] hover:underline truncate"
       @click="routeTo(`/playlist/${props.data.id}`)">
       {{ props.data.name }}
     </div>
@@ -93,7 +93,7 @@ const handleOpenCreator = () => {
 
 .cover:hover .cover-img {
   transform: scale(1.04);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 14px 32px var(--color-shadow-strong);
 }
 
 </style>

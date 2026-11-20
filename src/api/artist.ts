@@ -38,25 +38,29 @@ export const getrecommendArtistApi = (
 ): Promise<TopArtistResponse> =>
   http.get<TopArtistResponse>('/toplist/artist', { params })
 
+/** 歌手详情 */
 export const getArtistDetailApi = (
   params: ArtistIdParams
 ): Promise<ArtistDetailResponse> =>
-  http.get<ArtistDetailResponse>('/artist/detail', { params })
+  http.get<ArtistDetailResponse>('/artist/detail', { params, cache: true })
 
+/** 歌手歌曲（分页） */
 export const getSongsByArtistIdApi = (
   params: ArtistPageParams
 ): Promise<ArtistSongsResponse> =>
-  http.get<ArtistSongsResponse>('/artist/songs', { params })
+  http.get<ArtistSongsResponse>('/artist/songs', { params, cache: true })
 
+/** 歌手专辑（分页） */
 export const getArtistAlbumApi = (
   params: ArtistPageParams
 ): Promise<ArtistAlbumResponse> =>
-  http.get<ArtistAlbumResponse>('/artist/album', { params })
+  http.get<ArtistAlbumResponse>('/artist/album', { params, cache: true })
 
+/** 歌手 MV（分页） */
 export const getArtistMvApi = (
   params: ArtistPageParams
 ): Promise<ArtistMvResponse> =>
-  http.get<ArtistMvResponse>('/artist/mv', { params })
+  http.get<ArtistMvResponse>('/artist/mv', { params, cache: true })
 
 /** 收藏 / 取消收藏歌手 */
 export const subArtistApi = (id: string, t: 1 | 2): Promise<BaseResponse> =>

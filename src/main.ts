@@ -16,6 +16,10 @@ import router from '@/router/index'
 import pinia from '@/store/store'
 import notify from '@/components/common/notification/notify'
 import { isCanceledError } from '@/utils/request'
+import { initTheme } from '@/utils/theme'
+
+// 主题要在挂载前应用，避免首帧闪现错误配色
+initTheme()
 
 import Image from '@/components/common/Image.vue'
 import IconPark from '@/components/common/IconPark.vue'

@@ -66,14 +66,14 @@
                 :src="artist.img1v1Url"
                 :width="200"
                 :height="200"
-                class="w-12 h-12 rounded-full border-white border-2 cursor-pointer"
+                class="w-12 h-12 rounded-full border-[var(--color-border)] border-2 cursor-pointer"
                 @click="routeTo(`/artist/${artist.id}`)"></lmg>
             </div>
             <div class="flex items-center gap-2">
               <div
                 v-for="artist in mvData?.artists"
                 :key="`name-${artist.id}`"
-                class="text-gray-600 text-sm font-light ea-link"
+                class="text-[var(--color-text-muted)] text-sm font-light ea-link"
                 @click="routeTo(`/artist/${artist.id}`)">
                 {{ artist.name }}
               </div>
@@ -84,12 +84,12 @@
                 :size="18"
                 title="在浏览器中打开"
                 @click="handleShare"
-                class="cursor-pointer p-2 hover:bg-gray-200 transition-all duration-300 rounded-full"></icon-park>
+                class="cursor-pointer p-2 hover:bg-[var(--color-hover)] transition-all duration-300 rounded-full"></icon-park>
             </div>
           </div>
           <div
             v-if="publishDate"
-            class="text-sm text-gray-500 mt-2">
+            class="text-sm text-[var(--color-text-muted)] mt-2">
             {{ publishDate }}
           </div>
           <ea-empty

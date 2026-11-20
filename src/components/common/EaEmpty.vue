@@ -74,7 +74,7 @@ const emit = defineEmits<{ action: [] }>()
   gap: 10px;
   padding: 80px 16px;
   text-align: center;
-  color: var(--color-secondary, #7a7a7b);
+  color: var(--color-secondary);
 }
 
 .ea-empty--compact {
@@ -83,7 +83,7 @@ const emit = defineEmits<{ action: [] }>()
 }
 
 .ea-empty__icon {
-  color: color-mix(in srgb, var(--color-secondary, #7a7a7b) 55%, transparent);
+  color: color-mix(in srgb, var(--color-secondary) 55%, transparent);
   display: flex;
   animation: halo-rise var(--motion-base) var(--ease-standard) both;
 }
@@ -91,7 +91,7 @@ const emit = defineEmits<{ action: [] }>()
 .ea-empty__title {
   font-size: 18px;
   font-weight: 700;
-  color: var(--color-text, #000);
+  color: var(--color-text);
 }
 
 .ea-empty--compact .ea-empty__title {

@@ -52,7 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 .cover:hover .cover-img {
   transform: scale(1.04);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 14px 32px var(--color-shadow-strong);
 }
 
 </style>

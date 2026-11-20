@@ -10,27 +10,27 @@
         @load="addCls" />
       <div
         v-else
-        class="w-48 h-48 rounded-2xl bg-gray-100 flex items-center justify-center">
+        class="w-48 h-48 rounded-2xl bg-[var(--color-secondary-bg)] flex items-center justify-center">
         <ea-loading
           v-if="loading"
           :size="28" />
         <div
           v-else
-          class="text-sm text-gray-500">
+          class="text-sm text-[var(--color-text-muted)]">
           二维码加载失败
         </div>
       </div>
     </div>
     <div class="mt-4 text-base font-bold">
       打开<span
-        class="text-blue-600 cursor-pointer hover:underline"
+        class="text-[var(--color-primary)] cursor-pointer hover:underline"
         @click="openUrl('https://music.163.com/#/download')"
         >网易云音乐</span
       >扫码登录
     </div>
     <div
       v-if="tipMessage"
-      class="mt-2 text-sm text-gray-500">
+      class="mt-2 text-sm text-[var(--color-text-muted)]">
       {{ tipMessage }}
     </div>
     <ea-button

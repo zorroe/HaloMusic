@@ -34,7 +34,7 @@
       <div class="text-lv1 !my-2">
         {{ artistName ? `${artistName}的全部歌曲` : '全部歌曲' }}
       </div>
-      <div class="text-sm text-gray-500">共 {{ total }} 首</div>
+      <div class="text-sm text-[var(--color-text-muted)]">共 {{ total }} 首</div>
     </div>
     <div :aria-busy="loadingPage ? 'true' : 'false'">
       <music-table
@@ -66,7 +66,7 @@
             clip-rule="evenodd" />
         </svg>
       </button>
-      <p class="text-xs text-gray-900">
+      <p class="text-xs text-[var(--color-text)]">
         {{ currentPage }}
         <span class="mx-1">/</span>
         {{ totalPage }}
@@ -190,10 +190,10 @@ onMounted(loadAll)
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background-color: #ffffff;
-  color: #111827;
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
   cursor: pointer;
   transition:
     background-color var(--motion-fast) var(--ease-standard),
@@ -201,11 +201,11 @@ onMounted(loadAll)
 }
 
 .page-btn:hover:not(.page-btn--disabled) {
-  background-color: #e5e7eb;
+  background-color: var(--color-hover);
 }
 
 .page-btn--disabled {
-  color: #d1d5db;
+  color: var(--color-text-subtle);
   cursor: not-allowed;
 }
 </style>

@@ -72,7 +72,7 @@
               :icon="LeftOne"
               :size="20"
               theme="filled"
-              fill="black"
+              fill="currentColor"
               class="footer-icon btn-animation"
               @click="playerStore.playPrev"
             ></icon-park>
@@ -80,7 +80,7 @@
               :icon="playIcon"
               :size="36"
               theme="filled"
-              fill="black"
+              fill="currentColor"
               class="footer-icon btn-animation"
               @click="playerStore.togglePlay"
             ></icon-park>
@@ -88,7 +88,7 @@
               :icon="RightOne"
               :size="20"
               theme="filled"
-              fill="black"
+              fill="currentColor"
               class="footer-icon btn-animation"
               @click="playerStore.playNext"
             ></icon-park>
@@ -99,7 +99,7 @@
               :icon="volumeIcon"
               :size="18"
               theme="filled"
-              fill="black"
+              fill="currentColor"
               @click="playerStore.toggleMute"
             ></icon-park>
             <div class="volume-bar">
@@ -283,7 +283,9 @@ const handleSeekLyric = (time: number) => {
   z-index: 9999;
   display: flex;
   overflow: hidden;
-  background: radial-gradient(transparent, rgb(255, 255, 255) 1px);
+  color: var(--color-text);
+  background-color: var(--color-navbar-bg);
+  background-image: radial-gradient(transparent, var(--color-surface-noise) 1px);
   background-size: 2px 2px;
   backdrop-filter: saturate(180%) blur(5px);
 }
@@ -318,15 +320,15 @@ const handleSeekLyric = (time: number) => {
   will-change: auto;
 }
 
-/* 渐变遮罩：压住色块保证歌名/歌词可读 */
+/* 渐变遮罩：用主题底色压住色块，保证歌名/歌词可读（深浅色主题自动适配） */
 .player-ambient-veil {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     160deg,
-    rgba(255, 255, 255, 0.86) 0%,
-    rgba(255, 255, 255, 0.54) 45%,
-    rgba(255, 255, 255, 0.92) 100%
+    color-mix(in srgb, var(--color-body-bg) 86%, transparent) 0%,
+    color-mix(in srgb, var(--color-body-bg) 54%, transparent) 45%,
+    color-mix(in srgb, var(--color-body-bg) 92%, transparent) 100%
   );
 }
 
@@ -348,8 +350,8 @@ const handleSeekLyric = (time: number) => {
   height: 320px;
   border-radius: 50%;
   box-shadow:
-    0 20px 48px rgba(15, 23, 42, 0.26),
-    0 2px 8px rgba(15, 23, 42, 0.12);
+    0 20px 48px var(--color-shadow-strong),
+    0 2px 8px var(--color-shadow);
 }
 
 .player-vinyl {
@@ -455,7 +457,7 @@ const handleSeekLyric = (time: number) => {
 
 .player-time {
   font-size: 12px;
-  color: rgb(122, 122, 123);
+  color: var(--color-secondary);
   min-width: 36px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -502,7 +504,7 @@ const handleSeekLyric = (time: number) => {
   padding: 4px 0;
   font-size: 18px;
   line-height: 1.4;
-  color: rgb(75, 85, 99);
+  color: var(--color-text-muted);
   cursor: pointer;
   opacity: 0.42;
   filter: blur(1.1px);
@@ -516,14 +518,14 @@ const handleSeekLyric = (time: number) => {
 }
 
 .lyric-line:hover {
-  color: rgb(17, 24, 39);
+  color: var(--color-text);
 }
 
 .is-sing {
   opacity: 1;
   filter: none;
   transform: scale(1.05);
-  color: rgb(51, 94, 234);
+  color: var(--color-primary);
   font-weight: 800;
   font-size: 32px;
   line-height: 1.2;
@@ -532,7 +534,7 @@ const handleSeekLyric = (time: number) => {
 .lyric-empty {
   padding: 24px 0;
   font-size: 18px;
-  color: rgb(156, 163, 175);
+  color: var(--color-text-subtle);
 }
 
 .player-close {
@@ -553,7 +555,7 @@ const handleSeekLyric = (time: number) => {
 }
 
 .player-close-icon:hover {
-  background-color: rgba(243, 244, 246, 0.8);
+  background-color: var(--color-hover);
 }
 
 .footer-icon {
@@ -567,7 +569,7 @@ const handleSeekLyric = (time: number) => {
 }
 
 .footer-icon:hover {
-  background-color: rgba(243, 244, 246, 0.5);
+  background-color: var(--color-hover);
 }
 
 /* 进度条 / 音量条 hover 时滑块圆点轻微放大（vue-slider 内部结构） */

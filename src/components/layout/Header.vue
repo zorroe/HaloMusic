@@ -31,7 +31,7 @@
         {{ btn.name }}
       </div>
     </div>
-    <div class="flex w-1/3 justify-end gap-6 items-center">
+    <div class="flex w-1/3 justify-end gap-4 items-center">
       <!-- 搜索框：daisyUI 5 移除了 form-control / input-group，这里用纯 CSS 自绘 -->
       <div class="search-box">
         <input
@@ -51,7 +51,7 @@
             class="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="gray">
+            stroke="currentColor">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -60,12 +60,24 @@
           </svg>
         </button>
       </div>
+      <!-- 主题切换：浅色 → 深色 → 跟随系统 循环 -->
+      <button
+        type="button"
+        class="theme-btn btn-animation"
+        :title="themeTitle"
+        :aria-label="themeTitle"
+        @click="handleCycleTheme">
+        <icon-park
+          :icon="themeIcon"
+          :size="18"
+          theme="outline" />
+      </button>
       <div
         ref="avatarRef"
         class="relative flex items-center">
         <img
           :src="avatarSrc"
-          class="w-8 h-8 rounded-full cursor-pointer border-2 border-blue-200 object-cover"
+          class="w-8 h-8 rounded-full cursor-pointer border-2 border-[var(--color-border)] object-cover"
           alt="用户头像"
           title="用户菜单"
           @error="handleAvatarError"
@@ -94,7 +106,15 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Left, Logout, Right, Tool } from '@icon-park/vue-next'
+import {
+  AutoFocus,
+  Left,
+  Logout,
+  Moon,
+  Right,
+  Sunny,
+  Tool,
+} from '@icon-park/vue-next'
 import MenuBar from './Menubar.vue'
 import pinia from '@/store/store'
 import { useSearchStore, useUserInfoStore } from '@/store/index'
@@ -102,6 +122,7 @@ import { routeTo, go } from '@/utils/common'
 import { normalizeImageUrl } from '@/views/shared/mappers'
 import defaultAvatar from '@/assets/icons/default_avatar.png'
 import router from '@/router'
+import { useTheme } from '@/utils/theme'
 
 defineOptions({
   // 不能用 'header'：与 HTML 内建元素同名，Vue 会告警
@@ -134,6 +155,25 @@ const avatarSrc = computed(() => {
   if (avatarFailed.value || !remoteAvatar.value) return defaultAvatar
   return remoteAvatar.value
 })
+
+/* ---------------- 主题切换（浅色 → 深色 → 跟随系统） ---------------- */
+const { mode, cycleThemeMode } = useTheme()
+
+const themeIcon = computed(() => {
+  if (mode.value === 'light') return Sunny
+  if (mode.value === 'dark') return Moon
+  return AutoFocus
+})
+
+const themeTitle = computed(() => {
+  if (mode.value === 'light') return '当前：浅色 · 点击切换到深色'
+  if (mode.value === 'dark') return '当前：深色 · 点击切换到跟随系统'
+  return '当前：跟随系统 · 点击切换到浅色'
+})
+
+const handleCycleTheme = () => {
+  cycleThemeMode()
+}
 
 /** 搜到的结果页和输入框保持一致（比如从搜索页返回后再次进来） */
 watch(
@@ -202,14 +242,17 @@ onBeforeUnmount(() => {
   gap: 2px;
   height: 36px;
   padding: 0 2px 0 12px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--color-border);
   border-radius: 9999px;
-  background-color: rgba(255, 255, 255, 0.9);
-  transition: border-color 300ms;
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
 }
 
 .search-box:focus-within {
-  border-color: #9ca3af;
+  border-color: var(--color-border-strong);
 }
 
 .search-input {
@@ -231,12 +274,28 @@ onBeforeUnmount(() => {
   border: none;
   border-radius: 9999px;
   background: transparent;
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition: background-color 300ms;
+  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .search-btn:hover {
-  background-color: #e5e7eb;
+  background-color: var(--color-hover);
+}
+
+/* 主题切换按钮 */
+.theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
 }
 
 .avatar-menu {
@@ -249,8 +308,10 @@ onBeforeUnmount(() => {
   padding: 8px;
   list-style: none;
   border-radius: 12px;
-  background-color: #ffffff;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px var(--color-shadow-strong);
 }
 
 .avatar-dropdown {
@@ -266,7 +327,7 @@ onBeforeUnmount(() => {
 }
 
 .avatar-dropdown:hover {
-  background-color: rgb(234, 239, 253);
-  color: rgb(51, 94, 234);
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 </style>

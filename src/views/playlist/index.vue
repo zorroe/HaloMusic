@@ -83,7 +83,7 @@
             :icon="Edit"
             theme="filled"
             :size="24"
-            class="cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all duration-300"
+            class="cursor-pointer hover:bg-[var(--color-hover)] rounded-full p-1 transition-all duration-300"
             title="编辑歌单名"
             @click="handleEdit"></icon-park>
         </div>
@@ -96,13 +96,13 @@
             >{{ playListDetail?.creator?.nickname }}</span
           >
         </div>
-        <div class="text-gray-600 text-sm">
+        <div class="text-[var(--color-text-muted)] text-sm">
           <span>最后更新于</span>
           <span>{{ updateTimeText }}</span>
           <span> · </span>
           <span>{{ `${playListDetail?.trackCount ?? 0}首` }}</span>
         </div>
-        <div class="text-gray-600 text-sm inline-block playlist-detail">
+        <div class="text-[var(--color-text-muted)] text-sm inline-block playlist-detail">
           {{ playListDetail?.description }}
         </div>
         <div class="flex flex-grow gap-4 items-end">
@@ -302,15 +302,17 @@ onMounted(loadAll)
 .playlist-name-input {
   min-width: 240px;
   padding: 4px 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
   font-size: 20px;
   font-weight: 700;
   outline: none;
 }
 
 .playlist-name-input:focus {
-  border-color: var(--color-primary, #335eea);
+  border-color: var(--color-primary);
 }
 
 .playlist-detail {

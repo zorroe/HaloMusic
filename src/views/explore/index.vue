@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="text-6xl font-bold mb-4 bg-white">发现</div>
-    <div class="flex flex-wrap bg-white">
+    <div class="text-6xl font-bold mb-4">发现</div>
+    <div class="flex flex-wrap">
       <div
         v-for="btn in btns"
         :key="btn.name">
@@ -23,7 +23,7 @@
     <Transition name="expand">
       <div
         v-show="showHidden"
-        class="flex flex-col gap-4 my-4 px-4 rounded-lg bg-gray-100 p-8 mx-4">
+        class="flex flex-col gap-4 my-4 px-4 rounded-lg bg-[var(--color-secondary-bg)] p-8 mx-4">
         <div
           v-for="cat in cats"
           :key="cat"
@@ -266,12 +266,12 @@ onMounted(() => {
 }
 
 .cat-item-hidden:hover {
-  color: rgb(51, 94, 234);
-  background-color: rgb(234, 239, 253);
+  color: var(--color-primary);
+  background-color: var(--color-primary-bg);
 }
 
 .cat-item-active {
-  color: rgb(51, 94, 234);
+  color: var(--color-primary);
 }
 
 .expand-enter-active,

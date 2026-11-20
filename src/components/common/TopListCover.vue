@@ -17,7 +17,7 @@
         @click.stop="handlePlayAll"></icon-park>
     </div>
     <div
-      class="text-center text-base font-bold hover:decoration-black hover:underline truncate cursor-pointer"
+      class="text-center text-base font-bold hover:decoration-[var(--color-text)] hover:underline truncate cursor-pointer"
       @click="routeTo(`/playlist/${props.data.id}`)">
       {{ props.data.name }}
     </div>
@@ -57,7 +57,7 @@ const handlePlayAll = () => {
 
 .cover:hover .cover-img {
   transform: scale(1.04);
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 14px 32px var(--color-shadow-strong);
 }
 
 </style>

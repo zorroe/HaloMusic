@@ -31,8 +31,13 @@
   --skeleton-highlight: rgba(255, 255, 255, 0.5);
 }
 
-/* 骨架屏 */
+/* 深色下骨架屏：底色更暗、扫光更弱，避免一大片高亮白块 */
+[data-theme='dark'] {
+  --skeleton-bg: rgba(255, 255, 255, 0.07);
+  --skeleton-highlight: rgba(255, 255, 255, 0.14);
+}
 
+/* 骨架屏 */
 
 .halo-skeleton {
   position: relative;

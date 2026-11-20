@@ -10,7 +10,7 @@
       theme="filled"
       :size="24"
       @click="handlePlayFm"
-      class="mr-4 mb-4 p-2 z-50 rounded-full transition-all text-white bg-white bg-opacity-20 hover:bg-opacity-40 active:scale-90"
+      class="mr-4 mb-4 p-2 z-50 rounded-full transition-all text-white bg-white/20 hover:bg-white/40 active:scale-90"
     ></icon-park>
   </div>
 </template>
@@ -35,10 +35,14 @@ const bgImg = ref<string>(FALLBACK_BG)
  */
 const loadFmCover = async () => {
   try {
-    const res: any = await personFmApi()
+    const res = await personFmApi()
     const list = Array.isArray(res?.data) ? res.data : []
     const first = list[0]
-    const picUrl = first?.album?.picUrl ?? first?.al?.picUrl
+    // 私人 FM 同时存在新旧两种歌曲结构：album.picUrl（新）与 al.picUrl（旧）
+    const legacyPicUrl = (
+      first as { al?: { picUrl?: unknown } } | undefined
+    )?.al?.picUrl
+    const picUrl = first?.album?.picUrl ?? legacyPicUrl
     if (typeof picUrl === 'string' && picUrl) bgImg.value = picUrl
   } catch {
     bgImg.value = FALLBACK_BG
@@ -72,7 +76,7 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 400px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-image-mask);
   z-index: 2;
 }
 

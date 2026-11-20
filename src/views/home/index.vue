@@ -296,7 +296,7 @@ onMounted(loadAll)
   left: 0;
   width: 100%;
   height: 400px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-image-mask);
   z-index: 2;
 }
 

@@ -142,8 +142,9 @@ onBeforeUnmount(() => {
   width: 256px;
   margin-top: 16px;
   border-radius: 10px;
-  background-color: rgb(255, 255, 255);
-  box-shadow: rgb(0 0 0 / 10%) 0px 0px 16px 0px;
+  background-color: var(--color-card-bg);
+  color: var(--color-text);
+  box-shadow: 0 0 16px var(--color-shadow);
   padding: 0px 16px;
   font-weight: 700;
   overflow: hidden;

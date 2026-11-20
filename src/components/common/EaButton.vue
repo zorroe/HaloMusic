@@ -35,18 +35,18 @@ const props = withDefaults(defineProps<Props>(), {
 
 /* 按钮类型 */
 .primary {
-  background-color: rgb(234, 239, 253);
-  color: rgb(51, 94, 234);
+  background-color: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .danger {
-  background-color: rgb(253, 236, 234);
-  color: #f56c6c;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .info {
-  background-color: rgb(227, 228, 228);
-  color: rgb(125, 126, 133);
+  background-color: var(--color-secondary-bg);
+  color: var(--color-text-muted);
 }
 
 /* 按钮大小 */
