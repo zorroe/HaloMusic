@@ -57,7 +57,7 @@ interface Props {
   /**
    * 虚拟模式下的最大高度。
    * 页面外层 .content 已是滚动容器（100vh 布局），内层虚拟列表不能再撑满全屏，
-   * 否则页面滚动条与内层滚动条互相打架；预留 Header(75px) + Footer(64px) 及上下留白。
+   * 否则页面滚动条与内层滚动条互相打架；预留 Header(56px) + Footer(64px) 及上下留白。
    */
   maxHeight?: string
 }
@@ -66,7 +66,7 @@ const props = withDefaults(defineProps<Props>(), {
   itemHeight: 64,
   buffer: 6,
   threshold: 80,
-  maxHeight: 'calc(100vh - 220px)',
+  maxHeight: 'calc(100vh - 200px)',
 })
 
 defineSlots<{

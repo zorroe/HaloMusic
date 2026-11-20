@@ -5,6 +5,7 @@ import {
   globalShortcut,
   ipcMain,
   Menu,
+  nativeTheme,
   screen,
   session,
   shell,
@@ -89,6 +90,8 @@ const IPC = {
   mediaKey: 'halo:media-key',
   /** renderer → main：播放进度回写（任务栏 / 程序坞进度条） */
   playbackProgress: 'halo:playback-progress',
+  /** renderer → main：主题变化，让原生标题栏跟随浅色 / 深色 */
+  setThemeSource: 'halo:set-theme-source',
 } as const
 
 /** 旧版本（v1.1.0 及更早）生产页面来源；升级后改为 EXPRESS_ORIGIN（127.0.0.1） */
@@ -563,6 +566,16 @@ function registerIpcHandlers(): void {
     isTrustedIpcSender(event) ? app.getVersion() : ''
   )
 
+  // 渲染层主题变化 → 原生标题栏跟随浅色 / 深色（Windows 标题栏由 DWM 绘制）
+  ipcMain.on(IPC.setThemeSource, (event: IpcMainEvent, mode: unknown) => {
+    if (!isTrustedIpcSender(event)) return
+    if (mode !== 'light' && mode !== 'dark' && mode !== 'system') {
+      console.warn(`[HaloMusic] 拒绝非法主题来源: ${describeValue(mode)}`)
+      return
+    }
+    nativeTheme.themeSource = mode
+  })
+
   // 当前是否最大化（渲染进程启动时同步一次）
   ipcMain.handle(IPC.windowIsMaximized, (event: IpcMainInvokeEvent) => {
     if (!isTrustedIpcSender(event)) return false
@@ -784,9 +797,9 @@ async function createWindow(): Promise<BrowserWindow> {
     // 先隐藏，等首帧可绘制再显示，避免白屏闪烁
     show: false,
     backgroundColor: '#282c34',
-    // 自绘标题栏（Menubar.vue）依赖无边框窗口
-    frame: false,
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    // 使用 Windows / macOS 原生标题栏：左上角系统图标，右上角系统的最小化 / 最大化 / 关闭。
+    // 不再自绘标题栏（Menubar 已移除），因此保持默认 frame: true、不设 titleBarStyle。
+    frame: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       // 安全默认：渲染进程拿不到 Node，preload 通过 contextBridge 暴露白名单能力
@@ -1504,6 +1517,9 @@ app
   .then(async () => {
     // 顺序：session 安全 → 旧 cookie 迁移(仅生产) → NCM API(16666) → Express(17777) → 窗口
     installSessionSecurity()
+    // 原生标题栏：去掉 Electron 默认菜单栏（Windows/Linux 会在窗口内多出一条 File/Edit 菜单）。
+    // macOS 保留应用菜单（系统规范要求）。
+    if (process.platform !== 'darwin') Menu.setApplicationMenu(null)
     await migrateLegacyLocalhostCookies()
     await startNeteaseMusicApi()
     expressServer = await startExpressServer()

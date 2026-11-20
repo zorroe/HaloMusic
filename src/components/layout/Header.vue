@@ -1,5 +1,5 @@
 <template>
-  <MenuBar></MenuBar>
+  <!-- 原生标题栏由系统绘制（图标 + 最小化/最大化/关闭），这里只剩应用内导航栏 -->
   <div class="h-full w-full rounded-xl flex justify-around px-8 py-2 z-50">
     <div class="flex w-1/3 gap-2 items-center">
       <icon-park
@@ -115,7 +115,6 @@ import {
   Sunny,
   Tool,
 } from '@icon-park/vue-next'
-import MenuBar from './Menubar.vue'
 import pinia from '@/store/store'
 import { useSearchStore, useUserInfoStore } from '@/store/index'
 import { routeTo, go } from '@/utils/common'

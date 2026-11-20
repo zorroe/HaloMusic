@@ -76,7 +76,8 @@ onMounted(() => {
   overflow-y: scroll;
   overflow-x: hidden;
   flex: 1;
-  padding: 75px 40px 64px 40px;
+  /* 顶部：应用导航栏高度；底部：Footer 高度 */
+  padding: 56px 40px 64px 40px;
 }
 
 .header {
@@ -84,6 +85,7 @@ onMounted(() => {
   top: 0px;
   left: 0px;
   right: 0px;
+  height: 56px;
   background: radial-gradient(transparent, rgb(255, 255, 255) 1px);
   background-size: 2px 2px;
   backdrop-filter: saturate(180%) blur(50px);

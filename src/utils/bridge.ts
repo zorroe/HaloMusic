@@ -51,6 +51,12 @@ export interface HaloPlaybackBridge {
   setProgress(progress: number): void
 }
 
+/** 外观：让 Windows/macOS 原生标题栏跟随应用主题 */
+export interface HaloAppearanceBridge {
+  /** 'light' | 'dark' | 'system'（跟随系统） */
+  setThemeSource(mode: 'light' | 'dark' | 'system'): void
+}
+
 /** preload 暴露到 window.halo 的能力集合 */
 export interface HaloBridge {
   readonly isElectron: boolean
@@ -63,6 +69,8 @@ export interface HaloBridge {
   readonly media: HaloMediaControls
   /** 播放状态回写（任务栏进度） */
   readonly playback: HaloPlaybackBridge
+  /** 原生标题栏外观跟随主题 */
+  readonly appearance: HaloAppearanceBridge
   /** 应用版本号（来自 package.json） */
   getAppVersion(): Promise<string>
   /** 退出应用 */
@@ -90,6 +98,9 @@ const webFallback: HaloBridge = {
   },
   playback: {
     setProgress: noop,
+  },
+  appearance: {
+    setThemeSource: noop,
   },
   getAppVersion: async () => '0.0.0',
   quit: noop,

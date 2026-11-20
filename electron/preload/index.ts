@@ -40,6 +40,12 @@ interface HaloPlaybackBridge {
   setProgress(progress: number): void
 }
 
+/** 原生标题栏跟随主题，与 src/utils/bridge.ts 保持一致 */
+interface HaloAppearanceBridge {
+  /** 'light' | 'dark' | 'system'（跟随系统） */
+  setThemeSource(mode: 'light' | 'dark' | 'system'): void
+}
+
 interface HaloBridge {
   readonly isElectron: boolean
   readonly platform: string
@@ -47,6 +53,7 @@ interface HaloBridge {
   readonly window: HaloWindowControls
   readonly media: HaloMediaControls
   readonly playback: HaloPlaybackBridge
+  readonly appearance: HaloAppearanceBridge
   getAppVersion(): Promise<string>
   quit(): void
 }
@@ -70,6 +77,8 @@ const IPC = {
   mediaKey: 'halo:media-key',
   /** renderer → main：播放进度回写（任务栏 / 程序坞进度条） */
   playbackProgress: 'halo:playback-progress',
+  /** renderer → main：主题变化，让原生标题栏跟随浅色 / 深色 */
+  setThemeSource: 'halo:set-theme-source',
 } as const
 
 /** 播放控制动作白名单：主进程发来的值同样不可信，只放行约定的三个动作 */
@@ -163,6 +172,13 @@ const haloBridge: HaloBridge = {
         return
       }
       ipcRenderer.send(IPC.playbackProgress, progress)
+    },
+  },
+  appearance: {
+    setThemeSource: (mode: 'light' | 'dark' | 'system') => {
+      // 主进程侧同样做白名单校验
+      if (mode !== 'light' && mode !== 'dark' && mode !== 'system') return
+      ipcRenderer.send(IPC.setThemeSource, mode)
     },
   },
   getAppVersion: async () =>

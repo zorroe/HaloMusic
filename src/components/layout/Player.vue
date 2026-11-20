@@ -500,7 +500,8 @@ const handleSeekLyric = (time: number) => {
 <style scoped>
 .ea-player-page {
   position: fixed;
-  top: 25px;
+  /* 原生标题栏在窗口外，播放页铺满整个内容区即可 */
+  top: 0;
   bottom: 0;
   left: 0;
   width: 100%;

@@ -68,8 +68,8 @@ const handleShadowClick = (event: MouseEvent) => {
   width: 30%;
   max-width: 30%;
   right: 0px;
-  top: 66px;
-  bottom: 66px;
+  top: 56px;
+  bottom: 64px;
   overflow: auto;
   overflow-x: hidden;
   border-radius: 8px;

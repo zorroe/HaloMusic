@@ -21,7 +21,7 @@ HaloMusic 是一个开源的网易云音乐桌面客户端，通过内置的本�
 - 📚 音乐库：歌单、专辑、歌手、排行榜、每日推荐、私人 FM、MV 播放
 - 🔍 搜索：单曲 / 专辑 / 歌手 / 歌单 / MV / 用户多类型搜索
 - 👤 账号：二维码 / 手机号登录，收藏与「我喜欢的音乐」同步
-- 🖥️ 桌面体验：无边框自绘标题栏、系统托盘级的窗口控制、本地代理规避跨域与 Referer 限制
+- 🖥️ 桌面体验：Windows 原生标题栏（应用图标 + 最小化/最大化/关闭）、系统托盘与全局媒体键、本地代理规避跨域与 Referer 限制
 - 🔒 安全模型：`contextIsolation: true` + `nodeIntegration: false` + preload 桥接 + CSP 注入，渲染进程不接触 Node API
 - 🌙 深色模式与本地字体（Barlow），完全离线可用，无外网字体 / 脚本依赖
 
@@ -29,7 +29,7 @@ HaloMusic 是一个开源的网易云音乐桌面客户端，通过内置的本�
 
 | 分类        | 技术                                                                                                      |
 | ----------- | --------------------------------------------------------------------------------------------------------- |
-| 桌面框架    | Electron 45（主进程 + preload + 自绘窗口）                                                                |
+| 桌面框架    | Electron 45（主进程 + preload + 原生窗口）                                                                |
 | 前端框架    | Vue 3.5（`<script setup>` + TypeScript）、Vue Router 4、Pinia 3                                           |
 | 构建工具    | Vite 6、`vite-plugin-electron`、`vue-tsc`                                                                 |
 | 样式        | Tailwind CSS 4（`@tailwindcss/postcss`）+ daisyUI 5 + SCSS                                                |

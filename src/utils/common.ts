@@ -110,18 +110,6 @@ export const openUrl = (url: string): void => {
   bridge.openExternal(url)
 }
 
-export const windowMinimize = (): void => {
-  bridge.window.minimize()
-}
-
-export const windowMaxRestore = (): void => {
-  bridge.window.toggleMaximize()
-}
-
-export const windowClose = (): void => {
-  bridge.window.close()
-}
-
 export const handleLogin = (): void => {
   routeTo('/login')
 }

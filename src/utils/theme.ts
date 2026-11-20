@@ -10,6 +10,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { usePreferredDark } from '@vueuse/core'
+import { bridge } from '@/utils/bridge'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
@@ -55,6 +56,14 @@ const applyTheme = (theme: ResolvedTheme): void => {
   root.style.colorScheme = theme
 }
 
+/**
+ * 让系统原生标题栏跟随主题（Windows 标题栏由 DWM 绘制，Electron 通过
+ * nativeTheme.themeSource 控制；浏览器环境 bridge 已降级为 no-op）。
+ */
+const syncNativeTitleBar = (themeMode: ThemeMode): void => {
+  bridge.appearance.setThemeSource(themeMode)
+}
+
 // 模式或系统偏好变化时同步到 DOM（immediate 保证首次立即生效）
 watch(
   resolvedTheme,
@@ -66,6 +75,8 @@ watch(
 
 watch(mode, next => {
   writeStoredMode(next)
+  // 用用户选择的模式（而不是解析后的 light/dark），'system' 时让系统自己决定标题栏明暗
+  syncNativeTitleBar(next)
 })
 
 /**
@@ -75,6 +86,7 @@ watch(mode, next => {
 export function initTheme(): void {
   mode.value = readStoredMode()
   applyTheme(resolvedTheme.value)
+  syncNativeTitleBar(mode.value)
 }
 
 export function getThemeMode(): ThemeMode {
