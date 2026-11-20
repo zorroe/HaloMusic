@@ -399,6 +399,29 @@ export const usePlayerStore = defineStore('player', () => {
     return song
   }
 
+  /**
+   * 「下一首播放」：把歌曲插到当前播放之后并持久化。
+   * 若歌曲已在队列中，会先摘出再插入，保证语义是「紧接着当前曲播放」。
+   */
+  const insertNext = (song: SongDetail): void => {
+    if (!song || toKey(song.id) === '') return
+    const currentSongId = current.value.currentSong
+      ? toKey(current.value.currentSong.id)
+      : ''
+    const restList = (Array.isArray(playlist.value) ? playlist.value : []).filter(
+      (item) => toKey(item?.id) !== toKey(song.id)
+    )
+    const currentIdxInRest = restList.findIndex(
+      (item) => toKey(item?.id) === currentSongId
+    )
+    const insertAt = currentIdxInRest < 0 ? 0 : currentIdxInRest + 1
+    const nextList = restList.slice()
+    nextList.splice(Math.min(insertAt, nextList.length), 0, song)
+    playlist.value = nextList
+    persistQueue()
+    resetShufflePool()
+  }
+
   const listEdgeIndex = (direction: 1 | -1): number => {
     const length = playlist.value.length
     if (length === 0) return -1
@@ -1196,6 +1219,7 @@ export const usePlayerStore = defineStore('player', () => {
     removeSong,
     clearPlaylist,
     playByIndex,
+    insertNext,
     startSleepTimer,
     cancelSleepTimer,
     setPlaybackRate,

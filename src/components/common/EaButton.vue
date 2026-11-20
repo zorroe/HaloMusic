@@ -1,7 +1,10 @@
 <template>
   <label
     class="ea-button btn-animation"
-    :class="[props.type, props.size]">
+    :class="[props.type, props.size]"
+    role="button"
+    tabindex="0"
+    @keydown="handleKeydown">
     <slot></slot>
   </label>
 </template>
@@ -16,6 +19,17 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'primary',
   size: 'normal',
 })
+
+/**
+ * 根节点是 <label>（部分调用方依赖 label[for] 打开弹窗），没有原生键盘可达性，
+ * 这里补 role/tabindex + Enter/Space 手动触发 click，保证纯键盘也能操作。
+ */
+const handleKeydown = (event: KeyboardEvent): void => {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  const target = event.currentTarget as HTMLElement | null
+  target?.click()
+}
 </script>
 
 <style scoped>

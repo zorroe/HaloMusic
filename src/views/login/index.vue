@@ -108,7 +108,14 @@ const handleLoginSuccess = async (cookie?: string) => {
     })
   }
   try {
-    await checkLoginStatus()
+    // checkLoginStatus 在「网络失败」时不会抛错，而是返回当前登录态，
+    // 因此必须用返回值判断，避免出现 isLogin=true 但 userInfo=null 的中间态。
+    const loginOk = await checkLoginStatus()
+    if (!loginOk) {
+      notify({ message: '登录状态同步失败，请重试', type: 'warning' })
+      void startLogin()
+      return
+    }
     userInfoStore.setLogin(true)
     notify({ message: '登录成功', type: 'success' })
     redirectAfterLogin()
