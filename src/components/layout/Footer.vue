@@ -89,6 +89,18 @@
         >
           <icon-park :icon="VoiceOne" :size="20"></icon-park>
         </label>
+        <button
+          type="button"
+          class="footer-icon btn-animation footer-timer"
+          :class="{ 'is-active': playerStore.sleepTimerRunning }"
+          :title="sleepTimerTitle"
+          @click="openSleepTimerPanel"
+        >
+          <icon-park :icon="Timer" :size="20"></icon-park>
+          <span v-if="playerStore.sleepTimerRunning" class="footer-timer-text">
+            {{ sleepTimerLabel }}
+          </span>
+        </button>
         <div class="footer-volume">
           <icon-park
             :icon="volumeIcon"
@@ -231,6 +243,7 @@ import {
   PlayOne,
   RightOne,
   ShuffleOne,
+  Timer,
   Up,
   VoiceOne,
   VolumeMute,
@@ -241,7 +254,14 @@ import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import { formatTrackTime, routeTo } from '@/utils/common'
 import type { SongDetail, SongLevel } from '@/utils/player'
+import { formatSleepCountdown } from '@/utils/player-timer'
 import Player from './Player.vue'
+
+/**
+ * 「展开睡眠定时面板」的一次性事件名（与 Player.vue 保持一致）。
+ * Footer 只有入口，面板在播放页内；用 window 事件避免为 UI 开关去改 store。
+ */
+const OPEN_SLEEP_TIMER_EVENT = 'halo:open-sleep-timer-panel'
 
 const playerStore = usePlayerStore(pinia)
 
@@ -278,6 +298,25 @@ const playModeText = computed(() => {
   if (playerStore.cycleMode === 2) return '随机播放'
   return '列表循环'
 })
+
+// ---------------- 睡眠定时入口（面板在播放页内） ----------------
+const sleepTimerLabel = computed(() =>
+  playerStore.sleepTimerRunning
+    ? formatSleepCountdown(playerStore.sleepTimerRemaining)
+    : ''
+)
+
+const sleepTimerTitle = computed(() =>
+  playerStore.sleepTimerRunning
+    ? `睡眠定时剩余 ${sleepTimerLabel.value}，点击在播放页调整`
+    : '睡眠定时（在播放页设置）'
+)
+
+/** 打开播放页，并通知 Player 展开定时面板 */
+const openSleepTimerPanel = () => {
+  playerStore.openPlayerPage()
+  window.dispatchEvent(new CustomEvent(OPEN_SLEEP_TIMER_EVENT))
+}
 
 // ---------------- 进度条 ----------------
 const sliderMax = computed(() =>
@@ -448,6 +487,28 @@ const handleSelectQuality = async (level: SongLevel) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 睡眠定时入口：运行时显示倒计时并高亮 */
+.footer-timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  background-color: transparent;
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+.footer-timer.is-active {
+  color: var(--color-primary);
+}
+
+.footer-timer-text {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .footer-volume {
