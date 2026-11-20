@@ -1,0 +1,63 @@
+name: CI
+
+# 质量门禁：类型检查 / ESLint / Vitest / 前端 + Electron 主进程构建
+# 不启动 Electron、不做 electron-builder 打包（打包在发布流程中单独执行）。
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+# 同一分支/PR 的新运行会取消旧运行
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 最小权限：CI 只读取仓库内容
+permissions:
+  contents: read
+
+env:
+  # CI 只需要构建产物，不需要 Electron 可执行文件：
+  # 避免首次 require("electron") 或 postinstall 触发二进制下载（约 100MB+）。
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+  # 统一 npm 行为，避免 audit/fund 噪音
+  NPM_CONFIG_AUDIT: 'false'
+  NPM_CONFIG_FUND: 'false'
+
+jobs:
+  quality:
+    name: Quality (${{ matrix.os }} / Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [22, 24]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (renderer + electron)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build (renderer + electron main/preload)
+        run: npx vite build

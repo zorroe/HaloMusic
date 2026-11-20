@@ -5,6 +5,10 @@
   "description": "HaloMusic —— 基于 Electron + Vue 3 + TypeScript 的网易云音乐第三方桌面客户端",
   "author": "zorroe <1318753541@qq.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zorroe/HaloMusic.git"
+  },
   "main": "dist-electron/main/index.js",
   "keywords": [
     "electron",
@@ -25,20 +29,27 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && vite build && electron-builder --config electron-builder.json5",
-    "build:dist": "vite build && electron-builder --config electron-builder.json5",
+    "build": "npm run typecheck && vite build && electron-builder --config electron-builder.json5 --publish never",
+    "build:dist": "vite build && electron-builder --config electron-builder.json5 --publish never",
+    "release": "electron-builder --config electron-builder.json5 --publish never",
+    "release:win": "electron-builder --win --config electron-builder.json5 --publish never",
+    "release:mac": "electron-builder --mac --config electron-builder.json5 --publish never",
+    "release:linux": "electron-builder --linux --config electron-builder.json5 --publish never",
     "typecheck": "vue-tsc --noEmit && tsc -p tsconfig.node.json --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test": "vitest run",
-    "preview": "vite preview"
+    "test:watch": "vitest",
+    "preview": "vite preview",
+    "prepare": "husky"
   },
   "dependencies": {
     "@icon-park/vue-next": "^1.4.2",
     "@vueuse/core": "^13.9.0",
     "axios": "^1.21.1",
     "dayjs": "^1.11.23",
+    "electron-updater": "^6.8.11",
     "express": "^4.22.3",
     "express-http-proxy": "^2.1.1",
     "js-cookie": "^3.0.8",
@@ -49,12 +60,15 @@
     "vue-slider-component": "^4.1.0-beta.7"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@tailwindcss/postcss": "^4.3.5",
     "@types/express": "^4.17.21",
     "@types/express-http-proxy": "^1.6.7",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.0.0",
     "@vitejs/plugin-vue": "^5.2.4",
+    "@vue/test-utils": "^2.6.0",
     "autoprefixer": "^10.4.21",
     "daisyui": "^5.8.1",
     "electron": "^45.4.1",
@@ -62,6 +76,9 @@
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-vue": "^10.0.0",
+    "happy-dom": "^21.0.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
     "postcss": "^8.5.3",
     "prettier": "^3.0.0",
     "sass": "^1.108.2",

@@ -16,6 +16,12 @@
     "dist-electron",
     "!**/*.map"
   ],
+  "publish": {
+    "provider": "github",
+    "owner": "zorroe",
+    "repo": "HaloMusic"
+  },
+  "generateUpdatesFilesForAllChannels": true,
   "artifactName": "${productName}-${version}-${arch}.${ext}",
   "win": {
     "target": [
