@@ -33,8 +33,12 @@ export interface MusicDetailParams {
   ids: string | number
 }
 
+/** 歌词详情（词信息基本不变，缓存 5 分钟） */
 export const getLyricApi = (params: LyricParams): Promise<LyricResponse> =>
-  http.get<LyricResponse>('/lyric', { params })
+  http.get<LyricResponse>('/lyric', {
+    params,
+    cache: { ttl: 300_000 },
+  })
 
 export const likeMusicApi = (
   params: LikeMusicParams
@@ -58,7 +62,7 @@ export const getMusicUrl = async (
 export const getMusicDetailApi = (
   params: MusicDetailParams
 ): Promise<SongDetailResponse> =>
-  http.get<SongDetailResponse>('/song/detail', { params })
+  http.get<SongDetailResponse>('/song/detail', { params, cache: true })
 
 /** 取单曲信息并组装成视图层使用的 MusicBaseInfo；查不到时返回 null */
 export const getMusicDetail = async (
@@ -83,9 +87,12 @@ export const getMusicDetail = async (
 export const getRecommendSongsApi = (): Promise<RecommendSongsResponse> =>
   http.get<RecommendSongsResponse>('/recommend/songs')
 
-/** 检查歌曲是否可用 */
+/** 检查歌曲是否可用（版权状态可能变化，只缓存 10 秒） */
 export const checkMusicApi = (id: number): Promise<CheckMusicResponse> =>
-  http.get<CheckMusicResponse>('/check/music', { params: { id } })
+  http.get<CheckMusicResponse>('/check/music', {
+    params: { id },
+    cache: { ttl: 10_000 },
+  })
 
 /**
  * 获取歌曲资源（http -> https，避免 Electron 混合内容拦截）。

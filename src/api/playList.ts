@@ -47,13 +47,13 @@ export const getTopListApi = (): Promise<TopListResponse> =>
 export const getPlayListAllApi = (
   params: PlayListIdParams
 ): Promise<PlayListAllResponse> =>
-  http.get<PlayListAllResponse>('/playlist/track/all', { params })
+  http.get<PlayListAllResponse>('/playlist/track/all', { params, cache: true })
 
 /** 获取歌单详情 */
 export const getPlayListDetailApi = (
   params: PlayListIdParams
 ): Promise<PlayListDetailResponse> =>
-  http.get<PlayListDetailResponse>('/playlist/detail', { params })
+  http.get<PlayListDetailResponse>('/playlist/detail', { params, cache: true })
 
 /** 收藏与取消收藏歌单 */
 export const subscribePlayListApi = (

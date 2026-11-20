@@ -20,11 +20,11 @@ export const loginStatusApi = (): Promise<LoginStatusResponse> =>
 export const logoutApi = (): Promise<LogoutResponse> =>
   http.post<LogoutResponse>('/logout')
 
-/** 用户所有歌单（第一个通常是“我喜欢的音乐”） */
+/** 用户所有歌单（第一个通常是“我喜欢的音乐”）；退出登录后写接口会清空缓存 */
 export const getPlayListByUidApi = (
   params: UserPlayListParams
 ): Promise<UserPlayListResponse> =>
-  http.get<UserPlayListResponse>('/user/playlist', { params })
+  http.get<UserPlayListResponse>('/user/playlist', { params, cache: true })
 
 /** 喜欢列表的 id 集合 */
 export const getLikeListApi = (params: {
