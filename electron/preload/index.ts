@@ -23,11 +23,20 @@ interface HaloWindowControls {
   onMaximizeChange(cb: (isMax: boolean) => void): () => void
 }
 
+/** 播放控制动作（与 src/utils/bridge.ts 的 MediaKeyAction 保持一致） */
+type MediaKeyAction = 'play-pause' | 'play-next' | 'play-prev'
+
+interface HaloMediaControls {
+  /** 订阅系统媒体键 / 托盘菜单的播放控制动作，返回取消订阅函数 */
+  onKey(cb: (action: MediaKeyAction) => void): () => void
+}
+
 interface HaloBridge {
   readonly isElectron: boolean
   readonly platform: string
   openExternal(url: string): void
   readonly window: HaloWindowControls
+  readonly media: HaloMediaControls
   getAppVersion(): Promise<string>
   quit(): void
 }
@@ -47,7 +56,20 @@ const IPC = {
   appQuit: 'halo:app-quit',
   /** main → preload：页面加载完成，用于移除启动 loading（postMessage 的兜底通道） */
   appReady: 'halo:app-ready',
+  /** main → preload：系统媒体键 / 托盘菜单的播放控制动作 */
+  mediaKey: 'halo:media-key',
 } as const
+
+/** 播放控制动作白名单：主进程发来的值同样不可信，只放行约定的三个动作 */
+const MEDIA_KEY_ACTIONS: readonly string[] = [
+  'play-pause',
+  'play-next',
+  'play-prev',
+]
+
+function isMediaKeyAction(value: unknown): value is MediaKeyAction {
+  return typeof value === 'string' && MEDIA_KEY_ACTIONS.includes(value)
+}
 
 const haloBridge: HaloBridge = {
   isElectron: true,
@@ -71,6 +93,32 @@ const haloBridge: HaloBridge = {
       // 返回取消订阅函数；注意必须用同一个 listener 引用调用 removeListener
       return () => {
         ipcRenderer.removeListener(IPC.windowMaximizedChanged, listener)
+      }
+    },
+  },
+  media: {
+    onKey: (cb: (action: MediaKeyAction) => void) => {
+      // 运行时兜底：渲染进程可能传入非函数
+      if (typeof cb !== 'function') return () => undefined
+
+      const listener = (_event: IpcRendererEvent, action: unknown) => {
+        // 白名单校验：未知动作直接忽略，不向渲染进程透传
+        if (!isMediaKeyAction(action)) {
+          console.warn(
+            `[HaloMusic preload] 忽略未知媒体键动作: ${String(action)}`
+          )
+          return
+        }
+        try {
+          cb(action)
+        } catch (error) {
+          console.error('[HaloMusic preload] 媒体键回调执行失败:', error)
+        }
+      }
+      ipcRenderer.on(IPC.mediaKey, listener)
+      // 返回取消订阅函数；必须用同一个 listener 引用调用 removeListener
+      return () => {
+        ipcRenderer.removeListener(IPC.mediaKey, listener)
       }
     },
   },

@@ -35,6 +35,7 @@ import Modals from '@/components/layout/Modals.vue'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import { checkLoginStatus } from '@/utils/common'
+import { bindMediaKeys } from '@/utils/mediaKeys'
 
 const playerStore = usePlayerStore(pinia)
 
@@ -54,6 +55,8 @@ const excludes = [
 
 onMounted(() => {
   playerStore.initPlayer()
+  // 系统媒体键 / 托盘播放控制（Electron 下生效，浏览器环境自动跳过）
+  bindMediaKeys()
   // 登录态校验只在这里做一次（Header 不再重复请求）
   checkLoginStatus().catch(error => {
     console.error('[HaloMusic] check login status failed:', error)

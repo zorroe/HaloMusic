@@ -26,6 +26,22 @@ export interface HaloWindowControls {
   onMaximizeChange(cb: (isMax: boolean) => void): () => void
 }
 
+/**
+ * 播放控制动作。
+ * 来源有两处，共用同一套渲染层处理逻辑：
+ * - 系统媒体键（globalShortcut: MediaPlayPause / MediaNextTrack / MediaPreviousTrack）
+ * - 托盘菜单（播放/暂停、上一首、下一首）
+ */
+export type MediaKeyAction = 'play-pause' | 'play-next' | 'play-prev'
+
+export interface HaloMediaControls {
+  /**
+   * 订阅播放控制动作。
+   * @returns 取消订阅函数（必须在合适时机调用，避免重复处理）
+   */
+  onKey(cb: (action: MediaKeyAction) => void): () => void
+}
+
 /** preload 暴露到 window.halo 的能力集合 */
 export interface HaloBridge {
   readonly isElectron: boolean
@@ -34,6 +50,8 @@ export interface HaloBridge {
   /** 用系统默认浏览器打开外部链接，仅允许 http(s) */
   openExternal(url: string): void
   readonly window: HaloWindowControls
+  /** 媒体键 / 托盘播放控制 */
+  readonly media: HaloMediaControls
   /** 应用版本号（来自 package.json） */
   getAppVersion(): Promise<string>
   /** 退出应用 */
@@ -55,6 +73,9 @@ const webFallback: HaloBridge = {
     close: noop,
     isMaximized: async () => false,
     onMaximizeChange: () => noop,
+  },
+  media: {
+    onKey: () => noop,
   },
   getAppVersion: async () => '0.0.0',
   quit: noop,

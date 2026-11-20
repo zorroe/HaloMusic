@@ -1,6 +1,22 @@
-import { app, BrowserWindow, dialog, ipcMain, session, shell } from 'electron'
-import type { IpcMainEvent, IpcMainInvokeEvent, WebContents } from 'electron'
-import { existsSync, writeFileSync } from 'node:fs'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  screen,
+  session,
+  shell,
+  Tray,
+} from 'electron'
+import type {
+  IpcMainEvent,
+  IpcMainInvokeEvent,
+  MenuItemConstructorOptions,
+  WebContents,
+} from 'electron'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { connect } from 'node:net'
 import { release } from 'node:os'
 import { join } from 'node:path'
@@ -40,6 +56,17 @@ const SERVICE_READY_TIMEOUT_MS = 20_000
 /** 外部链接最大长度，防止超长/畸形串透传 */
 const MAX_EXTERNAL_URL_LENGTH = 2048
 
+/** 主窗口默认尺寸（首次启动 / 窗口状态无效时使用） */
+const DEFAULT_WINDOW_WIDTH = 1300
+const DEFAULT_WINDOW_HEIGHT = 800
+/** 主窗口最小尺寸：恢复窗口状态时不得小于该值 */
+const MIN_WINDOW_WIDTH = 1300
+const MIN_WINDOW_HEIGHT = 800
+/** 窗口状态持久化文件（放在 userData 下，升级/卸载不丢） */
+const WINDOW_STATE_FILE = 'window-state.json'
+/** resize / move 期间写窗口状态的防抖间隔 */
+const WINDOW_STATE_SAVE_DEBOUNCE_MS = 300
+
 /**
  * IPC 通道名，统一 `halo:` 前缀。
  * 注意：electron/preload/index.ts 里有一份相同常量（preload 独立构建、不共享模块），
@@ -56,6 +83,8 @@ const IPC = {
   appQuit: 'halo:app-quit',
   /** main → preload：页面加载完成，用于移除启动 loading（postMessage 的兜底通道） */
   appReady: 'halo:app-ready',
+  /** main → preload：系统媒体键 / 托盘菜单的播放控制动作 */
+  mediaKey: 'halo:media-key',
 } as const
 
 /** 旧版本（v1.1.0 及更早）生产页面来源；升级后改为 EXPRESS_ORIGIN（127.0.0.1） */
@@ -150,6 +179,16 @@ function describeValue(value: unknown): string {
     return value.length > 120 ? `${value.slice(0, 120)}…` : value
   }
   return typeof value
+}
+
+/**
+ * 应用图标路径（主窗口 / 系统托盘共用）。
+ * - dev：process.env.PUBLIC 指向仓库的 public/；
+ * - prod：PUBLIC 指向 dist/，vite 会把 public/ 下的静态资源拷到 dist 根目录，
+ *   因此同一个拼接方式在两种模式下都成立，不要硬编码绝对路径。
+ */
+function appIconPath(): string {
+  return join(process.env.PUBLIC, 'favicon.ico')
 }
 
 /** 轮询 TCP 端口，直到目标服务真正可以建立连接（而不是仅 listen() 调用完成） */
@@ -547,6 +586,133 @@ function registerIpcHandlers(): void {
 }
 
 // ---------------------------------------------------------------------------
+// 窗口状态持久化：记住上次的尺寸 / 位置 / 最大化状态
+// ---------------------------------------------------------------------------
+
+interface WindowState {
+  width: number
+  height: number
+  x: number
+  y: number
+  isMaximized: boolean
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+/**
+ * 窗口左上角是否落在某个显示器的工作区内。
+ * 注意：screen 模块只能在 app.whenReady() 之后使用，因此该函数只在 createWindow
+ * （ready 之后）里被调用，不在模块顶层调用。
+ */
+function isPointOnAnyDisplay(x: number, y: number): boolean {
+  return screen.getAllDisplays().some(({ workArea }) => {
+    return (
+      x >= workArea.x &&
+      x < workArea.x + workArea.width &&
+      y >= workArea.y &&
+      y < workArea.y + workArea.height
+    )
+  })
+}
+
+/**
+ * 读取并校验窗口状态。
+ * 任何字段缺失/非法、或 x/y 已不在当前任一显示器工作区（如外接屏被拔掉）时
+ * 返回 null，让窗口回退到默认尺寸并居中，避免恢复到屏幕外不可见。
+ */
+function readWindowState(): WindowState | null {
+  const filePath = join(app.getPath('userData'), WINDOW_STATE_FILE)
+  if (!existsSync(filePath)) return null
+
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(filePath, 'utf-8'))
+    if (parsed === null || typeof parsed !== 'object') return null
+    const state = parsed as Partial<WindowState>
+
+    if (
+      !isFiniteNumber(state.width) ||
+      !isFiniteNumber(state.height) ||
+      !isFiniteNumber(state.x) ||
+      !isFiniteNumber(state.y) ||
+      state.width < MIN_WINDOW_WIDTH ||
+      state.height < MIN_WINDOW_HEIGHT ||
+      typeof state.isMaximized !== 'boolean' ||
+      !isPointOnAnyDisplay(state.x, state.y)
+    ) {
+      console.warn('[HaloMusic] 窗口状态文件无效或已越界，回退默认居中')
+      return null
+    }
+
+    return {
+      width: Math.round(state.width),
+      height: Math.round(state.height),
+      x: Math.round(state.x),
+      y: Math.round(state.y),
+      isMaximized: state.isMaximized,
+    }
+  } catch (error) {
+    console.warn('[HaloMusic] 读取窗口状态失败，使用默认布局:', error)
+    return null
+  }
+}
+
+/**
+ * 采集当前窗口状态。
+ * 最大化时用 getNormalBounds()：记录「还原后」的尺寸/位置，
+ * 避免把最大化 bounds 写成普通 bounds，导致下次还原到最大尺寸。
+ */
+function collectWindowState(win: BrowserWindow): WindowState {
+  const isMaximized = win.isMaximized()
+  const bounds = isMaximized ? win.getNormalBounds() : win.getBounds()
+  return {
+    width: Math.round(bounds.width),
+    height: Math.round(bounds.height),
+    x: Math.round(bounds.x),
+    y: Math.round(bounds.y),
+    isMaximized,
+  }
+}
+
+/** 立即把窗口状态写盘；失败只 warn，不影响应用运行 */
+function saveWindowState(win: BrowserWindow): void {
+  if (win.isDestroyed()) return
+  try {
+    const dir = app.getPath('userData')
+    mkdirSync(dir, { recursive: true })
+    const state = collectWindowState(win)
+    writeFileSync(
+      join(dir, WINDOW_STATE_FILE),
+      `${JSON.stringify(state, null, 2)}\n`,
+      'utf-8'
+    )
+  } catch (error) {
+    console.warn('[HaloMusic] 保存窗口状态失败:', error)
+  }
+}
+
+let windowStateSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+/** 运行时 resize / move 防抖写盘，避免拖动窗口时高频 IO */
+function scheduleWindowStateSave(win: BrowserWindow): void {
+  if (windowStateSaveTimer) clearTimeout(windowStateSaveTimer)
+  windowStateSaveTimer = setTimeout(() => {
+    windowStateSaveTimer = null
+    saveWindowState(win)
+  }, WINDOW_STATE_SAVE_DEBOUNCE_MS)
+}
+
+/** 立即落盘（close / before-quit 调用），并清掉尚未触发的防抖任务 */
+function flushWindowState(win: BrowserWindow | null): void {
+  if (windowStateSaveTimer) {
+    clearTimeout(windowStateSaveTimer)
+    windowStateSaveTimer = null
+  }
+  if (win && !win.isDestroyed()) saveWindowState(win)
+}
+
+// ---------------------------------------------------------------------------
 // 主窗口
 // ---------------------------------------------------------------------------
 
@@ -560,13 +726,17 @@ async function createWindow(): Promise<BrowserWindow> {
     return mainWindow
   }
 
+  // 读取上次窗口状态并校验（screen 只能在 ready 之后使用，createWindow 只在 ready 后调用）
+  const restoredState = readWindowState()
+
   const win = new BrowserWindow({
     title: 'HaloMusic',
-    icon: join(process.env.PUBLIC, 'favicon.ico'),
-    width: 1300,
-    height: 800,
-    minWidth: 1300,
-    minHeight: 800,
+    icon: appIconPath(),
+    width: restoredState?.width ?? DEFAULT_WINDOW_WIDTH,
+    height: restoredState?.height ?? DEFAULT_WINDOW_HEIGHT,
+    ...(restoredState ? { x: restoredState.x, y: restoredState.y } : {}),
+    minWidth: MIN_WINDOW_WIDTH,
+    minHeight: MIN_WINDOW_HEIGHT,
     // 先隐藏，等首帧可绘制再显示，避免白屏闪烁
     show: false,
     backgroundColor: '#282c34',
@@ -596,6 +766,9 @@ async function createWindow(): Promise<BrowserWindow> {
   })
 
   mainWindow = win
+
+  // 上次退出时处于最大化：恢复最大化（普通 bounds 已由构造参数应用，不会被污染）
+  if (restoredState?.isMaximized) win.maximize()
 
   // 首帧可绘制后再显示
   win.once('ready-to-show', () => {
@@ -647,7 +820,20 @@ async function createWindow(): Promise<BrowserWindow> {
     maximizeNotifyTimer = setTimeout(notifyMaximizedState, 100)
   })
 
+  // 窗口状态记忆：resize / move 防抖保存，close 时立即落盘（退出前保证最后一次写入）
+  const persistWindowState = () => scheduleWindowStateSave(win)
+  win.on('resize', persistWindowState)
+  win.on('move', persistWindowState)
+  win.on('maximize', persistWindowState)
+  win.on('unmaximize', persistWindowState)
+  win.on('close', () => flushWindowState(win))
+
   win.on('closed', () => {
+    // 兜底：窗口未经 close 事件被直接销毁时，清掉待执行的防抖任务
+    if (windowStateSaveTimer) {
+      clearTimeout(windowStateSaveTimer)
+      windowStateSaveTimer = null
+    }
     if (maximizeNotifyTimer) {
       clearTimeout(maximizeNotifyTimer)
       maximizeNotifyTimer = null
@@ -675,6 +861,105 @@ async function createWindow(): Promise<BrowserWindow> {
   }
 
   return win
+}
+
+// ---------------------------------------------------------------------------
+// 桌面能力：全局媒体键 + 系统托盘
+// ---------------------------------------------------------------------------
+
+/**
+ * 播放控制动作（必须与 src/utils/bridge.ts 的 MediaKeyAction、
+ * electron/preload/index.ts 的动作白名单三方保持一致）。
+ */
+type MediaKeyAction = 'play-pause' | 'play-next' | 'play-prev'
+
+/** 媒体键是否已注册（窗口重建 / activate 时不再重复注册） */
+let mediaKeysRegistered = false
+
+/**
+ * 把播放动作广播给主窗口渲染进程。
+ * 窗口不存在/已销毁时静默忽略（窗口重建间隙、启动阶段、退出过程中都可能出现）。
+ */
+function broadcastMediaKey(action: MediaKeyAction): void {
+  const win = mainWindow
+  if (!win || win.isDestroyed() || win.webContents.isDestroyed()) return
+  win.webContents.send(IPC.mediaKey, action)
+}
+
+/**
+ * 注册全局媒体键（只注册一次）。
+ * - 必须在 app ready 之后、主窗口创建完成后调用；
+ * - register 返回 false 表示组合键被其它应用占用：只 warn，不影响启动；
+ * - 退出时由 will-quit 统一 unregisterAll()，避免退出后仍占用媒体键。
+ */
+function installMediaKeys(): void {
+  if (mediaKeysRegistered) return
+  mediaKeysRegistered = true
+
+  const bindings: ReadonlyArray<readonly [string, MediaKeyAction]> = [
+    ['MediaPlayPause', 'play-pause'],
+    ['MediaNextTrack', 'play-next'],
+    ['MediaPreviousTrack', 'play-prev'],
+  ]
+
+  for (const [accelerator, action] of bindings) {
+    try {
+      const registered = globalShortcut.register(accelerator, () => {
+        broadcastMediaKey(action)
+      })
+      if (!registered) {
+        console.warn(
+          `[HaloMusic] 全局媒体键注册失败（可能被其它应用占用）: ${accelerator}`
+        )
+      }
+    } catch (error) {
+      console.warn(`[HaloMusic] 全局媒体键注册异常: ${accelerator}`, error)
+    }
+  }
+}
+
+let tray: Tray | null = null
+
+/** 显示 / 还原并聚焦主窗口（复用 createWindow 的显隐逻辑：已存在则 show+focus，否则重建） */
+function showMainWindow(): void {
+  void createWindow().catch(handleStartupFailure)
+}
+
+/**
+ * 创建系统托盘（应用启动后调用一次）。
+ * 图标与主窗口共用 appIconPath()；创建失败（如无桌面环境）只 warn，不影响启动。
+ */
+function createTray(): void {
+  if (tray) return
+
+  try {
+    const instance = new Tray(appIconPath())
+    tray = instance
+    instance.setToolTip('HaloMusic')
+
+    const template: MenuItemConstructorOptions[] = [
+      { label: '显示主窗口', click: () => showMainWindow() },
+      { label: '播放 / 暂停', click: () => broadcastMediaKey('play-pause') },
+      { label: '上一首', click: () => broadcastMediaKey('play-prev') },
+      { label: '下一首', click: () => broadcastMediaKey('play-next') },
+      { type: 'separator' },
+      { label: '退出', click: () => app.quit() },
+    ]
+    instance.setContextMenu(Menu.buildFromTemplate(template))
+
+    // 单击托盘图标：显示 / 还原并聚焦主窗口
+    instance.on('click', () => showMainWindow())
+  } catch (error) {
+    console.warn('[HaloMusic] 系统托盘创建失败（不影响启动）:', error)
+    if (tray) {
+      try {
+        tray.destroy()
+      } catch {
+        /* 创建中途失败时销毁可能抛错，忽略 */
+      }
+      tray = null
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -816,6 +1101,15 @@ app.on('before-quit', () => {
   if (isQuitting) return
   isQuitting = true
 
+  // 退出前销毁托盘，避免 Windows 通知区残留图标
+  if (tray) {
+    tray.destroy()
+    tray = null
+  }
+
+  // 退出前确保最后一次窗口状态写入（close 事件通常还会再写一次，重复写入无副作用）
+  flushWindowState(mainWindow)
+
   // 先关本地服务，再让窗口/进程退出
   closeServer(expressServer, `Express (${LOOPBACK_HOST}:${EXPRESS_PORT})`)
   expressServer = null
@@ -825,6 +1119,13 @@ app.on('before-quit', () => {
     `NeteaseCloudMusicApi (${LOOPBACK_HOST}:${NCM_API_PORT})`
   )
   ncmApiApp = null
+})
+
+app.on('will-quit', () => {
+  // 注销全部全局快捷键，避免应用退出后媒体键仍被占用
+  // （未完成 ready 就被退出的场景，globalShortcut 尚不可用，直接跳过）
+  if (!app.isReady()) return
+  globalShortcut.unregisterAll()
 })
 
 app
@@ -837,6 +1138,9 @@ app
     expressServer = await startExpressServer()
     console.info(`[HaloMusic] 本地静态服务已启动: ${EXPRESS_ORIGIN}`)
     await createWindow()
+    // 桌面能力：均要求 app ready（screen / globalShortcut），且在主窗口创建完成后装配
+    installMediaKeys()
+    createTray()
   })
   .catch(handleStartupFailure)
 
