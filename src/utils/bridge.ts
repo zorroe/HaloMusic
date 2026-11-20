@@ -42,6 +42,15 @@ export interface HaloMediaControls {
   onKey(cb: (action: MediaKeyAction) => void): () => void
 }
 
+/** 播放状态 → 主进程（任务栏/程序坞进度） */
+export interface HaloPlaybackBridge {
+  /**
+   * 同步当前播放进度到系统任务栏。
+   * @param progress 0~1 的播放进度；传 -1 清除进度条
+   */
+  setProgress(progress: number): void
+}
+
 /** preload 暴露到 window.halo 的能力集合 */
 export interface HaloBridge {
   readonly isElectron: boolean
@@ -52,6 +61,8 @@ export interface HaloBridge {
   readonly window: HaloWindowControls
   /** 媒体键 / 托盘播放控制 */
   readonly media: HaloMediaControls
+  /** 播放状态回写（任务栏进度） */
+  readonly playback: HaloPlaybackBridge
   /** 应用版本号（来自 package.json） */
   getAppVersion(): Promise<string>
   /** 退出应用 */
@@ -76,6 +87,9 @@ const webFallback: HaloBridge = {
   },
   media: {
     onKey: () => noop,
+  },
+  playback: {
+    setProgress: noop,
   },
   getAppVersion: async () => '0.0.0',
   quit: noop,

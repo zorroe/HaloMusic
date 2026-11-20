@@ -18,9 +18,11 @@ import type {
 } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { connect } from 'node:net'
+import { createRequire } from 'node:module'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import type { Server } from 'node:http'
+import type { AppUpdater, ProgressInfo, UpdateInfo } from 'electron-updater'
 import express from 'express'
 import expressProxy from 'express-http-proxy'
 import NeteaseCloudMusicApi from 'NeteaseCloudMusicApi'
@@ -85,6 +87,8 @@ const IPC = {
   appReady: 'halo:app-ready',
   /** main → preload：系统媒体键 / 托盘菜单的播放控制动作 */
   mediaKey: 'halo:media-key',
+  /** renderer → main：播放进度回写（任务栏 / 程序坞进度条） */
+  playbackProgress: 'halo:playback-progress',
 } as const
 
 /** 旧版本（v1.1.0 及更早）生产页面来源；升级后改为 EXPRESS_ORIGIN（127.0.0.1） */
@@ -179,6 +183,27 @@ function describeValue(value: unknown): string {
     return value.length > 120 ? `${value.slice(0, 120)}…` : value
   }
   return typeof value
+}
+
+/**
+ * 校验任务栏进度入参：允许 -1（清除进度条）或 0~1 的有限数字。
+ * 渲染进程传入的其余值（NaN / Infinity / 越界 / 非数字）一律忽略。
+ */
+function isValidPlaybackProgress(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    (value === -1 || (value >= 0 && value <= 1))
+  )
+}
+
+/** 非法进度只在首次出现时 warn，避免渲染层 bug 把主进程日志打爆 */
+let warnedInvalidPlaybackProgress = false
+
+function warnInvalidPlaybackProgress(value: unknown): void {
+  if (warnedInvalidPlaybackProgress) return
+  warnedInvalidPlaybackProgress = true
+  console.warn(`[HaloMusic] 忽略非法播放进度: ${describeValue(value)}`)
 }
 
 /**
@@ -583,6 +608,25 @@ function registerIpcHandlers(): void {
     if (!isTrustedIpcSender(event)) return
     app.quit()
   })
+
+  // 任务栏 / 程序坞播放进度：0~1 显示进度，-1 清除（Windows 任务栏、macOS Dock、Linux Unity）
+  ipcMain.on(IPC.playbackProgress, (event: IpcMainEvent, value: unknown) => {
+    if (!isTrustedIpcSender(event)) return
+    if (!isValidPlaybackProgress(value)) {
+      warnInvalidPlaybackProgress(value)
+      return
+    }
+
+    // 用发送方所在的窗口，而不是全局单例，避免多窗口/窗口重建期间张冠李戴
+    const win = windowFromSender(event.sender)
+    if (!win || win.isDestroyed()) return
+
+    try {
+      win.setProgressBar(value)
+    } catch (error) {
+      console.warn('[HaloMusic] 设置任务栏播放进度失败:', error)
+    }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -787,7 +831,7 @@ async function createWindow(): Promise<BrowserWindow> {
   if (isDev) {
     // Electron 45 的 console-message 回调：第一个参数是 Event 与消息参数的合并对象，
     // 其中 level 为 'info' | 'warning' | 'error' | 'debug' 字符串。
-    win.webContents.on('console-message', event => {
+    win.webContents.on('console-message', (event) => {
       const location = event.sourceId
         ? ` (${event.sourceId}:${event.lineNumber})`
         : ''
@@ -943,6 +987,8 @@ function createTray(): void {
       { label: '上一首', click: () => broadcastMediaKey('play-prev') },
       { label: '下一首', click: () => broadcastMediaKey('play-next') },
       { type: 'separator' },
+      { label: '检查更新…', click: () => void checkForUpdates(true) },
+      { type: 'separator' },
       { label: '退出', click: () => app.quit() },
     ]
     instance.setContextMenu(Menu.buildFromTemplate(template))
@@ -960,6 +1006,325 @@ function createTray(): void {
       tray = null
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// 自动更新（electron-updater）：仅打包后启用，任何失败都只 warn、不影响启动
+// ---------------------------------------------------------------------------
+
+/** 启动后延迟多久执行首次静默检查（等窗口/首屏稳定后再联网） */
+const UPDATE_CHECK_DELAY_MS = 10_000
+/** 下载进度日志的最小百分比间隔，避免刷屏 */
+const UPDATE_PROGRESS_LOG_STEP = 10
+
+let autoUpdater: AppUpdater | null = null
+/** 是否已尝试加载更新组件（加载失败也只尝试一次，避免反复 warn） */
+let autoUpdaterLoadAttempted = false
+/** 最近一次检查是否由托盘「检查更新…」手动触发（只有手动才提示「已是最新 / 失败」） */
+let lastCheckWasManual = false
+let updateCheckInFlight = false
+let updateDownloadInFlight = false
+/** 本次检查是否收到过 error 事件（用于避免 catch 与事件重复弹失败框） */
+let updateErrorEmitted = false
+let lastProgressLoggedPercent = -1
+let scheduledUpdateTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * 延迟加载 electron-updater。
+ *
+ * 主进程产物是 CommonJS，这里用 `createRequire(__filename)` 在真正需要时才 require：
+ * - 更新组件缺失/损坏时只 warn，绝不阻断启动；
+ * - 开发/未打包模式不会走到这里（initAutoUpdater 直接跳过）。
+ */
+function loadAutoUpdater(): AppUpdater | null {
+  if (autoUpdater) return autoUpdater
+  if (autoUpdaterLoadAttempted) return null
+  autoUpdaterLoadAttempted = true
+
+  try {
+    const requireFromApp = createRequire(__filename)
+    const loaded: unknown = requireFromApp('electron-updater')
+    const candidate: unknown =
+      loaded !== null && typeof loaded === 'object'
+        ? (loaded as { autoUpdater?: unknown }).autoUpdater
+        : undefined
+
+    if (
+      candidate === null ||
+      typeof candidate !== 'object' ||
+      typeof (candidate as { checkForUpdates?: unknown }).checkForUpdates !==
+        'function' ||
+      typeof (candidate as { downloadUpdate?: unknown }).downloadUpdate !==
+        'function' ||
+      typeof (candidate as { quitAndInstall?: unknown }).quitAndInstall !==
+        'function'
+    ) {
+      console.warn('[HaloMusic] electron-updater 模块结构异常，自动更新不可用')
+      return null
+    }
+
+    autoUpdater = candidate as AppUpdater
+    return autoUpdater
+  } catch (error) {
+    console.warn(
+      '[HaloMusic] 加载 electron-updater 失败（自动更新不可用）:',
+      error
+    )
+    return null
+  }
+}
+
+/** 统一的更新对话框：有主窗口时挂在窗口上（保证模态/置顶），无窗口时独立弹出 */
+function showUpdateDialog(
+  options: Electron.MessageBoxOptions
+): Promise<Electron.MessageBoxReturnValue> {
+  const win = mainWindow
+  if (win && !win.isDestroyed()) return dialog.showMessageBox(win, options)
+  return dialog.showMessageBox(options)
+}
+
+/** 对话框失败（无桌面环境 / 正在退出）只 warn，不向调用方抛错 */
+async function safeShowUpdateDialog(
+  options: Electron.MessageBoxOptions
+): Promise<Electron.MessageBoxReturnValue | null> {
+  try {
+    return await showUpdateDialog(options)
+  } catch (error) {
+    console.warn('[HaloMusic] 显示更新对话框失败:', error)
+    return null
+  }
+}
+
+/** 下载进度只打日志（不做渲染层 UI），每 10% 一条 */
+function logUpdateDownloadProgress(progress: ProgressInfo): void {
+  const percent = Math.max(0, Math.min(100, Math.floor(progress.percent)))
+  if (percent === lastProgressLoggedPercent) return
+  if (percent % UPDATE_PROGRESS_LOG_STEP !== 0 && percent !== 100) return
+  lastProgressLoggedPercent = percent
+  console.info(`[HaloMusic] 更新下载进度: ${percent}%`)
+}
+
+/** update-available：询问是否下载（自动检查与手动检查都会询问） */
+async function promptDownloadUpdate(info: UpdateInfo): Promise<void> {
+  if (updateDownloadInFlight) return
+
+  const result = await safeShowUpdateDialog({
+    type: 'info',
+    title: '发现新版本',
+    message: `发现新版本 v${info.version}`,
+    detail: `当前版本 v${app.getVersion()}。是否现在下载更新？\n下载完成后会提示重启安装。`,
+    buttons: ['下载更新', '稍后'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  })
+
+  if (!result || result.response !== 0) {
+    console.info('[HaloMusic] 用户选择稍后下载更新')
+    return
+  }
+
+  const updater = loadAutoUpdater()
+  if (!updater) return
+
+  updateDownloadInFlight = true
+  lastProgressLoggedPercent = -1
+  try {
+    await updater.downloadUpdate()
+    // 下载完成由 update-downloaded 事件继续提示
+  } catch (error) {
+    updateDownloadInFlight = false
+    console.warn('[HaloMusic] 下载更新失败:', error)
+    // error 事件通常已提示过，事件没触发时这里兜底
+    if (!updateErrorEmitted) {
+      await safeShowUpdateDialog({
+        type: 'error',
+        title: '下载更新失败',
+        message: '下载更新时出错',
+        detail: error instanceof Error ? error.message : String(error),
+        buttons: ['好'],
+        noLink: true,
+      })
+    }
+  }
+}
+
+/** 执行安装：NSIS 静默安装并重启应用（内部会触发 app.quit，before-quit 清理照常执行） */
+function quitAndInstallUpdate(): void {
+  const updater = loadAutoUpdater()
+  if (!updater) return
+
+  try {
+    console.info('[HaloMusic] 开始安装更新并重启应用')
+    updater.quitAndInstall(true, true)
+  } catch (error) {
+    console.warn('[HaloMusic] 启动更新安装失败:', error)
+  }
+}
+
+/** update-downloaded：提示重启安装（选择「稍后」时 autoInstallOnAppQuit 会在退出时静默安装） */
+async function promptRestartToInstall(info: UpdateInfo): Promise<void> {
+  updateDownloadInFlight = false
+
+  const result = await safeShowUpdateDialog({
+    type: 'info',
+    title: '更新已就绪',
+    message: `新版本 v${info.version} 已下载完成`,
+    detail: '是否立即重启并安装？选择「稍后」将在下次退出应用时自动安装。',
+    buttons: ['立即重启安装', '稍后'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true,
+  })
+
+  if (!result || result.response !== 0) {
+    console.info('[HaloMusic] 用户选择稍后安装更新（退出应用时自动安装）')
+    return
+  }
+
+  quitAndInstallUpdate()
+}
+
+/** 更新过程中的 error 事件：warn 日志；手动检查 / 下载失败时弹提示 */
+function handleUpdaterError(error: Error): void {
+  updateErrorEmitted = true
+  const wasDownloading = updateDownloadInFlight
+  updateDownloadInFlight = false
+
+  console.warn('[HaloMusic] 更新过程出错:', error)
+
+  if (!lastCheckWasManual && !wasDownloading) return
+
+  void safeShowUpdateDialog({
+    type: 'error',
+    title: wasDownloading ? '下载更新失败' : '检查更新失败',
+    message: wasDownloading ? '下载更新时出错' : '检查更新时出错',
+    detail: error.message,
+    buttons: ['好'],
+    noLink: true,
+  })
+}
+
+/**
+ * 检查更新。
+ * @param manual true = 托盘「检查更新…」手动触发；只有手动检查才提示「已是最新 / 失败」
+ */
+async function checkForUpdates(manual: boolean): Promise<void> {
+  if (!app.isPackaged) {
+    console.info('[HaloMusic] 开发/未打包模式：自动更新不可用')
+    if (manual) {
+      await safeShowUpdateDialog({
+        type: 'info',
+        title: '检查更新',
+        message: '开发模式不支持自动更新',
+        detail: '请使用正式安装包验证更新流程。',
+        buttons: ['好'],
+        noLink: true,
+      })
+    }
+    return
+  }
+
+  const updater = loadAutoUpdater()
+  if (!updater) {
+    if (manual) {
+      await safeShowUpdateDialog({
+        type: 'warning',
+        title: '检查更新',
+        message: '更新组件不可用',
+        detail: 'electron-updater 加载失败，请查看应用日志。',
+        buttons: ['好'],
+        noLink: true,
+      })
+    }
+    return
+  }
+
+  if (updateCheckInFlight) {
+    if (manual) console.info('[HaloMusic] 已有检查更新任务在进行中')
+    return
+  }
+
+  updateCheckInFlight = true
+  lastCheckWasManual = manual
+  updateErrorEmitted = false
+
+  try {
+    console.info(`[HaloMusic] 开始${manual ? '手动' : '静默'}检查更新 ...`)
+    await updater.checkForUpdates()
+  } catch (error) {
+    console.warn('[HaloMusic] 检查更新失败:', error)
+    // error 事件通常已提示过手动检查失败；事件没触发时这里兜底
+    if (manual && !updateErrorEmitted) {
+      await safeShowUpdateDialog({
+        type: 'error',
+        title: '检查更新失败',
+        message: '无法检查更新',
+        detail: error instanceof Error ? error.message : String(error),
+        buttons: ['好'],
+        noLink: true,
+      })
+    }
+  } finally {
+    updateCheckInFlight = false
+  }
+}
+
+/**
+ * 初始化自动更新（app ready 之后、窗口与托盘创建之后调用）。
+ * 仅打包版本启用：dev 环境没有 app-update.yml，检查只会软失败。
+ */
+function initAutoUpdater(): void {
+  if (!app.isPackaged) {
+    console.info('[HaloMusic] 开发/未打包模式：跳过自动更新初始化')
+    return
+  }
+
+  const updater = loadAutoUpdater()
+  if (!updater) return
+
+  try {
+    updater.autoDownload = false
+    updater.autoInstallOnAppQuit = true
+
+    updater.on('update-available', (info) => {
+      console.info(`[HaloMusic] 发现新版本: v${info.version}`)
+      void promptDownloadUpdate(info)
+    })
+    updater.on('update-not-available', () => {
+      console.info('[HaloMusic] 检查更新完成：当前已是最新版本')
+      if (!lastCheckWasManual) return
+      void safeShowUpdateDialog({
+        type: 'info',
+        title: '检查更新',
+        message: '已是最新版本',
+        detail: `当前版本 v${app.getVersion()}`,
+        buttons: ['好'],
+        noLink: true,
+      })
+    })
+    updater.on('download-progress', (progress) => {
+      logUpdateDownloadProgress(progress)
+    })
+    updater.on('update-downloaded', (info) => {
+      console.info(`[HaloMusic] 更新下载完成: v${info.version}`)
+      void promptRestartToInstall(info)
+    })
+    updater.on('error', (error) => {
+      handleUpdaterError(error)
+    })
+  } catch (error) {
+    console.warn('[HaloMusic] 初始化自动更新失败（不影响启动）:', error)
+    return
+  }
+
+  // 启动后延迟静默检查一次；定时器 unref，避免退出流程被它拖住
+  if (scheduledUpdateTimer) clearTimeout(scheduledUpdateTimer)
+  scheduledUpdateTimer = setTimeout(() => {
+    scheduledUpdateTimer = null
+    void checkForUpdates(false)
+  }, UPDATE_CHECK_DELAY_MS)
+  scheduledUpdateTimer.unref?.()
 }
 
 // ---------------------------------------------------------------------------
@@ -1107,6 +1472,12 @@ app.on('before-quit', () => {
     tray = null
   }
 
+  // 取消尚未触发的自动更新检查，避免退出过程中再发起网络请求/弹框
+  if (scheduledUpdateTimer) {
+    clearTimeout(scheduledUpdateTimer)
+    scheduledUpdateTimer = null
+  }
+
   // 退出前确保最后一次窗口状态写入（close 事件通常还会再写一次，重复写入无副作用）
   flushWindowState(mainWindow)
 
@@ -1141,6 +1512,8 @@ app
     // 桌面能力：均要求 app ready（screen / globalShortcut），且在主窗口创建完成后装配
     installMediaKeys()
     createTray()
+    // 自动更新：仅打包版本启用，内部延迟 ~10s 静默检查，失败只 warn
+    initAutoUpdater()
   })
   .catch(handleStartupFailure)
 

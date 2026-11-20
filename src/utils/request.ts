@@ -14,6 +14,12 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
+import {
+  DEFAULT_CACHE_MAX_SIZE,
+  DEFAULT_CACHE_TTL,
+  stableKey,
+  TtlLruCache,
+} from '@/utils/api-cache'
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -22,6 +28,13 @@ declare module 'axios' {
      * 播放 / 登录态 / 启动缓存等应用级请求传 false，避免切页时被误杀。
      */
     abortOnNavigate?: boolean
+    /**
+     * 是否缓存该 GET 响应（详情/列表类只读接口用）。
+     * - `true`：使用默认 TTL（{@link DEFAULT_CACHE_TTL} ms）；
+     * - `{ ttl }`：自定义 TTL（毫秒）。
+     * 命中缓存时不会真正发出请求；失败/取消不写缓存。
+     */
+    cache?: boolean | { ttl?: number }
   }
 }
 
@@ -139,6 +152,8 @@ let loginRedirecting = false
 const redirectToLogin = (): void => {
   if (loginRedirecting) return
   loginRedirecting = true
+  // 会话过期 / 需要登录：清空接口缓存，避免换账号后命中上一个账号的用户态数据
+  clearApiCache()
   void import('@/router')
     .then((module) => {
       const candidate = module as {
@@ -276,6 +291,128 @@ export const withoutAbortOnNavigate = <T>(
   return result
 }
 
+// ---------------- 详情类 GET 内存缓存 ----------------
+
+/**
+ * 接口级内存缓存：跨页面共享，`rotateNavigationScope()` **不会**清空它
+ * （缓存的是接口数据本身，与当前页面无关）。
+ */
+const apiCache = new TtlLruCache<unknown>({
+  maxSize: DEFAULT_CACHE_MAX_SIZE,
+  ttl: DEFAULT_CACHE_TTL,
+})
+
+/** 本次请求的缓存写入计划（挂在拦截器内部的 config 对象上，不污染公开的 config 类型） */
+interface CachePlan {
+  key: string
+  ttl?: number
+}
+
+const cachePlans = new WeakMap<object, CachePlan>()
+
+/**
+ * 缓存命中的内部信号：在请求拦截器里抛出，由响应错误拦截器转成 resolve。
+ * 用异常做短路可以完全跳过 adapter / 导航作用域绑定 / 重试，且不会产生未捕获 rejection。
+ */
+class CacheHitSignal {
+  readonly cacheHit = true
+  readonly value: unknown
+
+  constructor(value: unknown) {
+    this.value = value
+  }
+}
+
+const isCacheHitSignal = (error: unknown): error is CacheHitSignal =>
+  error instanceof CacheHitSignal
+
+const isCacheEnabled = (config: AxiosRequestConfig): boolean => {
+  const method = (config.method ?? 'get').toLowerCase()
+  return method === 'get' && Boolean(config.cache)
+}
+
+const readCacheTtl = (config: AxiosRequestConfig): number | undefined => {
+  const cache = config.cache
+  if (cache && typeof cache === 'object' && typeof cache.ttl === 'number') {
+    return cache.ttl
+  }
+  return undefined
+}
+
+/** 缓存 key：忽略 timestamp（stableKey 内部会剔除），参数顺序无关 */
+const createCacheKey = (config: AxiosRequestConfig, params: unknown): string =>
+  stableKey(config.url ?? '', params)
+
+/**
+ * 查缓存。
+ * 调用方自带 `signal` 的请求不参与缓存（避免取消语义与缓存复用冲突）。
+ */
+const lookupCachedPayload = (
+  config: InternalAxiosRequestConfig
+): { hit: boolean; value: unknown } => {
+  if (!isCacheEnabled(config) || config.signal) {
+    return { hit: false, value: undefined }
+  }
+  const cacheKey = createCacheKey(config, config.params)
+  const cached = apiCache.getWithMeta(cacheKey)
+  if (!cached) return { hit: false, value: undefined }
+  if (cached.isStale) {
+    // 简化版 TTL 策略：命中即用，过期直接丢弃（getWithMeta 的 SWR 能力留给后续按需接）
+    apiCache.delete(cacheKey)
+    return { hit: false, value: undefined }
+  }
+  return { hit: true, value: cached.value }
+}
+
+/**
+ * 成功响应写入缓存。
+ * 只缓存 2xx 且无业务错误码的 payload；301（需要登录）在上层已 reject，不会走到这里。
+ */
+const storeCachePayload = (
+  config: InternalAxiosRequestConfig,
+  payload: unknown
+): void => {
+  const plan = cachePlans.get(config)
+  if (!plan) return
+  cachePlans.delete(config)
+  const envelope = readEnvelope(payload)
+  if (envelope?.code !== undefined && envelope.code !== 200) return
+  apiCache.set(plan.key, payload, plan.ttl)
+}
+
+/**
+ * 清空接口缓存。
+ * 目前未自动清理：切换账号 / 强制刷新时可由上层调用（如退出登录后），避免串号或读到旧数据。
+ */
+export const clearApiCache = (): void => {
+  apiCache.clear()
+}
+
+/**
+ * 网易云的写接口大部分是 GET（subscribe / like / delete ...），
+ * 这些请求成功后整体失效缓存，避免"点了收藏再拉详情还是旧数据"。
+ * 用精确路径匹配（不能用 includes，否则 /likeList、/album/sublist 会误伤）。
+ * 缓存容量很小（默认 60 条），整体失效的代价可以接受。
+ */
+const MUTATION_URLS: ReadonlySet<string> = new Set([
+  '/like',
+  '/playlist/subscribe',
+  '/playlist/delete',
+  '/playlist/name/update',
+  '/playlist/create',
+  '/playlist/tracks',
+  '/artist/sub',
+  '/album/sub',
+  '/mv/sub',
+])
+
+const isMutationRequest = (config: InternalAxiosRequestConfig): boolean => {
+  const method = (config.method ?? 'get').toLowerCase()
+  if (method !== 'get') return true
+  const url = (config.url ?? '').split('?')[0] ?? ''
+  return MUTATION_URLS.has(url)
+}
+
 const instance: AxiosInstance = axios.create({
   baseURL: import.meta.env.DEV ? DEV_BASE_URL : PROD_BASE_URL,
   timeout: REQUEST_TIMEOUT,
@@ -292,6 +429,18 @@ instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     ...params,
     // 时间戳参数沿用旧行为，避免代理 / 浏览器缓存
     timestamp: Date.now(),
+  }
+
+  // 详情类 GET：命中内存缓存直接短路（由响应错误拦截器转 resolve），跳过真实请求
+  const cached = lookupCachedPayload(config)
+  if (cached.hit) throw new CacheHitSignal(cached.value)
+
+  // 未命中：记录写入计划。调用方自带 signal 的请求不参与缓存读写
+  if (isCacheEnabled(config) && !config.signal) {
+    cachePlans.set(config, {
+      key: createCacheKey(config, config.params),
+      ttl: readCacheTtl(config),
+    })
   }
 
   // 页面级 GET 绑定当前导航作用域；应用级请求 / 调用方自带 signal 的不绑定
@@ -317,9 +466,19 @@ instance.interceptors.response.use(
         })
       )
     }
+    // 写接口成功后整体失效缓存（网易云写接口多为 GET，如 /like、/playlist/subscribe）
+    if (isMutationRequest(response.config)) {
+      apiCache.clear()
+    }
+    // 成功响应写入内存缓存（只缓存 2xx 且无业务错误码的 payload）
+    storeCachePayload(response.config, payload)
     return payload as AxiosResponse
   },
   (error: unknown) => {
+    // 缓存命中：请求拦截器抛出的内部信号，这里转成成功结果（对外仍是响应 payload）
+    if (isCacheHitSignal(error)) {
+      return Promise.resolve(error.value as AxiosResponse)
+    }
     const apiError = extractApiError(error)
     // 取消是正常控制流：不触发 301 跳登录、不重试、不提示
     if (apiError.isCanceled) return Promise.reject(apiError)

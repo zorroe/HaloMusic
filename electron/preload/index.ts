@@ -31,12 +31,22 @@ interface HaloMediaControls {
   onKey(cb: (action: MediaKeyAction) => void): () => void
 }
 
+/** 播放状态 → 主进程（任务栏 / 程序坞进度），与 src/utils/bridge.ts 保持一致 */
+interface HaloPlaybackBridge {
+  /**
+   * 同步当前播放进度到系统任务栏。
+   * @param progress 0~1 的播放进度；传 -1 清除进度条
+   */
+  setProgress(progress: number): void
+}
+
 interface HaloBridge {
   readonly isElectron: boolean
   readonly platform: string
   openExternal(url: string): void
   readonly window: HaloWindowControls
   readonly media: HaloMediaControls
+  readonly playback: HaloPlaybackBridge
   getAppVersion(): Promise<string>
   quit(): void
 }
@@ -58,6 +68,8 @@ const IPC = {
   appReady: 'halo:app-ready',
   /** main → preload：系统媒体键 / 托盘菜单的播放控制动作 */
   mediaKey: 'halo:media-key',
+  /** renderer → main：播放进度回写（任务栏 / 程序坞进度条） */
+  playbackProgress: 'halo:playback-progress',
 } as const
 
 /** 播放控制动作白名单：主进程发来的值同样不可信，只放行约定的三个动作 */
@@ -69,6 +81,27 @@ const MEDIA_KEY_ACTIONS: readonly string[] = [
 
 function isMediaKeyAction(value: unknown): value is MediaKeyAction {
   return typeof value === 'string' && MEDIA_KEY_ACTIONS.includes(value)
+}
+
+/**
+ * 任务栏进度入参白名单：-1（清除）或 0~1 的有限数字。
+ * 超过 1 的 Electron 语义是「不确定进度条」，不在契约内，一律忽略。
+ */
+function isValidPlaybackProgress(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    (value === -1 || (value >= 0 && value <= 1))
+  )
+}
+
+/** 非法进度只在首次出现时 warn，避免渲染层 bug 把控制台打爆 */
+let warnedInvalidPlaybackProgress = false
+
+function warnInvalidPlaybackProgress(value: unknown): void {
+  if (warnedInvalidPlaybackProgress) return
+  warnedInvalidPlaybackProgress = true
+  console.warn(`[HaloMusic preload] 忽略非法播放进度: ${String(value)}`)
 }
 
 const haloBridge: HaloBridge = {
@@ -120,6 +153,16 @@ const haloBridge: HaloBridge = {
       return () => {
         ipcRenderer.removeListener(IPC.mediaKey, listener)
       }
+    },
+  },
+  playback: {
+    setProgress: (progress: number) => {
+      // 主进程侧还会再校验一次，这里提前拦截非法值，减少无意义 IPC
+      if (!isValidPlaybackProgress(progress)) {
+        warnInvalidPlaybackProgress(progress)
+        return
+      }
+      ipcRenderer.send(IPC.playbackProgress, progress)
     },
   },
   getAppVersion: async () =>
