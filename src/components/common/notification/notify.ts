@@ -14,12 +14,16 @@ export interface NotifyOptions {
 interface ActiveNotification {
   id: string
   wrapper: HTMLElement
+  /** 请求关闭：正常播放退出动画后再移除；组件未就绪时退化为立即移除 */
+  close: () => void
 }
 
 /** 同一条消息的短时间去重窗口 */
 const DEDUPE_WINDOW = 1200
-/** 最多同时展示的条数（超出时移除最旧的） */
+/** 最多同时展示的条数（超出时淘汰最旧的） */
 const MAX_COUNT = 5
+/** 多条同时出现时的入场错峰间隔 */
+const STAGGER_STEP = 35
 
 let seed = 0
 let lastMessage = ''
@@ -54,15 +58,17 @@ const normalizeOptions = (
 /**
  * 全局轻提示。
  *
- * 修复点：
- * - id 递增（旧实现 seed 从不自增，所有通知 id 都是 `notification_1`）；
- * - 容器单例复用；
- * - 最多同时 5 条，超出移除最旧的；
- * - 每条通知关闭后真正卸载并移除 DOM（旧实现只是把高度收成 0，节点永久残留）。
+ * 能力约定保持不变：
+ * - 同文案 1.2s 去重；
+ * - 容器单例复用，最多同时 5 条，超出淘汰最旧；
+ * - 组件卸载（Notification.vue）负责清理自身定时器；
+ * - 关闭时先播退出动画（halo-slide-out-right + fade），动画结束才真正 unmount + 移除 DOM，
+ *   避免旧实现「收起高度」与「移除节点」竞争造成的闪现。
  */
 const notify = (options: string | VNode | NotifyOptions): void => {
   const normalized = normalizeOptions(options)
-  const messageText = typeof normalized.message === 'string' ? normalized.message : ''
+  const messageText =
+    typeof normalized.message === 'string' ? normalized.message : ''
 
   const now = Date.now()
   if (
@@ -78,21 +84,29 @@ const notify = (options: string | VNode | NotifyOptions): void => {
   seed += 1
   const id = `notification_${seed}`
   const wrapper = document.createElement('div')
+  // 多条同时出现时按当前条数做 35ms 错峰（只影响入场动画，不影响移除时机）
+  const staggerDelay = Math.min(active.length, MAX_COUNT - 1) * STAGGER_STEP
+  wrapper.style.setProperty('--ea-notify-delay', `${staggerDelay}ms`)
   getContainer().appendChild(wrapper)
 
-  const item: ActiveNotification = { id, wrapper }
+  const item: ActiveNotification = { id, wrapper, close: () => remove(item) }
   const vnode = createVNode(NotificationConstructor, {
     id,
     ...normalized,
     onClosed: () => remove(item),
+    // 组件挂载后接管关闭：走「先动画、后卸载」的路径
+    registerClose: (close: () => void) => {
+      item.close = close
+    },
   })
   render(vnode, wrapper)
   active.push(item)
 
-  while (active.length > MAX_COUNT) {
-    const oldest = active[0]
-    if (!oldest) break
-    remove(oldest)
+  // 超限时让最旧的几条播放退场动画（而不是瞬间删除）。
+  // 出现动画期间 active 里仍保留它们，等 onClosed 回调再真正移除。
+  const overflow = active.length - MAX_COUNT
+  if (overflow > 0) {
+    active.slice(0, overflow).forEach(oldest => oldest.close())
   }
 }
 

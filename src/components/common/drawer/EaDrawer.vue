@@ -53,9 +53,8 @@ const emit = defineEmits<{
 /**
  * 只有直接点中遮罩本身才关闭。
  *
- * 旧实现是在 document 上挂 click 监听，drawerShow 初始为 false 时 watch
- * 不触发、组件卸载时也不 remove，监听会随着开关抽屉不断累积（内存泄漏）。
- * 现在监听挂在遮罩节点上，节点随 v-if 销毁而自然回收，无需手动清理。
+ * 监听挂在遮罩节点上（不是 document）：节点随 v-if 销毁而自然回收，
+ * 不存在监听累积泄漏，也不需要手动 add/remove。
  */
 const handleShadowClick = (event: MouseEvent) => {
   if (!props.shadowClose) return
@@ -80,6 +79,7 @@ const handleShadowClick = (event: MouseEvent) => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  will-change: transform;
 }
 
 .ea-drawer-content-header {
@@ -117,9 +117,24 @@ const handleShadowClick = (event: MouseEvent) => {
   z-index: 9998;
 }
 
-.drawer-enter-active,
+/* ---------------------------------------------------------------------------
+ * 过渡：遮罩只做淡入淡出，内容单独从右侧滑入滑出（不再整体位移）
+ * 时长/曲线统一取 motion.css 的 token
+ *
+ * 注意：<Transition> 按「根节点」的 transition 总时长决定何时移除过渡类名。
+ * 入场时内容滑入 320ms 比遮罩淡入 200ms 长，所以根节点额外声明一个同样 320ms 的
+ * transform 过渡（根节点本身不位移）来让 Transition 等满 320ms，避免内容滑到一半被截断。
+ * ------------------------------------------------------------------------- */
+.drawer-enter-active {
+  transition:
+    opacity var(--motion-base) var(--ease-enter),
+    transform var(--motion-slow) var(--ease-enter);
+}
+
 .drawer-leave-active {
-  transition: all 500ms ease-in-out;
+  transition:
+    opacity var(--motion-fast) var(--ease-exit),
+    transform var(--motion-fast) var(--ease-exit);
 }
 
 .drawer-enter-from,
@@ -127,9 +142,12 @@ const handleShadowClick = (event: MouseEvent) => {
   opacity: 0;
 }
 
-.drawer-enter-active .ea-drawer-content,
+.drawer-enter-active .ea-drawer-content {
+  transition: transform var(--motion-slow) var(--ease-enter);
+}
+
 .drawer-leave-active .ea-drawer-content {
-  transition: all 500ms ease-in-out;
+  transition: transform var(--motion-fast) var(--ease-exit);
 }
 
 .drawer-enter-from .ea-drawer-content,
