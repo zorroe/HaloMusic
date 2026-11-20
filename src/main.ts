@@ -5,8 +5,9 @@
  * 具体逻辑一律下沉到 store / utils / 视图组件，避免入口变重。
  */
 import '@/assets/css/tailwind.css'
-import '@/style.scss'
 import '@/assets/css/global.scss'
+import '@/assets/css/motion.css'
+import '@/style.scss'
 import '@/assets/css/slider.css'
 
 import { createApp, nextTick } from 'vue'
@@ -27,6 +28,9 @@ import MvCover from '@/components/common/MvCover.vue'
 import EaButton from '@/components/common/EaButton.vue'
 import EaModal from '@/components/common/EaModal.vue'
 import EaDrawer from '@/components/common/drawer/EaDrawer.vue'
+import EaLoading from '@/components/common/EaLoading.vue'
+import EaSkeleton from '@/components/common/EaSkeleton.vue'
+import EaEmpty from '@/components/common/EaEmpty.vue'
 import VueSlider from 'vue-slider-component'
 
 const app = createApp(App)
@@ -44,6 +48,9 @@ app
   .component('ea-button', EaButton)
   .component('ea-modal', EaModal)
   .component('ea-drawer', EaDrawer)
+  .component('ea-loading', EaLoading)
+  .component('ea-skeleton', EaSkeleton)
+  .component('ea-empty', EaEmpty)
   .component('vue-slider', VueSlider)
 
 /**

@@ -1,17 +1,19 @@
 // 全局通用样式（Tailwind 4 入口见 src/assets/css/tailwind.css，本文件保持纯 CSS）
+// 动效统一使用 src/assets/css/motion.css 里的 token，禁止再写魔法值
 .button-primary {
   border-radius: 0.25rem;
   padding: 0.25rem 0.5rem;
   cursor: pointer;
-  transition: all 300ms linear;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
 
   &:hover {
     background-color: rgba(229, 231, 235, 0.5);
   }
 
   &:active {
-    transform: scale(0.9);
-    transition-duration: 200ms;
+    transform: scale(0.92);
   }
 }
 
@@ -29,13 +31,16 @@
   width: min-content;
   padding: 0.5rem;
   border-radius: 9100px;
-  transition: all 300ms;
+  transition:
+    transform var(--motion-base) var(--ease-spring),
+    opacity var(--motion-base) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
   background-color: rgba(255, 255, 255, 0.2);
 
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0.82);
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.4);
@@ -44,6 +49,15 @@
   &:active {
     transform: translate(-50%, -50%) scale(0.9);
   }
+}
+
+// 父级 hover 时播放按钮弹性放大并淡入。
+// 注意：Tailwind 4 的 group-hover:opacity-100 位于 @layer utilities 内，
+// 而本文件的 .cover-play{opacity:0} 是未分层样式，级联优先级更高（未分层 > 分层），
+// 所以必须在这里显式写 opacity，不能只靠模板上的 group-hover 工具类。
+.group:hover .cover-play {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .ea-link {
@@ -76,7 +90,9 @@
   gap: 0.25rem;
   cursor: pointer;
   width: fit-content;
-  transition: all 300ms;
+  transition:
+    scale var(--motion-base) var(--ease-spring),
+    background-color var(--motion-fast) var(--ease-standard);
 
   &:hover {
     scale: 1.05;
@@ -88,14 +104,17 @@
 }
 
 .btn-animation {
-  transition: all 300ms;
+  transition:
+    scale var(--motion-base) var(--ease-spring),
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
 
   &:hover {
-    scale: 1.05;
+    scale: 1.06;
   }
 
   &:active {
-    scale: 0.95;
+    scale: 0.94;
   }
 }
 
@@ -118,4 +137,7 @@
 .playing {
   background-color: rgb(234, 239, 253);
   color: rgb(51, 94, 234);
+  transition:
+    background-color var(--motion-slow) var(--ease-standard),
+    color var(--motion-slow) var(--ease-standard);
 }

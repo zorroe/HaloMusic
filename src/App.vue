@@ -4,12 +4,18 @@
       <Header />
     </div>
     <div class="content">
-      <router-view v-slot="{ Component }">
-        <keep-alive
-          :max="10"
-          :exclude="excludes">
-          <component :is="Component" />
-        </keep-alive>
+      <router-view v-slot="{ Component, route }">
+        <Transition
+          name="page"
+          mode="out-in">
+          <keep-alive
+            :max="10"
+            :exclude="excludes">
+            <component
+              :is="Component"
+              :key="route.path" />
+          </keep-alive>
+        </Transition>
       </router-view>
     </div>
     <div

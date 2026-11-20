@@ -1,0 +1,210 @@
+/**
+ * 动效基础设施（Phase 1）
+ *
+ * 统一约定：
+ * - 只动 `transform` / `opacity` / `filter`，避免布局抖动；
+ * - 时长与曲线统一走本文件的 CSS 变量，禁止在组件里手写 `300ms ease`；
+ * - 所有动效都必须能被 `prefers-reduced-motion: reduce` 关闭（见文件末尾）。
+ */
+
+:root {
+  /* 时长 */
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --motion-page: 180ms;
+  /* 加载环一圈 */
+  --motion-spin: 800ms;
+
+  /* 曲线 */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* 带一点回弹，用于 hover / 点击反馈 */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* 骨架屏 */
+  --skeleton-bg: rgba(128, 128, 128, 0.16);
+  --skeleton-highlight: rgba(255, 255, 255, 0.5);
+}
+
+/* 骨架屏 */
+
+
+.halo-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background-color: var(--skeleton-bg);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--skeleton-highlight) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: halo-shimmer 1.6s var(--ease-in-out) infinite;
+}
+
+@keyframes halo-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
+/* 加载环 */
+@keyframes halo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 播放页唱片旋转 */
+@keyframes halo-vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 当前播放行的动感音条 */
+@keyframes halo-bar-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* 喜欢按钮的心跳反馈 */
+@keyframes halo-heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.32);
+  }
+  70% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 内容入场 */
+@keyframes halo-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 播放页封面环境光：缓慢漂移放大，避免静态大图发呆 */
+@keyframes halo-ambient-drift {
+  0% {
+    transform: scale(1.18) translate3d(-1.5%, -1%, 0);
+  }
+  50% {
+    transform: scale(1.26) translate3d(1.5%, 1%, 0);
+  }
+  100% {
+    transform: scale(1.18) translate3d(-1.5%, -1%, 0);
+  }
+}
+
+/* 播放/暂停按钮的轻微呼吸，仅播放中启用 */
+@keyframes halo-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 路由切换过渡（App.vue 中 <Transition name="page">）
+ * 只做透明度 + 极小位移，160~180ms，避免长页面切换时的拖沓感
+ * ------------------------------------------------------------------------- */
+.page-enter-active {
+  transition:
+    opacity var(--motion-page) var(--ease-standard),
+    transform var(--motion-page) var(--ease-standard);
+}
+
+.page-leave-active {
+  transition:
+    opacity var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* ---------------------------------------------------------------------------
+ * 通用交互工具类
+ * ------------------------------------------------------------------------- */
+
+/* hover 轻微上浮 + 阴影加深（卡片类） */
+.halo-hover-lift {
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
+  will-change: transform;
+}
+
+.halo-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* 按下时轻微缩小 */
+.halo-press {
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.halo-press:active {
+  transform: scale(0.96);
+}
+
+/* 用 :focus-visible 提供键盘可达的焦点环（无障碍） */
+:focus-visible {
+  outline: 2px solid var(--color-primary, #335eea);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 无障碍：系统开启「减少动态效果」时，全局关闭动效与平滑滚动
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .halo-skeleton {
+    animation: none;
+  }
+}
