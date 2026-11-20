@@ -98,7 +98,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getArtistDetailApi, getSongsByArtistIdApi } from '@/api/artist'
 import type { MusicBaseInfo } from '@/types/musicRel'
-import notify from '@/components/common/notification/notify'
+import { handleRequestError } from '@/utils/common'
 import { mapSong } from '@/views/shared/mappers'
 
 defineOptions({
@@ -146,7 +146,7 @@ const loadAll = async () => {
   } catch (error) {
     console.error('[HaloMusic] load artist tracks failed:', error)
     loadFailed.value = true
-    notify({ message: '歌曲列表加载失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '歌曲列表加载失败，请稍后重试')
   }
 }
 
@@ -160,7 +160,7 @@ const changePage = async (page: number) => {
     await getAllTracks()
   } catch (error) {
     console.error('[HaloMusic] load tracks page failed:', error)
-    notify({ message: '翻页失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '翻页失败，请稍后重试')
   } finally {
     loadingPage.value = false
   }

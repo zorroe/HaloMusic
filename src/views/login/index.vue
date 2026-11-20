@@ -46,7 +46,13 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { checkLoginStatus, openUrl, routeTo, setCookie } from '@/utils/common'
+import {
+  checkLoginStatus,
+  handleRequestError,
+  openUrl,
+  routeTo,
+  setCookie,
+} from '@/utils/common'
 import { qrImgApi, qrKeyApi, qrStatusApi } from './api'
 import { useUserInfoStore } from '@/store'
 import pinia from '@/store/store'
@@ -108,7 +114,7 @@ const handleLoginSuccess = async (cookie?: string) => {
     redirectAfterLogin()
   } catch (error) {
     console.error('[HaloMusic] login success handler failed:', error)
-    notify({ message: '登录状态同步失败，请重试', type: 'error' })
+    handleRequestError(error, '登录状态同步失败，请重试')
   }
 }
 

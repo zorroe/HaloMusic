@@ -15,6 +15,16 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    /**
+     * 页面级跳转时是否取消该请求（仅 GET 生效），默认 true。
+     * 播放 / 登录态 / 启动缓存等应用级请求传 false，避免切页时被误杀。
+     */
+    abortOnNavigate?: boolean
+  }
+}
+
 /** 开发环境直连本地 NeteaseCloudMusicApi 服务 */
 const DEV_BASE_URL = 'http://127.0.0.1:16666'
 /** 生产环境走主进程 express 的同源反向代理 */
@@ -26,6 +36,7 @@ const GET_RETRY_DELAYS = [300, 900] as const
 const RETRYABLE_STATUS = [408, 425, 429, 500, 502, 503, 504]
 const NEED_LOGIN_CODE = 301
 const NEED_LOGIN_MESSAGE = '需要登录'
+const CANCELED_MESSAGE = '请求已取消'
 
 export interface ApiErrorOptions {
   /** HTTP 状态码 */
@@ -36,19 +47,22 @@ export interface ApiErrorOptions {
   url?: string
   /** 是否属于网络层错误（断网 / 超时 / 无法建立连接） */
   isNetwork?: boolean
+  /** 是否是导航取消（不重试、不跳登录、不提示） */
+  isCanceled?: boolean
   /** 原始错误或响应体，便于排查 */
   raw?: unknown
 }
 
 /**
  * 归一化后的请求错误。
- * UI 层可以据此区分“网络问题（可重试）”与“业务失败（需要处理）”。
+ * UI 层可以据此区分“网络问题（可重试）”“业务失败”与“导航取消（静默）”。
  */
 export class ApiError extends Error {
   readonly status?: number
   readonly code?: number
   readonly url?: string
   readonly isNetwork: boolean
+  readonly isCanceled: boolean
   readonly raw?: unknown
 
   constructor(message: string, options: ApiErrorOptions = {}) {
@@ -58,6 +72,7 @@ export class ApiError extends Error {
     this.code = options.code
     this.url = options.url
     this.isNetwork = options.isNetwork ?? false
+    this.isCanceled = options.isCanceled ?? false
     this.raw = options.raw
   }
 }
@@ -65,6 +80,23 @@ export class ApiError extends Error {
 /** 判断 unknown 是否为 ApiError */
 export const isApiError = (error: unknown): error is ApiError =>
   error instanceof ApiError
+
+const readErrorCode = (error: unknown): string | undefined => {
+  if (typeof error !== 'object' || error === null) return undefined
+  const code = (error as { code?: unknown }).code
+  return typeof code === 'string' ? code : undefined
+}
+
+/** 底层是否属于 axios / AbortController 的取消错误 */
+const isCanceledLike = (error: unknown): boolean =>
+  axios.isCancel(error) || readErrorCode(error) === 'ERR_CANCELED'
+
+/**
+ * 判断是否为“请求被取消”（导航切换时的作用域取消，或调用方自带 signal 的取消）。
+ * 取消属于正常控制流：UI 层应静默忽略，不要提示错误。
+ */
+export const isCanceledError = (error: unknown): boolean =>
+  (error instanceof ApiError && error.isCanceled) || isCanceledLike(error)
 
 interface PayloadEnvelope {
   code?: number
@@ -127,6 +159,15 @@ const redirectToLogin = (): void => {
 const extractApiError = (error: unknown, fallbackUrl?: string): ApiError => {
   if (error instanceof ApiError) return error
 
+  if (isCanceledLike(error)) {
+    const url = axios.isAxiosError(error) ? error.config?.url : fallbackUrl
+    return new ApiError(CANCELED_MESSAGE, {
+      isCanceled: true,
+      url,
+      raw: error,
+    })
+  }
+
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<unknown>
     const response = axiosError.response
@@ -160,6 +201,81 @@ const extractApiError = (error: unknown, fallbackUrl?: string): ApiError => {
   return new ApiError('未知请求错误', { url: fallbackUrl, raw: error })
 }
 
+/** 去重表：同 method + url + params 的并发 GET 复用同一个 Promise */
+const pendingRequests = new Map<string, Promise<unknown>>()
+
+// ---------------- 导航作用域取消 ----------------
+
+/**
+ * 当前导航作用域的 AbortController。
+ * 路由切换（afterEach）时轮换：旧作用域 abort，在途页面级 GET 请求随之取消；
+ * 播放 / 登录态等应用级请求通过 abortOnNavigate: false 跳过绑定。
+ */
+let navigationScope = new AbortController()
+
+/** 作用域代数：用于让「等待重试中」的请求感知到期间发生了切页 */
+let navigationGeneration = 0
+
+/**
+ * 轮换导航作用域：取消上一页所有在途的页面级 GET 请求。
+ * 应先切换出新作用域再 abort 旧作用域，避免 abort 触发的新请求绑到已取消的 signal 上。
+ */
+export const rotateNavigationScope = (): void => {
+  const previous = navigationScope
+  navigationScope = new AbortController()
+  navigationGeneration += 1
+  pendingRequests.clear()
+  previous.abort()
+}
+
+/**
+ * 应用级请求标记（等效于给请求传 `abortOnNavigate: false`），路由切换时不会被取消。
+ *
+ * 之所以不逐个修改 api 函数签名：api 函数都是「同步发起请求 + 返回 Promise」，
+ * 因此在回调内同步发起的首个 GET 请求会消费掉这次标记，作用域仅限当前这一发请求。
+ * 只应包裹单个 api 调用；不要跨 await 使用（await 之后再发的请求不会被标记）。
+ */
+interface KeepOnNavigateToken {
+  used: boolean
+}
+
+const keepOnNavigateTokens: KeepOnNavigateToken[] = []
+
+/** 消费最近一个未被使用的标记；没有则返回 false */
+const consumeKeepOnNavigateToken = (): boolean => {
+  for (let index = keepOnNavigateTokens.length - 1; index >= 0; index -= 1) {
+    const token = keepOnNavigateTokens[index]
+    if (!token || token.used) continue
+    token.used = true
+    keepOnNavigateTokens.splice(index, 1)
+    return true
+  }
+  return false
+}
+
+const releaseKeepOnNavigateToken = (token: KeepOnNavigateToken): void => {
+  const index = keepOnNavigateTokens.indexOf(token)
+  if (index !== -1) keepOnNavigateTokens.splice(index, 1)
+}
+
+export const withoutAbortOnNavigate = <T>(
+  run: () => Promise<T>
+): Promise<T> => {
+  const token: KeepOnNavigateToken = { used: false }
+  keepOnNavigateTokens.push(token)
+
+  let result: Promise<T>
+  try {
+    result = run()
+  } catch (error) {
+    releaseKeepOnNavigateToken(token)
+    return Promise.reject(error)
+  }
+  // 回调内没有发起请求（例如提前校验返回）时回收标记，避免影响后续请求
+  if (!token.used) releaseKeepOnNavigateToken(token)
+  return result
+}
+
 const instance: AxiosInstance = axios.create({
   baseURL: import.meta.env.DEV ? DEV_BASE_URL : PROD_BASE_URL,
   timeout: REQUEST_TIMEOUT,
@@ -176,6 +292,12 @@ instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     ...params,
     // 时间戳参数沿用旧行为，避免代理 / 浏览器缓存
     timestamp: Date.now(),
+  }
+
+  // 页面级 GET 绑定当前导航作用域；应用级请求 / 调用方自带 signal 的不绑定
+  const method = (config.method ?? 'get').toLowerCase()
+  if (method === 'get' && config.abortOnNavigate !== false && !config.signal) {
+    config.signal = navigationScope.signal
   }
   return config
 })
@@ -199,6 +321,8 @@ instance.interceptors.response.use(
   },
   (error: unknown) => {
     const apiError = extractApiError(error)
+    // 取消是正常控制流：不触发 301 跳登录、不重试、不提示
+    if (apiError.isCanceled) return Promise.reject(apiError)
     if (
       apiError.code === NEED_LOGIN_CODE ||
       apiError.status === NEED_LOGIN_CODE ||
@@ -227,12 +351,25 @@ const executeRequest = async <T>(config: AxiosRequestConfig): Promise<T> => {
 const requestWithRetry = async <T>(config: AxiosRequestConfig): Promise<T> => {
   const method = (config.method ?? 'get').toLowerCase()
   const retryable = method === 'get'
+  /** 该请求是否绑定导航作用域（应用级请求 / 自带 signal 的不绑定） */
+  const navigationBound =
+    retryable && config.abortOnNavigate !== false && !config.signal
+  const generation = navigationGeneration
   let attempt = 0
   for (;;) {
+    // 等待重试期间如果发生了切页，视为取消，避免旧页面请求回来覆盖新页面
+    if (retryable && navigationBound && generation !== navigationGeneration) {
+      throw new ApiError(CANCELED_MESSAGE, {
+        isCanceled: true,
+        url: config.url,
+      })
+    }
     try {
       return await executeRequest<T>(config)
     } catch (error) {
       const apiError = extractApiError(error)
+      // 导航取消：直接抛出，不重试
+      if (apiError.isCanceled) throw apiError
       if (
         !retryable ||
         attempt >= GET_RETRY_DELAYS.length ||
@@ -245,8 +382,6 @@ const requestWithRetry = async <T>(config: AxiosRequestConfig): Promise<T> => {
     }
   }
 }
-
-const pendingRequests = new Map<string, Promise<unknown>>()
 
 const serializeValue = (value: unknown): string => {
   if (value === undefined) return ''
@@ -270,17 +405,29 @@ const createDedupeKey = (config: AxiosRequestConfig): string | undefined => {
 }
 
 const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
+  const method = (config.method ?? 'get').toLowerCase()
+  // 应用级请求：消费 withoutAbortOnNavigate 标记，等效于 config.abortOnNavigate = false
+  const keepOnNavigate = method === 'get' && consumeKeepOnNavigateToken()
+  if (keepOnNavigate) {
+    // 不参与页面级请求去重：避免与可能被导航取消的页面请求共享同一个 Promise
+    return requestWithRetry<T>({ ...config, abortOnNavigate: false })
+  }
+
   const dedupeKey = createDedupeKey(config)
   if (!dedupeKey) return requestWithRetry<T>(config)
 
   const pending = pendingRequests.get(dedupeKey)
   if (pending) return pending as Promise<T>
 
-  const current = requestWithRetry<T>(config).finally(() => {
-    pendingRequests.delete(dedupeKey)
+  const current = requestWithRetry<T>(config)
+  const tracked: Promise<T> = current.finally(() => {
+    // 只清理自己写入的 key：导航轮换时旧请求可能已被新请求顶替
+    if (pendingRequests.get(dedupeKey) === tracked) {
+      pendingRequests.delete(dedupeKey)
+    }
   })
-  pendingRequests.set(dedupeKey, current)
-  return current
+  pendingRequests.set(dedupeKey, tracked)
+  return tracked
 }
 
 /**

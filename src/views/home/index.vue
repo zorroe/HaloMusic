@@ -151,7 +151,13 @@ import type { AlbumBaseInfo } from '@/types/albumRel'
 import type { ArtistBaseInfo } from '@/types/artistRel'
 import type { PlayListBaseInfo } from '@/types/playListRel'
 import type { MusicBaseInfo } from '@/types/musicRel'
-import { routeTo, saveLikeMusicIds, saveSubAlbumIds } from '@/utils/common'
+import {
+  handleRequestError,
+  routeTo,
+  saveLikeMusicIds,
+  saveSubAlbumIds,
+} from '@/utils/common'
+import { isCanceledError } from '@/utils/request'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import notify from '@/components/common/notification/notify'
@@ -236,13 +242,15 @@ const loadAll = async () => {
     rejected.forEach(item => {
       console.error('[HaloMusic] home request failed:', item.reason)
     })
+    // 切页会取消在途请求：这属于正常控制流，不算加载失败、不提示
+    const failed = rejected.filter(item => !isCanceledError(item.reason))
     if (rejected.length === tasks.length) {
       failedAll.value = true
-    } else {
-      notify({
-        message: `部分内容加载失败（${rejected.length}/${tasks.length}）`,
-        type: 'warning',
-      })
+    } else if (failed.length) {
+      handleRequestError(
+        failed[0]?.reason,
+        `部分内容加载失败（${failed.length}/${tasks.length}）`
+      )
     }
   }
   loading.value = false

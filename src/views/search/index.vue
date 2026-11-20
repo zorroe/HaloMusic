@@ -123,7 +123,8 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useSearchStore } from '@/store/index'
 import { searchByType, typeMap } from '@/api/search'
 import pinia from '@/store/store'
-import notify from '@/components/common/notification/notify'
+import { handleRequestError } from '@/utils/common'
+import { isCanceledError } from '@/utils/request'
 import type { MusicBaseInfo } from '@/types/musicRel'
 import type { PlayListBaseInfo } from '@/types/playListRel'
 import type { ArtistBaseInfo } from '@/types/artistRel'
@@ -222,18 +223,19 @@ const runSearch = async () => {
       typeMap.map(type => searchByType(type.alias, 0))
     )
     const rejected = results.filter(
-      item => item.status === 'rejected'
-    ) as PromiseRejectedResult[]
+      (item): item is PromiseRejectedResult =>
+        item.status === 'rejected' && !isCanceledError(item.reason)
+    )
     if (rejected.length) {
       rejected.forEach(item => {
         console.error('[HaloMusic] search failed:', item.reason)
       })
       const allFailed = rejected.length === results.length
       searchFailed.value = allFailed
-      notify({
-        message: allFailed ? '搜索失败，请检查网络' : '部分搜索结果加载失败',
-        type: allFailed ? 'error' : 'warning',
-      })
+      handleRequestError(
+        rejected[0]?.reason,
+        allFailed ? '搜索失败，请检查网络' : '部分搜索结果加载失败'
+      )
     }
   } finally {
     searching.value = false
@@ -279,7 +281,7 @@ const loadMore = async (type: 'song' | 'playlist', offset: number) => {
     await searchByType(type, offset)
   } catch (error) {
     console.error('[HaloMusic] load more search result failed:', error)
-    notify({ message: '加载更多失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '加载更多失败，请稍后重试')
   } finally {
     loadMoreLoading.value = ''
   }

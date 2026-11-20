@@ -109,7 +109,7 @@ import { Like, PlayOne } from '@icon-park/vue-next'
 import { getAlbumApi } from '@/api/album'
 import type { AlbumInfo } from '@/types/albumRel'
 import type { MusicBaseInfo } from '@/types/musicRel'
-import { routeTo } from '@/utils/common'
+import { handleRequestError, routeTo } from '@/utils/common'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
 import notify from '@/components/common/notification/notify'
@@ -170,7 +170,7 @@ const getAlbum = async () => {
   } catch (error) {
     console.error('[HaloMusic] load album failed:', error)
     loadFailed.value = true
-    notify({ message: '专辑加载失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '专辑加载失败，请稍后重试')
   }
 }
 

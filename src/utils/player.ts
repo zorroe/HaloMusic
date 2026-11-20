@@ -13,6 +13,7 @@ import {
   getMusicDetailApi,
   personFmApi,
 } from '@/api/music'
+import { withoutAbortOnNavigate } from '@/utils/request'
 
 /** 播放器支持的音质档位 */
 export type SongLevel = 'standard' | 'higher' | 'exhigh' | 'lossless'
@@ -86,7 +87,10 @@ export const toSecureUrl = (url: string): string =>
  */
 export const canPlay = async (songId: SongId): Promise<boolean> => {
   try {
-    const res: unknown = await checkMusicApi(Number(songId))
+    // 播放相关请求属于应用级请求：切页时不能被取消
+    const res: unknown = await withoutAbortOnNavigate(() =>
+      checkMusicApi(Number(songId))
+    )
     return isObject(res) && res.success === true
   } catch {
     return false
@@ -102,7 +106,9 @@ export const getSongResource = async (
   level: SongLevel = 'exhigh'
 ): Promise<SongResource | null> => {
   try {
-    const res: unknown = await getMusicUrlApi({ id: Number(songId), level })
+    const res: unknown = await withoutAbortOnNavigate(() =>
+      getMusicUrlApi({ id: Number(songId), level })
+    )
     if (!isObject(res) || !Array.isArray(res.data)) return null
 
     const item = (res.data as MusicUrlItem[]).find(
@@ -135,7 +141,9 @@ export const getMusicDetail = async (
   if (!normalizedIds) return null
 
   try {
-    const res: unknown = await getMusicDetailApi({ ids: normalizedIds })
+    const res: unknown = await withoutAbortOnNavigate(() =>
+      getMusicDetailApi({ ids: normalizedIds })
+    )
     if (!isObject(res) || !Array.isArray(res.songs)) return null
 
     const songs = (res.songs as unknown[]).filter(
@@ -158,7 +166,7 @@ export const getMusicDetail = async (
  */
 export const getPersonfm = async (): Promise<SongDetail | null> => {
   try {
-    const res: unknown = await personFmApi()
+    const res: unknown = await withoutAbortOnNavigate(() => personFmApi())
     if (!isObject(res) || !Array.isArray(res.data) || res.data.length === 0) {
       return null
     }

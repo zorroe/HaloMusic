@@ -15,6 +15,7 @@ import App from '@/App.vue'
 import router from '@/router/index'
 import pinia from '@/store/store'
 import notify from '@/components/common/notification/notify'
+import { isCanceledError } from '@/utils/request'
 
 import Image from '@/components/common/Image.vue'
 import IconPark from '@/components/common/IconPark.vue'
@@ -64,6 +65,11 @@ app.config.errorHandler = (err, _instance, info) => {
 
 window.addEventListener('unhandledrejection', event => {
   const reason: unknown = event.reason
+
+  // 路由切换会主动取消上一页在途的 GET 请求，这是预期行为：
+  // 既不打印错误也不弹提示，避免用户切页时看到「操作失败」。
+  if (isCanceledError(reason)) return
+
   console.error('[HaloMusic] unhandled promise rejection:', reason)
   const message = reason instanceof Error ? reason.message : String(reason ?? '')
   // 网络层已经 notify 过的错误不重复提示（notify 内部有相同消息去重）

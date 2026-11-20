@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useUserInfoStore } from '@/store'
 import pinia from '@/store/store'
+import { rotateNavigationScope } from '@/utils/request'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -108,14 +109,16 @@ export const router = createRouter({
   },
 })
 
-router.beforeEach(to => {
+router.beforeEach((to) => {
   const userInfoStore = useUserInfoStore(pinia)
   if (to.meta.requiresAuth === false) return true
   if (userInfoStore.isLogin) return true
   return { name: 'login', query: { redirect: to.fullPath } }
 })
 
-router.afterEach(to => {
+router.afterEach((to) => {
+  // 切页后取消上一页仍在途的页面级 GET 请求（播放/登录态等应用级请求不受影响）
+  rotateNavigationScope()
   const title = to.meta.title
   document.title = title ? `${title} · ${APP_NAME}` : APP_NAME
 })

@@ -231,7 +231,7 @@ import type { ArtistBaseInfo, ArtistInfo } from '@/types/artistRel'
 import type { AlbumBaseInfo } from '@/types/albumRel'
 import type { MvBaseInfo } from '@/types/mvRel'
 import type { MusicBaseInfo } from '@/types/musicRel'
-import { openUrl, routeTo } from '@/utils/common'
+import { handleRequestError, openUrl, routeTo } from '@/utils/common'
 import notify from '@/components/common/notification/notify'
 import {
   mapAlbum,
@@ -317,7 +317,7 @@ const loadAll = async () => {
 const handlePlayAll = () => {
   playAllSongsByArtistId(Number(artistId.value)).catch((error: unknown) => {
     console.error('[HaloMusic] play artist songs failed:', error)
-    notify({ message: '播放失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '播放失败，请稍后重试')
   })
 }
 
@@ -353,7 +353,7 @@ const starArtist = async () => {
     })
   } catch (error) {
     console.error('[HaloMusic] star artist failed:', error)
-    notify({ message: '关注操作失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '关注操作失败，请稍后重试')
   }
 }
 

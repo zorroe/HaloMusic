@@ -289,7 +289,8 @@ import {
   getMvSubListApi,
   getPlayListByUidApi,
 } from './api'
-import { routeTo } from '@/utils/common'
+import { handleRequestError, routeTo } from '@/utils/common'
+import { isCanceledError } from '@/utils/request'
 import type { PlayListBaseInfo } from '@/types/playListRel'
 import type { MusicBaseInfo } from '@/types/musicRel'
 import type { ArtistBaseInfo } from '@/types/artistRel'
@@ -432,17 +433,21 @@ const initData = async () => {
     (item): item is PromiseRejectedResult => item.status === 'rejected'
   )
   if (rejected.length) {
-    rejected.forEach(item => {
+    // 切页会取消在途请求：这属于正常控制流，不算加载失败
+    const failed = rejected.filter(item => !isCanceledError(item.reason))
+    failed.forEach(item => {
       console.error('[HaloMusic] load music library failed:', item.reason)
     })
     if (rejected.length === results.length) {
-      // 全部失败（通常是断网）：给整页错误态，避免只剩一个空音乐库
+      // 全部失败（通常是断网，或首屏加载中被切页）：给整页错误态，避免只剩一个空音乐库
       isLoaded.value = true
       loadFailed.value = true
-      notify({ message: '音乐库加载失败，请稍后重试', type: 'error' })
+      handleRequestError(failed[0]?.reason, '音乐库加载失败，请稍后重试')
       return
     }
-    notify({ message: '部分音乐库数据加载失败', type: 'warning' })
+    if (failed.length) {
+      handleRequestError(failed[0]?.reason, '部分音乐库数据加载失败')
+    }
   }
   isLoaded.value = true
   // 随机歌词不阻塞首屏
@@ -521,7 +526,7 @@ const handleClickSortTab = async (id: string) => {
     await getListenHistory(id)
   } catch (error) {
     console.error('[HaloMusic] load listen history failed:', error)
-    notify({ message: '听歌排行加载失败', type: 'error' })
+    handleRequestError(error, '听歌排行加载失败')
   } finally {
     tabLoading.value = false
   }
@@ -538,7 +543,7 @@ const handleClickTab = async (id: string) => {
     else if (id === '5') await getListenHistory(historyType.value)
   } catch (error) {
     console.error('[HaloMusic] load tab data failed:', error)
-    notify({ message: '数据加载失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '数据加载失败，请稍后重试')
   } finally {
     tabLoading.value = false
   }
@@ -554,11 +559,17 @@ const refreshMe = async () => {
       loadLikeCount(),
       loadRandomLyric(),
     ])
-    const failed = results.some(item => item.status === 'rejected')
-    notify({
-      message: failed ? '刷新完成，部分数据失败' : '刷新成功',
-      type: failed ? 'warning' : 'success',
-    })
+    const rejected = results.filter(
+      (item): item is PromiseRejectedResult => item.status === 'rejected'
+    )
+    const failed = rejected.some(item => !isCanceledError(item.reason))
+    // 只有全部是「切页取消」时不提示，避免在其他页面弹刷新结果
+    if (!rejected.length || failed) {
+      notify({
+        message: failed ? '刷新完成，部分数据失败' : '刷新成功',
+        type: failed ? 'warning' : 'success',
+      })
+    }
   } finally {
     // 转一圈动画结束再复位
     rotateTimer = setTimeout(() => {

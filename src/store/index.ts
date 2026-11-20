@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { likeMusicApi } from '@/api/music'
+import { withoutAbortOnNavigate } from '@/utils/request'
 import type { UserProfile } from '@/types/userRel'
 import type {
   CloudSearchRawResult,
@@ -214,7 +215,10 @@ export const useLikeStore = defineStore('like', () => {
       : [...snapshot, targetId]
 
     try {
-      const res = await likeMusicApi({ id: targetId, like: !liked })
+      // 喜欢是用户主动操作，不能因为切页被导航作用域取消
+      const res = await withoutAbortOnNavigate(() =>
+        likeMusicApi({ id: targetId, like: !liked })
+      )
       // 业务失败可能以 HTTP 200 + code != 200 返回，这里补一层校验
       if (typeof res.code === 'number' && res.code !== 200) {
         throw new Error(res.code === 301 ? '需要登录' : '喜欢操作失败')

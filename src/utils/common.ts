@@ -10,7 +10,12 @@
 import Cookies from 'js-cookie'
 import pinia from '@/store/store'
 import { bridge } from '@/utils/bridge'
-import { isApiError } from '@/utils/request'
+import {
+  isApiError,
+  isCanceledError,
+  withoutAbortOnNavigate,
+} from '@/utils/request'
+import type { NotifyOptions } from '@/components/common/notification/notify'
 import { useLikeStore, useUserInfoStore } from '@/store/index'
 import { usePlayerStore } from '@/store/playerStore'
 import { getPlayListAllApi } from '@/api/playList'
@@ -154,6 +159,29 @@ const clearPlayerQueue = (): void => {
 }
 
 /**
+ * 统一的请求错误提示。
+ * - 导航取消（切页导致的作用域取消）静默忽略，避免切页时弹“加载失败”；
+ * - 其它错误按页面原有文案提示，调用方只用一个 fallbackMessage 即可。
+ */
+export const handleRequestError = (
+  error: unknown,
+  fallbackMessage?: string
+): void => {
+  if (isCanceledError(error)) return
+  const message =
+    fallbackMessage ||
+    (isApiError(error) ? error.message : '') ||
+    '请求失败，请稍后重试'
+  // 动态导入通知组件：utils 层不静态依赖组件层，纯函数单测也无需加载 .vue
+  void import('@/components/common/notification/notify')
+    .then((module) => {
+      const options: NotifyOptions = { message, type: 'error' }
+      module.default(options)
+    })
+    .catch(() => undefined)
+}
+
+/**
  * 校验登录状态。
  * - 成功且 profile 存在：写入 store（同时持久化到 localStorage）；
  * - profile 为空：清理登录态并跳登录；
@@ -161,7 +189,8 @@ const clearPlayerQueue = (): void => {
  */
 export const checkLoginStatus = async (): Promise<boolean> => {
   try {
-    const res = await loginStatusApi()
+    // 登录态属于应用级请求：切页不能取消
+    const res = await withoutAbortOnNavigate(() => loginStatusApi())
     const profile = res.data?.profile ?? null
     if (profile) {
       userInfoStore.setUserInfo(profile)
@@ -199,12 +228,16 @@ export const saveLikeMusicIds = async (): Promise<void> => {
   if (!userId) return
 
   try {
-    const res = await getPlayListByUidApi({ uid: userId })
+    const res = await withoutAbortOnNavigate(() =>
+      getPlayListByUidApi({ uid: userId })
+    )
     const likePlayList = res.playlist?.[0]
     if (!likePlayList?.id) return
     localStorage.setItem('likePlayListId', String(likePlayList.id))
 
-    const { songs } = await getPlayListAllApi({ id: likePlayList.id })
+    const { songs } = await withoutAbortOnNavigate(() =>
+      getPlayListAllApi({ id: likePlayList.id })
+    )
     const ids = (songs ?? [])
       .map((song) => Number(song.id))
       .filter((id) => Number.isFinite(id))
@@ -220,7 +253,9 @@ export const saveSubAlbumIds = async (): Promise<void> => {
   if (!userInfoStore.isLogin) return
 
   try {
-    const { data } = await getSubAlbumlistApi({ offset: 0, limit: 999 })
+    const { data } = await withoutAbortOnNavigate(() =>
+      getSubAlbumlistApi({ offset: 0, limit: 999 })
+    )
     const ids = (data ?? [])
       .map((item) => Number(item.id))
       .filter((id) => Number.isFinite(id))
@@ -253,8 +288,10 @@ export interface CheckMusicResult {
 /** 检查歌曲是否可播放（有版权且有播放地址） */
 export const checkMusic = async (id: number): Promise<CheckMusicResult> => {
   try {
-    const checkStatus = await checkMusicApi(id)
-    const musicUrl = await getMusicUrlApi({ id, level: 'exhigh' })
+    const checkStatus = await withoutAbortOnNavigate(() => checkMusicApi(id))
+    const musicUrl = await withoutAbortOnNavigate(() =>
+      getMusicUrlApi({ id, level: 'exhigh' })
+    )
     const source = musicUrl.data?.[0]
     if (!source?.url || source.freeTrialInfo) {
       return { success: false, message: '暂无资源' }

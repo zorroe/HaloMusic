@@ -104,7 +104,7 @@ import {
   getTopListApi,
   getTopPlayList,
 } from '@/api/playList'
-import notify from '@/components/common/notification/notify'
+import { handleRequestError } from '@/utils/common'
 import { mapPlayList } from '@/views/shared/mappers'
 
 defineOptions({
@@ -184,7 +184,7 @@ const runLoad = async (task: () => Promise<void>) => {
   } catch (error) {
     console.error('[HaloMusic] load explore playlists failed:', error)
     loadFailed.value = playListList.value.length === 0
-    notify({ message: '歌单加载失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '歌单加载失败，请稍后重试')
   } finally {
     loading.value = false
   }

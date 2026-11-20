@@ -167,7 +167,7 @@ import {
 } from '@/api/playList'
 import type { PlayListDetail } from '@/types/playListRel'
 import type { MusicBaseInfo } from '@/types/musicRel'
-import { openUrl } from '@/utils/common'
+import { handleRequestError, openUrl } from '@/utils/common'
 import { useUserInfoStore } from '@/store'
 import { usePlayerStore } from '@/store/playerStore'
 import pinia from '@/store/store'
@@ -223,7 +223,7 @@ const loadAll = async () => {
   } catch (error) {
     console.error('[HaloMusic] load playlist failed:', error)
     loadFailed.value = true
-    notify({ message: '歌单加载失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '歌单加载失败，请稍后重试')
   }
 }
 
@@ -265,7 +265,7 @@ const confirmEdit = async () => {
     notify({ message: '修改成功', type: 'success' })
   } catch (error) {
     console.error('[HaloMusic] rename playlist failed:', error)
-    notify({ message: '修改失败', type: 'warning' })
+    handleRequestError(error, '修改失败')
   } finally {
     isEdit.value = false
   }
@@ -278,7 +278,7 @@ const handleDeletePlayList = async () => {
     router.push('/me')
   } catch (error) {
     console.error('[HaloMusic] delete playlist failed:', error)
-    notify({ message: '删除失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '删除失败，请稍后重试')
   }
 }
 
@@ -291,7 +291,7 @@ const handleSubscribePlayList = async () => {
     await loadDetail()
   } catch (error) {
     console.error('[HaloMusic] subscribe playlist failed:', error)
-    notify({ message: '操作失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '操作失败，请稍后重试')
   }
 }
 

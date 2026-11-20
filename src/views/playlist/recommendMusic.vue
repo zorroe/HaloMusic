@@ -51,7 +51,7 @@
 import { onMounted, ref } from 'vue'
 import { getRecommendSongsApi } from '@/api/music'
 import type { MusicBaseInfo } from '@/types/musicRel'
-import notify from '@/components/common/notification/notify'
+import { handleRequestError } from '@/utils/common'
 import { mapSong } from '@/views/shared/mappers'
 
 defineOptions({
@@ -73,7 +73,7 @@ const getRecommendSongs = async () => {
   } catch (error) {
     console.error('[HaloMusic] load recommend songs failed:', error)
     loadFailed.value = true
-    notify({ message: '每日推荐加载失败，请稍后重试', type: 'error' })
+    handleRequestError(error, '每日推荐加载失败，请稍后重试')
   }
 }
 
