@@ -152,7 +152,19 @@
             :class="{ playing: isCurrentSong(music) }"
             @dblclick="handlePlayMusic(music)"
           >
-            <span class="playlist-index">{{ index + 1 }}</span>
+            <span class="playlist-index">
+              <span
+                v-if="isCurrentSong(music)"
+                class="music-bars"
+                :class="{ 'is-paused': playerStore.paused }"
+                aria-hidden="true"
+              >
+                <i class="music-bar"></i>
+                <i class="music-bar"></i>
+                <i class="music-bar"></i>
+              </span>
+              <template v-else>{{ index + 1 }}</template>
+            </span>
             <div class="playlist-main">
               <div class="playlist-name">{{ music.name }}</div>
               <div class="playlist-singers">
@@ -422,8 +434,9 @@ const handleSelectQuality = async (level: SongLevel) => {
   border-radius: 9999px;
   cursor: pointer;
   transition:
-    background-color 300ms,
-    transform 300ms;
+    background-color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-base) var(--ease-spring),
+    scale var(--motion-base) var(--ease-spring);
 }
 
 .footer-icon:hover {
@@ -446,6 +459,17 @@ const handleSelectQuality = async (level: SongLevel) => {
 
 .volume-bar {
   width: 84px;
+}
+
+/* 进度条 / 音量条 hover 时滑块圆点轻微放大（vue-slider 内部结构） */
+.progress-bar :deep(.vue-slider-dot-handle),
+.volume-bar :deep(.vue-slider-dot-handle) {
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.progress-bar:hover :deep(.vue-slider-dot-handle),
+.volume-bar:hover :deep(.vue-slider-dot-handle) {
+  transform: scale(1.15);
 }
 
 /* ---------------- 播放队列抽屉 ---------------- */
@@ -481,7 +505,7 @@ const handleSelectQuality = async (level: SongLevel) => {
   background-color: #fff;
   color: rgb(55, 65, 81);
   cursor: pointer;
-  transition: background-color 200ms;
+  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .playlist-clear:hover:not(:disabled) {
@@ -509,7 +533,7 @@ const handleSelectQuality = async (level: SongLevel) => {
   border-radius: 8px;
   padding: 0 12px;
   cursor: default;
-  transition: background-color 200ms;
+  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .playlist-item:hover {
@@ -521,7 +545,40 @@ const handleSelectQuality = async (level: SongLevel) => {
   color: rgb(51, 94, 234);
 }
 
+/* 当前播放曲的动感音条（与 MusicTable 同一套 class，本文件独立作用域） */
+.music-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.music-bar {
+  width: 3px;
+  height: 12px;
+  border-radius: 1px;
+  background-color: currentColor;
+  transform-origin: bottom;
+  animation: halo-bar-bounce 0.9s var(--ease-in-out) infinite;
+}
+
+.music-bar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.music-bar:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* 暂停时音条静止，恢复播放后从当前相位继续摆动 */
+.music-bars.is-paused .music-bar {
+  animation-play-state: paused;
+}
+
 .playlist-index {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   width: 20px;
   text-align: center;
   font-size: 12px;
@@ -565,8 +622,8 @@ const handleSelectQuality = async (level: SongLevel) => {
   opacity: 0;
   flex-shrink: 0;
   transition:
-    opacity 200ms,
-    color 200ms;
+    opacity var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
 }
 
 .playlist-item:hover .playlist-remove {
@@ -627,7 +684,7 @@ const handleSelectQuality = async (level: SongLevel) => {
   font-size: 14px;
   text-align: left;
   cursor: pointer;
-  transition: background-color 200ms;
+  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .quality-option:hover {

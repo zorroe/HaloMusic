@@ -5,7 +5,7 @@
         :src="props.data.picUrl"
         :width="300"
         :height="300"
-        class="w-40 h-40 rounded-full"
+        class="cover-img w-40 h-40 rounded-full"
         @click="routeTo(`/artist/${props.data.id}`)"></lmg>
       <icon-park
         :icon="PlayOne"
@@ -46,4 +46,18 @@ const handlePlayAll = () => {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+/* hover 时封面微放大 + 阴影加深，只动 transform / box-shadow / opacity */
+.cover-img {
+  transition:
+    transform var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    opacity var(--motion-base) var(--ease-standard);
+}
+
+.cover:hover .cover-img {
+  transform: scale(1.04);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+}
+
+</style>
