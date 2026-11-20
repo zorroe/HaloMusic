@@ -609,6 +609,32 @@ async function createWindow(): Promise<BrowserWindow> {
     win.webContents.send(IPC.appReady)
   })
 
+  // 开发模式：把渲染进程的 console 与加载失败转发到主进程 stdout，
+  // 便于在不打开 DevTools（或 CI / 无 GUI 环境）时发现运行时错误。
+  if (isDev) {
+    // Electron 45 的 console-message 回调：第一个参数是 Event 与消息参数的合并对象，
+    // 其中 level 为 'info' | 'warning' | 'error' | 'debug' 字符串。
+    win.webContents.on('console-message', event => {
+      const location = event.sourceId
+        ? ` (${event.sourceId}:${event.lineNumber})`
+        : ''
+      const line = `[renderer:${event.level}] ${event.message}${location}`
+      if (event.level === 'error') console.error(line)
+      else if (event.level === 'warning') console.warn(line)
+      else console.info(line)
+    })
+
+    win.webContents.on(
+      'did-fail-load',
+      (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+        if (!isMainFrame) return
+        console.error(
+          `[HaloMusic] 页面加载失败: code=${errorCode} ${errorDescription} url=${validatedURL}`
+        )
+      }
+    )
+  }
+
   // 最大化状态变化推送给渲染进程（Menubar 的自绘按钮需要）
   let maximizeNotifyTimer: ReturnType<typeof setTimeout> | null = null
   const notifyMaximizedState = () => {

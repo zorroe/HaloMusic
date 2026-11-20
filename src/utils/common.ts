@@ -33,9 +33,18 @@ interface PlayerStoreLike {
 
 const playerStore = usePlayerStore(pinia) as unknown as PlayerStoreLike
 
+interface RouteLocationLike {
+  name?: string | null
+  fullPath: string
+}
+
 interface RouterLike {
   push(path: string): unknown
   go(delta: number): void
+  /** vue-router 的 currentRoute 是 ref，这里只取用到的字段 */
+  currentRoute?: { value: RouteLocationLike }
+  /** 等待首次导航完成（避免在初始 redirect 期间重复跳转） */
+  isReady?: () => Promise<void>
 }
 
 /** 动态获取 router（不走静态 import，避免循环依赖） */
@@ -49,6 +58,21 @@ const getRouter = (): Promise<RouterLike | undefined> =>
       return candidate.router ?? candidate.default
     })
     .catch(() => undefined)
+
+/**
+ * 跳转登录页。
+ * - 先等路由 ready：App 挂载时初始导航（守卫会把 / 重定向到 /login?redirect=）可能还在进行中，
+ *   此时直接 push('/login') 会与守卫的 redirect 竞争；
+ * - 已经在登录页时不再跳转：否则会带上/丢掉不同的 query，RouterView 重建实例会导致
+ *   登录页二次挂载、同时开两套二维码轮询。
+ */
+export const gotoLogin = async (): Promise<void> => {
+  const router = await getRouter()
+  if (!router) return
+  await router.isReady?.()
+  if (router.currentRoute?.value?.name === 'login') return
+  void Promise.resolve(router.push('/login')).catch(() => undefined)
+}
 
 export const routeTo = (path: string): void => {
   void getRouter().then((router) => {
@@ -144,7 +168,7 @@ export const checkLoginStatus = async (): Promise<boolean> => {
       return true
     }
     userInfoStore.setUserInfo(null)
-    routeTo('/login')
+    await gotoLogin()
     return false
   } catch {
     return userInfoStore.isLogin
@@ -163,7 +187,7 @@ export const doLogout = async (): Promise<void> => {
   clearAllCookie()
   clearLocalStorage()
   likeStore.refresh()
-  routeTo('/login')
+  await gotoLogin()
 }
 
 /**

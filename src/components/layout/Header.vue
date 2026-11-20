@@ -104,7 +104,8 @@ import defaultAvatar from '@/assets/icons/default_avatar.png'
 import router from '@/router'
 
 defineOptions({
-  name: 'header',
+  // 不能用 'header'：与 HTML 内建元素同名，Vue 会告警
+  name: 'appHeader',
 })
 
 const userInfoStore = useUserInfoStore(pinia)
