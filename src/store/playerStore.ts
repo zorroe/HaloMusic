@@ -40,6 +40,13 @@ import {
   type PersistedQueue,
 } from '@/utils/queue-storage'
 import { findActiveLyricIndex, parseLrc, type LyricLine } from '@/utils/lyric'
+import { bridge } from '@/utils/bridge'
+import {
+  nextPlaybackRate,
+  normalizePlaybackRate,
+  normalizeSleepTimerMinutes,
+  shouldPushProgress,
+} from '@/utils/player-timer'
 
 /** 启动回填详情时每次 /song/detail 请求的最大歌曲数（避免 URL 过长） */
 const DETAIL_FETCH_CHUNK_SIZE = 500
@@ -112,6 +119,7 @@ export const usePlayerStore = defineStore('player', () => {
   })
   const lyricStr = useLocalStorage<string>('player-lyricStr', '')
   const quality = useLocalStorage<SongLevel>('player-quality', DEFAULT_QUALITY)
+  const playbackRate = useLocalStorage<number>('player-playback-rate', 1)
 
   // 播放队列只持久化 id 列表（player-queue-v2），完整歌曲对象仅存在内存与旧版迁移里
   const playlist = ref<SongDetail[]>([])
@@ -121,6 +129,8 @@ export const usePlayerStore = defineStore('player', () => {
   const paused = ref(true)
   const mediaDuration = ref(0)
   const loading = ref(false)
+  /** 睡眠定时器剩余秒数；0 表示未启用（刷新页面不恢复） */
+  const sleepTimerRemaining = ref(0)
 
   // ---------------- 内部可变状态（闭包内，不参与响应式） ----------------
   /** 每次开始播放自增，异步链路回来时用于丢弃过期结果 */
@@ -147,6 +157,14 @@ export const usePlayerStore = defineStore('player', () => {
   let pendingHydratedQueue: PersistedQueue | null = null
   /** pending 队列是否已经重试过，避免每次点歌都触发网络请求 */
   let hydrationRetried = false
+  /** 睡眠定时器句柄；必须在取消/到点/清空队列时清理，避免泄漏 */
+  let sleepTimerId: ReturnType<typeof setInterval> | undefined
+  /** 睡眠定时器到期时间戳（用绝对时间兜底，窗口被节流时倒计时也不会跑偏） */
+  let sleepTimerDeadlineAt = 0
+  /** 上一次回写到系统任务栏的进度（-1 表示未回写/已清除） */
+  let lastPushedPlaybackProgress = -1
+  /** 上次回写任务栏的时间戳（performance.now），用于 1s 兜底节流 */
+  let lastPlaybackProgressPushAt = 0
 
   const nowMs = (): number =>
     typeof performance !== 'undefined' ? performance.now() : Date.now()
@@ -155,9 +173,11 @@ export const usePlayerStore = defineStore('player', () => {
   if (!QUALITY_OPTIONS.includes(quality.value)) quality.value = DEFAULT_QUALITY
   if (![0, 1, 2].includes(Number(cycleMode.value))) cycleMode.value = 1
   volume.value = clampPercent(volume.value)
+  playbackRate.value = normalizePlaybackRate(playbackRate.value)
   // 上次会话的进度没有对应音源，启动时归零（key 继续保留，兼容旧版本）
   currentTime.value = 0
   audio.volume = clampPercent(volume.value) / 100
+  audio.playbackRate = playbackRate.value
 
   // ---------------- 队列持久化（v2：ids + currentId，体量远小于完整对象） ----------------
   /** 把内存队列 + 当前歌曲 id 写入 v2 存储；失败时 queue-storage 内部静默降级 */
@@ -204,12 +224,56 @@ export const usePlayerStore = defineStore('player', () => {
     findActiveLyricIndex(lyrics.value, currentTime.value)
   )
 
+  /** 睡眠定时器是否运行中（剩余秒数 > 0） */
+  const sleepTimerRunning = computed(() => sleepTimerRemaining.value > 0)
+
   // ---------------- audio 事件处理 ----------------
   const stopProgressLoop = () => {
     if (progressFrame) {
       cancelAnimationFrame(progressFrame)
       progressFrame = 0
     }
+  }
+
+  /** 调用 bridge 回写任务栏进度；IPC 不可用时静默降级，避免影响播放本身 */
+  const sendTaskbarProgress = (progress: number): void => {
+    try {
+      bridge.playback.setProgress(progress)
+    } catch {
+      /* 浏览器 no-op 或主进程 IPC 暂时不可用，忽略即可 */
+    }
+  }
+
+  /**
+   * 把当前进度回写到系统任务栏（Windows 任务栏 / macOS Dock 进度条）。
+   * 二次节流：进度变化 ≥1% 或距上次回写 ≥1s 才真正走 IPC，
+   * 避免 10Hz 的 syncCurrentTime 直接把 IPC 打满。
+   */
+  const pushTaskbarProgress = (progress: number): void => {
+    const now = nowMs()
+    const elapsed = now - lastPlaybackProgressPushAt
+    if (
+      !shouldPushProgress(lastPushedPlaybackProgress, progress) &&
+      elapsed < 1000
+    ) {
+      return
+    }
+    lastPushedPlaybackProgress = progress
+    lastPlaybackProgressPushAt = now
+    sendTaskbarProgress(progress)
+  }
+
+  /** 清除任务栏进度（暂停 / 停止 / 清空队列 / 切歌时调用） */
+  const clearTaskbarProgress = (): void => {
+    if (lastPushedPlaybackProgress === -1) return
+    lastPushedPlaybackProgress = -1
+    lastPlaybackProgressPushAt = nowMs()
+    sendTaskbarProgress(-1)
+  }
+
+  /** 把持久化的倍速重新应用到 audio（切歌 / 换源后 audio 可能被重置为 1x） */
+  const applyPlaybackRate = (): void => {
+    audio.playbackRate = playbackRate.value
   }
 
   /**
@@ -226,6 +290,12 @@ export const usePlayerStore = defineStore('player', () => {
     if (!force && now - lastProgressEmitAt < PROGRESS_EMIT_INTERVAL_MS) return
     lastProgressEmitAt = now
     currentTime.value = time
+
+    // 任务栏进度只在真正播放时回写：暂停/停止由 clearTaskbarProgress 传 -1
+    const total = duration.value
+    if (!audio.paused && total > 0) {
+      pushTaskbarProgress(Math.min(1, Math.max(0, time / total)))
+    }
   }
 
   const syncDuration = () => {
@@ -249,6 +319,7 @@ export const usePlayerStore = defineStore('player', () => {
 
   const onPlay = () => {
     paused.value = false
+    applyPlaybackRate()
     syncCurrentTime(true)
     startProgressLoop()
   }
@@ -256,6 +327,7 @@ export const usePlayerStore = defineStore('player', () => {
   const onPlaying = () => {
     paused.value = false
     consecutiveFailures = 0
+    applyPlaybackRate()
     syncCurrentTime(true)
     startProgressLoop()
   }
@@ -263,8 +335,9 @@ export const usePlayerStore = defineStore('player', () => {
   const onPause = () => {
     paused.value = true
     stopProgressLoop()
-    // 暂停是离散事件：立即把最终进度同步到 store
+    // 暂停是离散事件：立即把最终进度同步到 store，并清除任务栏进度
     syncCurrentTime(true)
+    clearTaskbarProgress()
   }
 
   const onSeeked = () => {
@@ -539,6 +612,7 @@ export const usePlayerStore = defineStore('player', () => {
       seekTimer = undefined
     }
     stopProgressLoop()
+    clearTaskbarProgress()
     songId.value = ''
     currentTime.value = 0
     lastProgressEmitAt = 0
@@ -611,6 +685,8 @@ export const usePlayerStore = defineStore('player', () => {
     if (!song || toKey(song.id) === '') return false
 
     const token = (playToken += 1)
+    // 切歌是离散事件：先清除任务栏进度，等新曲真正播放后随进度重新回写
+    clearTaskbarProgress()
     loading.value = true
     errorHandled = false
     mediaDuration.value = 0
@@ -652,6 +728,8 @@ export const usePlayerStore = defineStore('player', () => {
       }
 
       audio.src = resource.url
+      // 换源后 audio.playbackRate 可能被重置为 1，重新应用持久化的倍速
+      applyPlaybackRate()
       await audio.play()
       if (token !== playToken) return false
       loading.value = false
@@ -740,6 +818,7 @@ export const usePlayerStore = defineStore('player', () => {
   /** 初始化播放器（幂等）：绑定 audio 事件、同步音量 */
   const initPlayer = () => {
     audio.volume = clampPercent(volume.value) / 100
+    audio.playbackRate = playbackRate.value
     // 异步回填播放队列（v2 ids -> 详情，旧版完整队列自动迁移），不阻塞首帧
     void hydrateQueue()
     if (listenersBound) return
@@ -763,6 +842,7 @@ export const usePlayerStore = defineStore('player', () => {
     stopProgressLoop()
     // ended 是离散事件：先把最终进度立即同步一次（随后切歌会同步归零）
     syncCurrentTime(true)
+    clearTaskbarProgress()
     if (!current.value.currentSong) return
     void advance(1, 'ended')
   }
@@ -913,6 +993,62 @@ export const usePlayerStore = defineStore('player', () => {
     resetShufflePool()
   }
 
+  // ---------------- 睡眠定时器 ----------------
+  const clearSleepTimerInterval = () => {
+    if (sleepTimerId !== undefined) {
+      clearInterval(sleepTimerId)
+      sleepTimerId = undefined
+    }
+  }
+
+  /** 取消睡眠定时器（到点 / 清空队列时也会走这里，保证 interval 被清理） */
+  const cancelSleepTimer = () => {
+    clearSleepTimerInterval()
+    sleepTimerDeadlineAt = 0
+    sleepTimerRemaining.value = 0
+  }
+
+  /** 启动睡眠定时器；minutes 支持 15/30/60（非法值忽略） */
+  const startSleepTimer = (minutes: number) => {
+    const totalMinutes = normalizeSleepTimerMinutes(minutes)
+    if (totalMinutes <= 0) return
+
+    clearSleepTimerInterval()
+    const totalSeconds = totalMinutes * 60
+    // 以绝对时间戳为准：即使窗口后台被 Chromium 节流，剩余时间也不会越走越慢
+    sleepTimerDeadlineAt = Date.now() + totalSeconds * 1000
+    sleepTimerRemaining.value = totalSeconds
+
+    sleepTimerId = setInterval(() => {
+      const remaining = Math.min(
+        totalSeconds,
+        Math.max(0, Math.ceil((sleepTimerDeadlineAt - Date.now()) / 1000))
+      )
+      sleepTimerRemaining.value = remaining
+      if (remaining > 0) return
+
+      // 到点：先清理 interval，再暂停并提示（onPause 会顺手清除任务栏进度）
+      cancelSleepTimer()
+      audio.pause()
+      paused.value = true
+      stopProgressLoop()
+      notify({ message: '睡眠定时器已结束，已暂停播放', type: 'info' })
+    }, 1000)
+  }
+
+  // ---------------- 播放倍速 ----------------
+  /** 设置播放倍速：夹取 0.5~2.0、对齐 0.25 步进并同步 audio */
+  const setPlaybackRate = (rate: number) => {
+    const next = normalizePlaybackRate(rate)
+    playbackRate.value = next
+    audio.playbackRate = next
+  }
+
+  /** 循环切换倍速：1 → 1.25 → 1.5 → 0.75 → 0.5 → 1 */
+  const cyclePlaybackRate = () => {
+    setPlaybackRate(nextPlaybackRate(playbackRate.value))
+  }
+
   const setVolume = (value: number) => {
     const next = clampPercent(value)
     volume.value = next
@@ -954,6 +1090,7 @@ export const usePlayerStore = defineStore('player', () => {
     audio.pause()
     paused.value = true
     stopProgressLoop()
+    clearTaskbarProgress()
   }
 
   /** 切换音质：正在播放时重新取流并从原进度继续 */
@@ -1012,6 +1149,7 @@ export const usePlayerStore = defineStore('player', () => {
   /** 清空播放队列并停止播放 */
   const clearPlaylist = () => {
     playlist.value = []
+    cancelSleepTimer()
     stopPlayback()
     // 显式写一次空队列：清空本身也是一种需要持久化的状态（避免下次启动复活旧队列）
     persistQueue()
@@ -1034,6 +1172,9 @@ export const usePlayerStore = defineStore('player', () => {
     lyrics,
     activeLyricIndex,
     quality,
+    playbackRate,
+    sleepTimerRemaining,
+    sleepTimerRunning,
     // 方法（旧名字全部保留，新增 togglePlay / seek 等别名）
     initPlayer,
     playMulti,
@@ -1055,5 +1196,9 @@ export const usePlayerStore = defineStore('player', () => {
     removeSong,
     clearPlaylist,
     playByIndex,
+    startSleepTimer,
+    cancelSleepTimer,
+    setPlaybackRate,
+    cyclePlaybackRate,
   }
 })
