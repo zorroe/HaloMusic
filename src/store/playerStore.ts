@@ -13,10 +13,11 @@
  * - 持久化 key 保持 player-* 前缀，升级后老用户播放列表/音量/音质等数据不丢。
  */
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { debounceFilter, useLocalStorage } from '@vueuse/core'
 import notify from '@/components/common/notification/notify'
 import { getLyricApi } from '@/api/music'
+import { withoutAbortOnNavigate } from '@/utils/request'
 import {
   canPlay,
   getMusicDetail,
@@ -27,7 +28,21 @@ import {
   type SongLevel,
   type SongResource,
 } from '@/utils/player'
+import {
+  migrateLegacyQueue,
+  normalizeQueueId,
+  readLegacyCurrentId,
+  readLegacyPlaylist,
+  readPersistedQueue,
+  removeLegacyPlaylist,
+  serializeQueue,
+  writePersistedQueue,
+  type PersistedQueue,
+} from '@/utils/queue-storage'
 import { findActiveLyricIndex, parseLrc, type LyricLine } from '@/utils/lyric'
+
+/** 启动回填详情时每次 /song/detail 请求的最大歌曲数（避免 URL 过长） */
+const DETAIL_FETCH_CHUNK_SIZE = 500
 
 /** 连续播放失败达到该次数后停止自动跳过，防止不可用歌单死循环 */
 const MAX_CONSECUTIVE_FAILURES = 5
@@ -91,13 +106,15 @@ export const usePlayerStore = defineStore('player', () => {
   const volume = useLocalStorage<number>('player-volume', 60, {
     eventFilter: debounceFilter(1000),
   })
-  const playlist = useLocalStorage<SongDetail[]>('player-playlist', [])
   const currentTime = useLocalStorage<number>('player-current-time', 0, {
     // 进度每帧变化，持久化做 1s 防抖，避免每帧同步写 localStorage
     eventFilter: debounceFilter(1000),
   })
   const lyricStr = useLocalStorage<string>('player-lyricStr', '')
   const quality = useLocalStorage<SongLevel>('player-quality', DEFAULT_QUALITY)
+
+  // 播放队列只持久化 id 列表（player-queue-v2），完整歌曲对象仅存在内存与旧版迁移里
+  const playlist = ref<SongDetail[]>([])
 
   // ---------------- 非持久化状态 ----------------
   const showPlayerPage = ref(false)
@@ -123,18 +140,35 @@ export const usePlayerStore = defineStore('player', () => {
   let lastNonZeroVolume = clampPercent(volume.value) || 60
   /** 上次把进度写入 store 的时间戳（performance.now），用于 10Hz 节流 */
   let lastProgressEmitAt = 0
+  /** v2 队列是否已完成一次回填（成功、无数据或确认失败），保证 hydrate 幂等 */
+  let queueHydrated = false
+  let queueHydratePromise: Promise<void> | null = null
+  /** 回填失败（离线/接口异常）时暂存的持久化队列，供用户点歌前重试一次 */
+  let pendingHydratedQueue: PersistedQueue | null = null
+  /** pending 队列是否已经重试过，避免每次点歌都触发网络请求 */
+  let hydrationRetried = false
 
   const nowMs = (): number =>
     typeof performance !== 'undefined' ? performance.now() : Date.now()
 
   // ---------------- 数据清洗（兼容旧版本持久化的脏数据） ----------------
-  if (!Array.isArray(playlist.value)) playlist.value = []
   if (!QUALITY_OPTIONS.includes(quality.value)) quality.value = DEFAULT_QUALITY
   if (![0, 1, 2].includes(Number(cycleMode.value))) cycleMode.value = 1
   volume.value = clampPercent(volume.value)
   // 上次会话的进度没有对应音源，启动时归零（key 继续保留，兼容旧版本）
   currentTime.value = 0
   audio.volume = clampPercent(volume.value) / 100
+
+  // ---------------- 队列持久化（v2：ids + currentId，体量远小于完整对象） ----------------
+  /** 把内存队列 + 当前歌曲 id 写入 v2 存储；失败时 queue-storage 内部静默降级 */
+  const persistQueue = (): void => {
+    writePersistedQueue(serializeQueue(playlist.value, songId.value))
+  }
+
+  // 当前曲变化（切歌/暂停恢复/停止/清空）都要同步持久化的 currentId
+  watch(songId, () => {
+    persistQueue()
+  })
 
   // ---------------- 计算属性 ----------------
   const playlistCount = computed(() =>
@@ -287,6 +321,7 @@ export const usePlayerStore = defineStore('player', () => {
     const nextList = list.slice()
     nextList.splice(Math.max(0, insertAt), 0, song)
     playlist.value = nextList
+    persistQueue()
     resetShufflePool()
     return song
   }
@@ -321,6 +356,166 @@ export const usePlayerStore = defineStore('player', () => {
       return validKeys.findIndex((key) => key !== currentKey)
     }
     return validKeys.indexOf(nextKey)
+  }
+
+  // ---------------- 启动队列回填（v2 优先，旧版 player-playlist 自动迁移） ----------------
+  /** 旧版完整对象数组里字段齐全、可直接复用（不请求网络）的歌曲，按 ids 顺序返回 */
+  const collectReusableSongs = (
+    legacySongs: readonly unknown[],
+    ids: number[]
+  ): SongDetail[] => {
+    const idSet = new Set(ids.map((id) => String(id)))
+    const reusable = new Map<string, SongDetail>()
+    for (const raw of legacySongs) {
+      if (!isObject(raw)) continue
+      const id = normalizeQueueId(raw.id)
+      if (id === null || !idSet.has(String(id))) continue
+      if (typeof raw.name !== 'string' || raw.name.length === 0) continue
+      reusable.set(String(id), raw as unknown as SongDetail)
+    }
+    return ids
+      .map((id) => reusable.get(String(id)))
+      .filter((song): song is SongDetail => Boolean(song))
+  }
+
+  /**
+   * 按保存顺序批量回填歌曲详情；失败（离线/接口异常）返回 null。
+   * 大歌单（最多 2000 首）一次性拼接 ids 会超出 URL 长度限制，按块请求更稳。
+   */
+  const fetchSongsByIds = async (
+    ids: number[]
+  ): Promise<SongDetail[] | null> => {
+    if (ids.length === 0) return []
+
+    const fetched: SongDetail[] = []
+    for (let start = 0; start < ids.length; start += DETAIL_FETCH_CHUNK_SIZE) {
+      const chunkIds = ids.slice(start, start + DETAIL_FETCH_CHUNK_SIZE)
+      const chunkSongs = await getMusicDetail(chunkIds.join(','))
+      if (chunkSongs && chunkSongs.length > 0) fetched.push(...chunkSongs)
+    }
+    if (fetched.length === 0) return null
+
+    // 详情接口返回顺序不保证与入参一致，必须按保存的 ids 重排
+    const songMap = new Map(fetched.map((song) => [toKey(song.id), song]))
+    const ordered: SongDetail[] = []
+    for (const id of ids) {
+      const song = songMap.get(String(id))
+      if (song) ordered.push(song)
+    }
+    return ordered.length > 0 ? ordered : null
+  }
+
+  /**
+   * 把回填结果恢复成内存队列。
+   * 不自动播放：audio 不动，paused 保持 true，只恢复 current/currentSong。
+   */
+  const applyHydratedSongs = (
+    songs: SongDetail[],
+    currentId: number | null
+  ): void => {
+    // 用户已经开始操作（例如启动后先点了歌）时，不要覆盖当前队列
+    if (playlist.value.length > 0 || songs.length === 0) return
+
+    playlist.value = songs
+    resetShufflePool()
+
+    const wantedKey =
+      currentId !== null ? String(currentId) : toKey(songId.value)
+    const matched = wantedKey
+      ? songs.find((song) => toKey(song.id) === wantedKey)
+      : undefined
+    if (matched) songId.value = matched.id
+
+    // 回填后把（可能被接口丢弃部分歌曲的）最新队列写回 v2
+    persistQueue()
+  }
+
+  /** 用 v2 数据回填；失败时把 ids 暂存 pending，供用户点歌前重试一次 */
+  const restoreFromPersistedQueue = async (
+    persisted: PersistedQueue
+  ): Promise<void> => {
+    const songs = await fetchSongsByIds(persisted.ids)
+    if (!songs) {
+      // 离线/接口失败：ids 已保存在 v2，本次会话队列暂空
+      pendingHydratedQueue = persisted
+      return
+    }
+    pendingHydratedQueue = null
+    applyHydratedSongs(songs, persisted.currentId)
+  }
+
+  /** 真正执行一次回填：优先 v2；没有 v2 时迁移旧版完整队列 */
+  const doHydrateQueue = async (): Promise<void> => {
+    // 内存里已有队列（用户在 hydrate 完成前就点了歌/播放）——以内存为准
+    if (playlist.value.length > 0) {
+      if (readPersistedQueue()) removeLegacyPlaylist()
+      return
+    }
+
+    const persisted = readPersistedQueue()
+    if (persisted) {
+      // v2 存在即权威数据，旧版完整队列 key 可安全清理
+      removeLegacyPlaylist()
+      if (persisted.ids.length === 0) return
+      await restoreFromPersistedQueue(persisted)
+      return
+    }
+
+    // 没有 v2：尝试从旧版 player-playlist（完整对象数组）迁移
+    const legacySongs = readLegacyPlaylist()
+    if (!legacySongs || legacySongs.length === 0) {
+      if (legacySongs) removeLegacyPlaylist()
+      return
+    }
+
+    const migrated = migrateLegacyQueue(legacySongs, readLegacyCurrentId())
+    if (!migrated) {
+      // 旧数据全是脏 id，没有迁移价值，清掉避免每次启动重复解析
+      removeLegacyPlaylist()
+      return
+    }
+
+    // 旧对象数组字段齐全时直接复用内存数据，不请求网络
+    const reusableSongs = collectReusableSongs(legacySongs, migrated.ids)
+    if (reusableSongs.length === migrated.ids.length) {
+      writePersistedQueue(migrated)
+      applyHydratedSongs(reusableSongs, migrated.currentId)
+      removeLegacyPlaylist()
+      return
+    }
+
+    // 字段不全：先把 ids 落到 v2（离线也不丢），再按 ids 批量回填详情
+    writePersistedQueue(migrated)
+    removeLegacyPlaylist()
+    await restoreFromPersistedQueue(migrated)
+  }
+
+  /**
+   * 启动回填入口：异步、幂等、不阻塞首帧。
+   * 重复调用只会复用同一个 Promise；成功/失败都会置 hydrated 标记，不会重复请求。
+   */
+  const hydrateQueue = (): Promise<void> => {
+    if (queueHydrated) return Promise.resolve()
+    if (queueHydratePromise) return queueHydratePromise
+    queueHydratePromise = (async () => {
+      try {
+        await doHydrateQueue()
+      } catch {
+        // 回填失败不阻塞播放；pending 队列留待用户点歌前重试
+      } finally {
+        queueHydrated = true
+        queueHydratePromise = null
+      }
+    })()
+    return queueHydratePromise
+  }
+
+  /** 回填失败后的唯一一次重试（非阻塞，不拖慢用户的点歌操作） */
+  const retryPendingHydration = (): void => {
+    if (!pendingHydratedQueue || hydrationRetried) return
+    if (playlist.value.length > 0) return
+    hydrationRetried = true
+    void restoreFromPersistedQueue(pendingHydratedQueue)
   }
 
   // ---------------- 播放核心 ----------------
@@ -379,7 +574,10 @@ export const usePlayerStore = defineStore('player', () => {
   /** 取歌词文本；失败/无歌词返回空串（调用方只在 token 未过期时采用） */
   const fetchLyricStr = async (id: SongId): Promise<string> => {
     try {
-      const res: unknown = await getLyricApi({ id: Number(id) })
+      // 歌词属于当前播放歌曲，不能因为用户切页被导航作用域取消
+      const res: unknown = await withoutAbortOnNavigate(() =>
+        getLyricApi({ id: Number(id) })
+      )
       if (!isObject(res) || !isObject(res.lrc)) return ''
       const lyric = res.lrc.lyric
       return typeof lyric === 'string' ? lyric : ''
@@ -542,6 +740,8 @@ export const usePlayerStore = defineStore('player', () => {
   /** 初始化播放器（幂等）：绑定 audio 事件、同步音量 */
   const initPlayer = () => {
     audio.volume = clampPercent(volume.value) / 100
+    // 异步回填播放队列（v2 ids -> 详情，旧版完整队列自动迁移），不阻塞首帧
+    void hydrateQueue()
     if (listenersBound) return
     listenersBound = true
     audio.addEventListener('timeupdate', onTimeUpdate)
@@ -576,14 +776,19 @@ export const usePlayerStore = defineStore('player', () => {
     }
     isFm.value = fm
 
-    // 当前曲直接点击：暂停中则继续播放，播放中则忽略，不重复请求详情
-    if (key === toKey(songId.value)) {
+    // 离线启动导致队列回填失败时，在用户点歌前再试一次（非阻塞，不拖慢点歌）
+    retryPendingHydration()
+
+    const currentIdx = current.value.idx
+
+    // 当前曲直接点击：暂停中则继续播放，播放中则忽略，不重复请求详情。
+    // 队列尚未回填时 idx === -1，此时不能提前 return，要走下面的"拉详情并插入队列"。
+    if (key === toKey(songId.value) && currentIdx !== -1) {
       if (audio.paused) {
         if (audio.src) {
           await safePlay()
         } else {
-          const idx = current.value.idx
-          if (idx !== -1) await playByIndex(idx)
+          await playByIndex(currentIdx)
         }
       }
       return
@@ -639,6 +844,7 @@ export const usePlayerStore = defineStore('player', () => {
     seeking = false
     isFm.value = false
     playlist.value = orderedSongs
+    persistQueue()
     songId.value = ''
     currentTime.value = 0
     mediaDuration.value = 0
@@ -792,6 +998,7 @@ export const usePlayerStore = defineStore('player', () => {
     const nextList = list.slice()
     nextList.splice(index, 1)
     playlist.value = nextList
+    persistQueue()
     shufflePool = shufflePool.filter((poolKey) => poolKey !== key)
 
     if (!wasCurrent) return
@@ -806,6 +1013,8 @@ export const usePlayerStore = defineStore('player', () => {
   const clearPlaylist = () => {
     playlist.value = []
     stopPlayback()
+    // 显式写一次空队列：清空本身也是一种需要持久化的状态（避免下次启动复活旧队列）
+    persistQueue()
   }
 
   return {
