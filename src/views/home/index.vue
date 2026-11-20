@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onActivated, onMounted, ref } from 'vue'
 import { PlayOne } from '@icon-park/vue-next'
 import { getNewAlbumApi } from '@/api/album'
 import { getrecommendArtistApi } from '@/api/artist'
@@ -194,6 +194,14 @@ const nothingToShow = computed(
     !recommendSongList.value.length
 )
 
+/** keep-alive 静默刷新阈值：距上次加载超过 5 分钟才在重新激活时后台重拉 */
+const SILENT_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+
+/** keep-alive 静默刷新状态：上次加载时间 / 上次是否失败 / 是否正在静默刷新 */
+let lastLoadedAt = 0
+let lastLoadFailed = false
+let silentRefreshing = false
+
 const loadRecommendPlayList = async () => {
   const { recommend } = await getrecommendPlayListApi()
   recommendPlayList.value = (recommend ?? [])
@@ -223,37 +231,65 @@ const loadRecommendSongs = async () => {
   recommendBg.value = recommendSongList.value[0]?.picUrl ?? ''
 }
 
-/** 五个模块并行请求：任意一个失败都不影响其它模块渲染 */
-const loadAll = async () => {
-  loading.value = true
-  failedAll.value = false
-  const tasks = [
-    loadRecommendPlayList(),
-    loadRecommendArtist(),
-    loadAlbumNewest(),
-    loadTopList(),
-    loadRecommendSongs(),
-  ]
-  const results = await Promise.allSettled(tasks)
-  const rejected = results.filter(
-    (item): item is PromiseRejectedResult => item.status === 'rejected'
-  )
-  if (rejected.length) {
-    rejected.forEach(item => {
-      console.error('[HaloMusic] home request failed:', item.reason)
-    })
+/**
+ * 五个模块并行请求：任意一个失败都不影响其它模块渲染。
+ * silent=true 用于 keep-alive 重新激活：不显示骨架、失败不提示、保留现有内容。
+ */
+const loadAll = async (silent = false) => {
+  if (silent) {
+    if (silentRefreshing || loading.value) return
+    silentRefreshing = true
+  } else {
+    loading.value = true
+    failedAll.value = false
+  }
+
+  try {
+    const tasks = [
+      loadRecommendPlayList(),
+      loadRecommendArtist(),
+      loadAlbumNewest(),
+      loadTopList(),
+      loadRecommendSongs(),
+    ]
+    const results = await Promise.allSettled(tasks)
+    const rejected = results.filter(
+      (item): item is PromiseRejectedResult => item.status === 'rejected'
+    )
     // 切页会取消在途请求：这属于正常控制流，不算加载失败、不提示
     const failed = rejected.filter(item => !isCanceledError(item.reason))
-    if (rejected.length === tasks.length) {
-      failedAll.value = true
-    } else if (failed.length) {
-      handleRequestError(
-        failed[0]?.reason,
-        `部分内容加载失败（${failed.length}/${tasks.length}）`
-      )
+
+    if (silent) {
+      // 静默刷新：失败只在控制台留痕，不弹错误、不切错误态；全部失败时下次激活再试
+      failed.forEach(item => {
+        console.error('[HaloMusic] home silent refresh failed:', item.reason)
+      })
+      if (failed.length < tasks.length) failedAll.value = false
+      lastLoadFailed = failed.length > 0 && failed.length === tasks.length
+    } else {
+      if (rejected.length) {
+        rejected.forEach(item => {
+          console.error('[HaloMusic] home request failed:', item.reason)
+        })
+        if (rejected.length === tasks.length) {
+          failedAll.value = true
+        } else if (failed.length) {
+          handleRequestError(
+            failed[0]?.reason,
+            `部分内容加载失败（${failed.length}/${tasks.length}）`
+          )
+        }
+      }
+      lastLoadFailed = failedAll.value
+    }
+  } finally {
+    lastLoadedAt = Date.now()
+    if (silent) {
+      silentRefreshing = false
+    } else {
+      loading.value = false
     }
   }
-  loading.value = false
 
   // 喜欢列表 / 订阅专辑 id 不影响首屏，放到最后异步刷新
   Promise.allSettled([saveLikeMusicIds(), saveSubAlbumIds()]).then(items => {
@@ -275,7 +311,18 @@ const handlePlayMultiRecommend = (event: Event) => {
   playerStore.playMulti(ids.join(','))
 }
 
-onMounted(loadAll)
+onMounted(() => {
+  void loadAll()
+})
+
+onActivated(() => {
+  // 首次激活与 onMounted 的首次加载会先后触发：lastLoadedAt 为 0 时说明首屏还没落地，直接跳过
+  if (!lastLoadedAt || loading.value || silentRefreshing) return
+  if (!lastLoadFailed && Date.now() - lastLoadedAt < SILENT_REFRESH_INTERVAL_MS) {
+    return
+  }
+  void loadAll(true)
+})
 </script>
 
 <style scoped>

@@ -278,7 +278,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onActivated, onBeforeUnmount, ref, watch } from 'vue'
 import { PlayOne, Refresh } from '@icon-park/vue-next'
 import { useLocalStorage } from '@vueuse/core'
 import {
@@ -326,6 +326,14 @@ const historyType = ref('1')
 const musicHistoryData = ref<MusicBaseInfo[]>([])
 const activeTab = ref('1')
 const tabLoading = ref(false)
+
+/** keep-alive 静默刷新阈值：距上次加载超过 5 分钟才在重新激活时后台重拉 */
+const SILENT_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+
+/** keep-alive 静默刷新状态：上次加载时间 / 上次是否失败 / 是否正在静默刷新 */
+let lastLoadedAt = 0
+let lastLoadFailed = false
+let silentRefreshing = false
 
 let rotateTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -442,6 +450,8 @@ const initData = async () => {
       // 全部失败（通常是断网，或首屏加载中被切页）：给整页错误态，避免只剩一个空音乐库
       isLoaded.value = true
       loadFailed.value = true
+      lastLoadedAt = Date.now()
+      lastLoadFailed = true
       handleRequestError(failed[0]?.reason, '音乐库加载失败，请稍后重试')
       return
     }
@@ -450,6 +460,8 @@ const initData = async () => {
     }
   }
   isLoaded.value = true
+  lastLoadedAt = Date.now()
+  lastLoadFailed = false
   // 随机歌词不阻塞首屏
   loadRandomLyric().catch((error: unknown) => {
     console.error('[HaloMusic] load random lyric failed:', error)
@@ -461,6 +473,40 @@ const retryLoad = () => {
   if (!user.value.userId) return
   isLoaded.value = false
   void initData()
+}
+
+/**
+ * keep-alive 重新激活时的静默刷新：只重拉首屏数据，
+ * 不显示骨架、失败不提示；成功时顺带清掉之前的错误态。
+ */
+const refreshSilently = async () => {
+  if (!user.value.userId || !isLoaded.value) return
+  if (silentRefreshing || tabLoading.value) return
+  silentRefreshing = true
+  try {
+    const results = await Promise.allSettled([
+      loadPlayLists(),
+      loadLikeSongs(),
+      loadLikeCount(),
+    ])
+    const failed = results.filter(
+      (item): item is PromiseRejectedResult =>
+        item.status === 'rejected' && !isCanceledError(item.reason)
+    )
+    failed.forEach(item => {
+      console.error('[HaloMusic] silent refresh music library failed:', item.reason)
+    })
+    lastLoadFailed = failed.length === results.length
+    if (!failed.length) {
+      loadFailed.value = false
+      loadRandomLyric().catch((error: unknown) => {
+        console.error('[HaloMusic] silent refresh lyric failed:', error)
+      })
+    }
+  } finally {
+    silentRefreshing = false
+    lastLoadedAt = Date.now()
+  }
 }
 
 /** 加载一个 tab 的数据（重置后按接口分页拉全） */
@@ -604,6 +650,16 @@ watch(
   },
   { immediate: true }
 )
+
+onActivated(() => {
+  // 首屏数据还没落地（lastLoadedAt 为 0）或正在加载时不重复请求：
+  // 首次激活与上面的 watch 首屏加载会先后触发，靠这个判断避免双请求。
+  if (!lastLoadedAt || !isLoaded.value || silentRefreshing) return
+  if (!lastLoadFailed && Date.now() - lastLoadedAt < SILENT_REFRESH_INTERVAL_MS) {
+    return
+  }
+  void refreshSilently()
+})
 
 onBeforeUnmount(() => {
   if (rotateTimer !== undefined) {

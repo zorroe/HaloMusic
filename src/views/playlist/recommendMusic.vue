@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onActivated, onMounted, ref } from 'vue'
 import { getRecommendSongsApi } from '@/api/music'
 import type { MusicBaseInfo } from '@/types/musicRel'
 import { handleRequestError } from '@/utils/common'
@@ -58,26 +58,61 @@ defineOptions({
   name: 'recommendMusic',
 })
 
+/** keep-alive 静默刷新阈值：距上次加载超过 5 分钟才在重新激活时后台重拉 */
+const SILENT_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+
 /* 每日推荐歌曲页面 */
 const recommendSongList = ref<MusicBaseInfo[]>([])
 const loaded = ref(false)
 const loadFailed = ref(false)
 
-const getRecommendSongs = async () => {
-  loaded.value = false
-  loadFailed.value = false
+/** keep-alive 静默刷新状态：上次加载时间 / 上次是否失败 / 是否正在静默刷新 */
+let lastLoadedAt = 0
+let lastLoadFailed = false
+let silentRefreshing = false
+
+/**
+ * 拉取每日推荐。
+ * silent=true 用于 keep-alive 重新激活：不显示骨架、失败不提示、保留现有内容。
+ */
+const getRecommendSongs = async (silent = false) => {
+  if (silent) {
+    if (silentRefreshing) return
+    silentRefreshing = true
+  } else {
+    loaded.value = false
+    loadFailed.value = false
+  }
   try {
     const { data } = await getRecommendSongsApi()
     recommendSongList.value = (data?.dailySongs ?? []).map(mapSong)
     loaded.value = true
+    loadFailed.value = false
+    lastLoadFailed = false
   } catch (error) {
     console.error('[HaloMusic] load recommend songs failed:', error)
+    lastLoadFailed = true
+    if (silent) return
     loadFailed.value = true
     handleRequestError(error, '每日推荐加载失败，请稍后重试')
+  } finally {
+    lastLoadedAt = Date.now()
+    silentRefreshing = false
   }
 }
 
-onMounted(getRecommendSongs)
+onMounted(() => {
+  void getRecommendSongs()
+})
+
+onActivated(() => {
+  // 首次激活与 onMounted 的首次加载会先后触发：lastLoadedAt 为 0 时说明首屏还没落地，直接跳过
+  if (!lastLoadedAt || silentRefreshing) return
+  if (!lastLoadFailed && Date.now() - lastLoadedAt < SILENT_REFRESH_INTERVAL_MS) {
+    return
+  }
+  void getRecommendSongs(true)
+})
 </script>
 
 <style scoped>

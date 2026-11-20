@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onActivated, onMounted, ref } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { playlistBigCats, playlistCategories } from './btns'
 import type { PlaylistCategory } from './btns'
@@ -120,6 +120,16 @@ const activeName = ref('全部')
 const loading = ref(false)
 const loadFailed = ref(false)
 
+/** keep-alive 静默刷新阈值：距上次加载超过 5 分钟才在重新激活时后台重拉当前分类 */
+const SILENT_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+
+/** keep-alive 静默刷新状态：上次加载时间 / 上次是否失败 / 是否正在静默刷新 */
+let lastLoadedAt = 0
+let lastLoadFailed = false
+let silentRefreshing = false
+/** 用户主动加载的版本号：静默刷新期间用户切了分类/翻页时，丢弃过期的静默结果 */
+let loadVersion = 0
+
 /** 精品歌单分页参数（before 用上一页最后一条的 updateTime） */
 const highQualityParams = {
   limit: 60,
@@ -136,57 +146,111 @@ const topParams = {
 const labels = (cat: string): PlaylistCategory[] =>
   btns.value.filter(item => item.bigCat === cat)
 
+/* --------------------------------------------------------------------------
+ * 数据拉取：fetch* 只负责取第一页数据（不直接改列表），
+ * 正常加载与 keep-alive 静默刷新共用，避免两份请求逻辑。
+ * ------------------------------------------------------------------------ */
+
+/** 推荐歌单（首屏一次性给 100 个，无分页） */
+const fetchPersonalized = async (): Promise<PlayListBaseInfo[]> => {
+  const { result } = await getPersonalizePlayListApi({ limit: 100 })
+  return (result ?? []).map(mapPlayList)
+}
+
+/** 排行榜（无分页） */
+const fetchTopListData = async (): Promise<PlayListBaseInfo[]> => {
+  const { list } = await getTopListApi()
+  return (list ?? []).map(mapPlayList)
+}
+
+/** 精品歌单单页结果：列表 + 下一页 before 游标（最后一条 updateTime） */
+interface HighQualityPage {
+  list: PlayListBaseInfo[]
+  lastUpdateTime: number | null
+}
+
+/** 精品歌单（分页：before 用上一页最后一条的 updateTime） */
+const fetchHighQualityPage = async (
+  before: number,
+  cat: string
+): Promise<HighQualityPage> => {
+  const { playlists } = await getHighQualityPlayList({
+    limit: highQualityParams.limit,
+    before,
+    cat,
+  })
+  const list = playlists ?? []
+  const last = list[list.length - 1]
+  return {
+    list: list.map(mapPlayList),
+    lastUpdateTime:
+      typeof last?.updateTime === 'number' ? last.updateTime : null,
+  }
+}
+
+/** 普通分类（分页） */
+const fetchOthersPage = async (
+  offset: number,
+  cat: string
+): Promise<PlayListBaseInfo[]> => {
+  const { playlists } = await getTopPlayList({
+    offset,
+    limit: topParams.limit,
+    cat,
+  })
+  return (playlists ?? []).map(mapPlayList)
+}
+
 // 点击推荐歌单
 const loadPersonalized = async () => {
   playListList.value = []
   showMoreBtn.value = false
-  const { result } = await getPersonalizePlayListApi({ limit: 100 })
-  playListList.value = (result ?? []).map(mapPlayList)
+  playListList.value = await fetchPersonalized()
 }
 
 // 点击排行榜
 const loadTopList = async () => {
   playListList.value = []
   showMoreBtn.value = false
-  const { list } = await getTopListApi()
-  playListList.value = (list ?? []).map(mapPlayList)
+  playListList.value = await fetchTopListData()
 }
 
 // 点击精品歌单（分页）
 const loadHighQuality = async () => {
-  const { playlists } = await getHighQualityPlayList({
-    ...highQualityParams,
-    cat: activeName.value,
-  })
-  const list = playlists ?? []
-  playListList.value.push(...list.map(mapPlayList))
-  const last = list[list.length - 1]
-  if (typeof last?.updateTime === 'number') {
-    highQualityParams.before = last.updateTime
+  const page = await fetchHighQualityPage(
+    highQualityParams.before,
+    activeName.value
+  )
+  if (page.lastUpdateTime !== null) {
+    highQualityParams.before = page.lastUpdateTime
   }
-  showMoreBtn.value = list.length > 0
+  playListList.value.push(...page.list)
+  showMoreBtn.value = page.list.length > 0
 }
 
 // 点击其它分类（分页）
 const loadOthers = async () => {
-  const { playlists } = await getTopPlayList({ ...topParams })
-  const list = playlists ?? []
-  playListList.value.push(...list.map(mapPlayList))
+  const list = await fetchOthersPage(topParams.offset, topParams.cat)
+  playListList.value.push(...list)
   showMoreBtn.value = list.length > 0
 }
 
 const runLoad = async (task: () => Promise<void>) => {
   if (loading.value) return
+  loadVersion += 1
   loading.value = true
   loadFailed.value = false
   try {
     await task()
+    lastLoadFailed = false
   } catch (error) {
     console.error('[HaloMusic] load explore playlists failed:', error)
     loadFailed.value = playListList.value.length === 0
+    lastLoadFailed = true
     handleRequestError(error, '歌单加载失败，请稍后重试')
   } finally {
     loading.value = false
+    lastLoadedAt = Date.now()
   }
 }
 
@@ -253,8 +317,64 @@ const handleVisible = (btn: PlaylistCategory) => {
   btns.value.splice(index, 1, { ...target, enable: !target.enable })
 }
 
+/**
+ * keep-alive 重新激活时的静默刷新：
+ * 只重拉当前分类的第一页，成功后才替换列表（空结果不覆盖），失败不提示、不切错误态。
+ */
+const refreshSilently = async () => {
+  if (silentRefreshing || loading.value) return
+  const version = loadVersion
+  silentRefreshing = true
+  try {
+    let list: PlayListBaseInfo[] = []
+    let nextBefore: number | null = null
+    if (activeName.value === '精品歌单') {
+      const page = await fetchHighQualityPage(0, activeName.value)
+      list = page.list
+      nextBefore = page.lastUpdateTime
+    } else if (activeName.value === '推荐歌单') {
+      list = await fetchPersonalized()
+    } else if (activeName.value === '排行榜') {
+      list = await fetchTopListData()
+    } else {
+      list = await fetchOthersPage(0, activeName.value)
+    }
+    // 请求期间用户已经主动切换分类/翻页：丢弃本次静默结果，避免覆盖用户操作
+    if (version !== loadVersion) return
+    if (list.length > 0) {
+      playListList.value = list
+      showMoreBtn.value =
+        activeName.value !== '推荐歌单' && activeName.value !== '排行榜'
+      // 分页游标跟随新的第一页重置，避免「加载更多」拿到重复数据
+      if (activeName.value === '精品歌单' && nextBefore !== null) {
+        highQualityParams.before = nextBefore
+      } else if (activeName.value !== '推荐歌单' && activeName.value !== '排行榜') {
+        topParams.cat = activeName.value
+        topParams.offset = 0
+      }
+    }
+    loadFailed.value = false
+    lastLoadFailed = false
+  } catch (error) {
+    console.error('[HaloMusic] silent refresh explore failed:', error)
+    lastLoadFailed = true
+  } finally {
+    silentRefreshing = false
+    lastLoadedAt = Date.now()
+  }
+}
+
 onMounted(() => {
   void runLoad(loadOthers)
+})
+
+onActivated(() => {
+  // 首次激活与 onMounted 的首次加载会先后触发：lastLoadedAt 为 0 时说明首屏还没落地，直接跳过
+  if (!lastLoadedAt || loading.value || silentRefreshing) return
+  if (!lastLoadFailed && Date.now() - lastLoadedAt < SILENT_REFRESH_INTERVAL_MS) {
+    return
+  }
+  void refreshSilently()
 })
 </script>
 
