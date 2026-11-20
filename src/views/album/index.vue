@@ -1,21 +1,54 @@
 <template>
+  <!-- 加载骨架：封面 + 标题/歌手/元信息 + 与歌曲行高一致的列表 -->
   <div
     v-if="!loaded && !loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-    <div class="page-spinner"></div>
-    <div class="text-base">正在加载专辑…</div>
+    class="flex flex-col w-full px-4 gap-8"
+    aria-busy="true">
+    <div class="flex my-4 gap-8">
+      <div class="w-48 flex-none">
+        <ea-skeleton
+          variant="rect"
+          height="12rem"
+          radius="12px" />
+      </div>
+      <div class="flex flex-col gap-2 flex-1 min-w-0 py-2">
+        <ea-skeleton
+          variant="rect"
+          width="16rem"
+          height="32px" />
+        <ea-skeleton
+          variant="text"
+          width="10rem" />
+        <ea-skeleton
+          variant="text"
+          width="6rem" />
+        <div class="flex flex-grow gap-4 items-end pb-2">
+          <ea-skeleton
+            variant="rect"
+            width="7rem"
+            height="40px"
+            radius="9999px" />
+          <ea-skeleton
+            variant="rect"
+            :width="40"
+            :height="40"
+            radius="9999px" />
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <ea-skeleton
+        v-for="index in 12"
+        :key="`skeleton-album-track-${index}`"
+        variant="row" />
+    </div>
   </div>
-  <div
+  <ea-empty
     v-else-if="loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40">
-    <div class="text-xl font-bold">专辑加载失败</div>
-    <div class="text-base text-gray-500">可能是网络异常或专辑不存在</div>
-    <ea-button
-      type="primary"
-      @click="getAlbum">
-      <div class="text-base font-bold">重新加载</div>
-    </ea-button>
-  </div>
+    title="专辑加载失败"
+    description="可能是网络异常或专辑不存在"
+    action-text="重新加载"
+    @action="getAlbum" />
   <div
     v-else
     class="flex flex-col w-full px-4 h-64 gap-8">
@@ -58,8 +91,13 @@
       </div>
     </div>
     <music-table
+      v-if="albumSongs.length"
       :data="albumSongs"
       :showCover="false"></music-table>
+    <ea-empty
+      v-else
+      title="专辑里还没有歌曲"
+      description="换个专辑听听吧" />
   </div>
 </template>
 
@@ -147,20 +185,3 @@ const playMusicByAlbumId = () => {
 
 onMounted(getAlbum)
 </script>
-
-<style scoped>
-.page-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: page-spin 0.8s linear infinite;
-}
-
-@keyframes page-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

@@ -11,9 +11,9 @@
       <div
         v-else
         class="w-48 h-48 rounded-2xl bg-gray-100 flex items-center justify-center">
-        <div
+        <ea-loading
           v-if="loading"
-          class="qr-spinner"></div>
+          :size="28" />
         <div
           v-else
           class="text-sm text-gray-500">
@@ -172,23 +172,8 @@ onBeforeUnmount(clearTimer)
 </script>
 
 <style scoped>
-.qr-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: qr-spin 0.8s linear infinite;
-}
-
-@keyframes qr-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .gradual-appear {
   opacity: 1;
-  transition: all 300ms linear;
+  transition: opacity var(--motion-slow) var(--ease-standard);
 }
 </style>

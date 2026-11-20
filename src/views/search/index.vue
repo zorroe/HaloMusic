@@ -1,23 +1,39 @@
 <template>
   <div class="flex flex-col gap-4">
-    <div
+    <ea-empty
       v-if="!searchKey"
-      class="flex flex-col items-center justify-center gap-2 py-40 text-gray-400">
-      <div class="text-xl font-bold">搜点什么吧</div>
-      <div class="text-base">在右上角搜索框输入关键词开始搜索</div>
-    </div>
+      title="搜点什么吧"
+      description="在右上角搜索框输入关键词开始搜索" />
+    <!-- 结果区骨架：标题行 + 与歌曲行高一致的 5 行 -->
     <div
       v-else-if="loadingUI"
-      class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-      <div class="search-spinner"></div>
-      <div class="text-base">正在搜索「{{ searchKey }}」…</div>
+      class="flex flex-col gap-4"
+      aria-busy="true">
+      <div class="flex items-center gap-3 my-2">
+        <ea-skeleton
+          variant="text"
+          width="12rem"
+          height="20px" />
+        <ea-skeleton
+          variant="text"
+          width="6rem"
+          height="20px" />
+      </div>
+      <ea-skeleton
+        v-for="index in 5"
+        :key="`skeleton-search-${index}`"
+        variant="row" />
     </div>
-    <div
+    <ea-empty
+      v-else-if="searchFailed"
+      title="搜索失败"
+      description="请检查网络后重试"
+      action-text="重新搜索"
+      @action="retrySearch" />
+    <ea-empty
       v-else-if="isEmpty"
-      class="flex flex-col items-center justify-center gap-2 py-40 text-gray-400">
-      <div class="text-xl font-bold">没有找到与「{{ searchKey }}」相关的内容</div>
-      <div class="text-base">换个关键词试试吧</div>
-    </div>
+      title="没有找到相关内容"
+      description="换个关键词试试" />
     <template v-else>
       <div v-if="artists.length">
         <div class="text-2xl my-2">
@@ -145,6 +161,8 @@ interface RawSearchResult {
 const searchStore = useSearchStore(pinia)
 
 const searching = ref(false)
+/** 所有搜索类型都失败时展示可重试的错误态，避免和「无结果」混淆 */
+const searchFailed = ref(false)
 /** 防抖等待期（从输入变化到真正发起请求之间）也展示 loading，避免闪一下空状态 */
 const searchPending = ref(false)
 const loadingUI = computed(() => searching.value || searchPending.value)
@@ -197,6 +215,7 @@ const runSearch = async () => {
   const key = searchStore.searchKey
   if (!key) return
   searching.value = true
+  searchFailed.value = false
   searchStore.clearSearchResult()
   try {
     const results = await Promise.allSettled(
@@ -209,12 +228,11 @@ const runSearch = async () => {
       rejected.forEach(item => {
         console.error('[HaloMusic] search failed:', item.reason)
       })
+      const allFailed = rejected.length === results.length
+      searchFailed.value = allFailed
       notify({
-        message:
-          rejected.length === results.length
-            ? '搜索失败，请检查网络'
-            : '部分搜索结果加载失败',
-        type: rejected.length === results.length ? 'error' : 'warning',
+        message: allFailed ? '搜索失败，请检查网络' : '部分搜索结果加载失败',
+        type: allFailed ? 'error' : 'warning',
       })
     }
   } finally {
@@ -229,6 +247,12 @@ const enqueueSearch = () => {
   })
 }
 
+/** 错误态「重新搜索」：复用串行队列再跑一次当前关键词 */
+const retrySearch = () => {
+  searchFailed.value = false
+  enqueueSearch()
+}
+
 // 搜索词变化时防抖后入队执行
 watch(
   () => searchStore.searchKey,
@@ -236,6 +260,7 @@ watch(
     if (debounceTimer !== undefined) clearTimeout(debounceTimer)
     if (!key) {
       searchPending.value = false
+      searchFailed.value = false
       return
     }
     searchPending.value = true
@@ -267,20 +292,3 @@ onBeforeUnmount(() => {
   }
 })
 </script>
-
-<style scoped>
-.search-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: search-spin 0.8s linear infinite;
-}
-
-@keyframes search-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

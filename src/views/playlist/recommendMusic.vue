@@ -1,27 +1,49 @@
 <template>
+  <!-- 加载骨架：保留页面大标题的版式留白 + 与歌单行高一致的列表 -->
   <div
     v-if="!loaded && !loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-    <div class="page-spinner"></div>
-    <div class="text-base">正在加载每日推荐…</div>
+    class="flex flex-col"
+    aria-busy="true">
+    <div class="special-playlist">
+      <div class="flex justify-center">
+        <ea-skeleton
+          variant="rect"
+          width="min(90%, 32rem)"
+          height="88px"
+          radius="12px" />
+      </div>
+      <div class="flex justify-center">
+        <ea-skeleton
+          variant="text"
+          width="18rem"
+          class="mt-7 mb-[54px]" />
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <ea-skeleton
+        v-for="index in 10"
+        :key="`skeleton-recommend-${index}`"
+        variant="row" />
+    </div>
   </div>
-  <div
+  <ea-empty
     v-else-if="loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40">
-    <div class="text-xl font-bold">每日推荐加载失败</div>
-    <div class="text-base text-gray-500">请检查网络后重试</div>
-    <ea-button
-      type="primary"
-      @click="getRecommendSongs">
-      <div class="text-base font-bold">重新加载</div>
-    </ea-button>
-  </div>
+    title="每日推荐加载失败"
+    description="请检查网络后重试"
+    action-text="重新加载"
+    @action="getRecommendSongs" />
   <template v-else>
     <div class="special-playlist">
       <div class="title gradient">每日歌曲推荐</div>
       <div class="subtitle">根据你的音乐口味生成 · 每天6:00更新</div>
     </div>
-    <music-table :data="recommendSongList"></music-table>
+    <music-table
+      v-if="recommendSongList.length"
+      :data="recommendSongList"></music-table>
+    <ea-empty
+      v-else
+      title="今天还没有推荐歌曲"
+      description="稍后再来看看吧" />
   </template>
 </template>
 
@@ -59,21 +81,6 @@ onMounted(getRecommendSongs)
 </script>
 
 <style scoped>
-.page-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: page-spin 0.8s linear infinite;
-}
-
-@keyframes page-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .special-playlist {
   margin-top: 192px;
   margin-bottom: 128px;

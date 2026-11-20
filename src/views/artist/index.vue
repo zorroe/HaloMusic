@@ -1,21 +1,103 @@
 <template>
+  <!-- 加载骨架：圆形头像 + 简介 + 热门歌曲行 + 专辑/MV 卡片网格 -->
   <div
     v-if="!loaded && !loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-    <div class="page-spinner"></div>
-    <div class="text-base">正在加载歌手…</div>
+    class="flex flex-col w-full px-4 gap-8 my-4"
+    aria-busy="true">
+    <div class="flex my-4 gap-4">
+      <div class="w-56 flex-none">
+        <ea-skeleton
+          variant="circle"
+          :width="224"
+          :height="224" />
+      </div>
+      <div class="flex flex-col gap-4 flex-1 min-w-0 pl-6 py-2">
+        <ea-skeleton
+          variant="rect"
+          width="16rem"
+          height="32px" />
+        <ea-skeleton
+          variant="text"
+          width="60%" />
+        <ea-skeleton
+          variant="text"
+          width="40%" />
+        <ea-skeleton
+          variant="text"
+          width="80%" />
+        <div class="flex flex-grow gap-4 items-end pb-2">
+          <ea-skeleton
+            variant="rect"
+            width="7rem"
+            height="40px"
+            radius="9999px" />
+          <ea-skeleton
+            variant="rect"
+            width="7rem"
+            height="40px"
+            radius="9999px" />
+          <ea-skeleton
+            variant="rect"
+            :width="40"
+            :height="40"
+            radius="9999px" />
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="flex justify-between items-center pr-2 my-4">
+        <ea-skeleton
+          variant="rect"
+          width="6rem"
+          height="32px" />
+        <ea-skeleton
+          variant="text"
+          width="3rem" />
+      </div>
+      <div class="flex flex-col">
+        <ea-skeleton
+          v-for="index in 5"
+          :key="`skeleton-hot-song-${index}`"
+          variant="row" />
+      </div>
+    </div>
+    <div>
+      <ea-skeleton
+        variant="rect"
+        width="4rem"
+        height="32px"
+        class="my-4" />
+      <div class="grid-cols-5 grid gap-4">
+        <ea-skeleton
+          v-for="index in 10"
+          :key="`skeleton-artist-album-${index}`"
+          variant="card"
+          width="12rem" />
+      </div>
+    </div>
+    <div>
+      <ea-skeleton
+        variant="rect"
+        width="3rem"
+        height="32px"
+        class="my-4" />
+      <div class="grid-cols-4 grid gap-4">
+        <ea-skeleton
+          v-for="index in 8"
+          :key="`skeleton-artist-mv-${index}`"
+          variant="rect"
+          width="15rem"
+          height="8rem"
+          radius="8px" />
+      </div>
+    </div>
   </div>
-  <div
+  <ea-empty
     v-else-if="loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40">
-    <div class="text-xl font-bold">歌手信息加载失败</div>
-    <div class="text-base text-gray-500">可能是网络异常或歌手不存在</div>
-    <ea-button
-      type="primary"
-      @click="loadAll">
-      <div class="text-base font-bold">重新加载</div>
-    </ea-button>
-  </div>
+    title="歌手信息加载失败"
+    description="可能是网络异常或歌手不存在"
+    action-text="重新加载"
+    @action="loadAll" />
   <div
     v-else
     class="flex flex-col w-full px-4 h-64 gap-8 my-4">
@@ -83,25 +165,43 @@
           查看全部
         </div>
       </div>
-      <music-table :data="artistHotSongs"></music-table>
+      <music-table
+        v-if="artistHotSongs.length"
+        :data="artistHotSongs"></music-table>
+      <ea-empty
+        v-else
+        compact
+        title="暂无热门歌曲" />
     </div>
     <div>
       <div class="text-lv1">专辑</div>
-      <div class="grid-cols-5 grid place-items-center gap-4">
+      <div
+        v-if="artistHotAlbums.length"
+        class="grid-cols-5 grid place-items-center gap-4">
         <album-cover
           v-for="item in artistHotAlbums"
           :key="item.id"
           :data="item"></album-cover>
       </div>
+      <ea-empty
+        v-else
+        compact
+        title="暂无专辑" />
     </div>
     <div>
       <div class="text-lv1">MV</div>
-      <div class="grid-cols-4 grid place-items-center gap-4">
+      <div
+        v-if="artistHotMvs.length"
+        class="grid-cols-4 grid place-items-center gap-4">
         <mv-cover
           v-for="item in artistHotMvs"
           :key="item.id"
           :data="item"></mv-cover>
       </div>
+      <ea-empty
+        v-else
+        compact
+        title="暂无 MV" />
     </div>
     <ea-modal
       id="artist-desc"
@@ -261,21 +361,6 @@ onMounted(loadAll)
 </script>
 
 <style scoped>
-.page-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: page-spin 0.8s linear infinite;
-}
-
-@keyframes page-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .artist-desc {
   user-select: none;
   font-size: 14px;
@@ -289,7 +374,7 @@ onMounted(loadAll)
 }
 
 .artist-desc:hover {
-  transition: opacity 0.3s;
+  transition: opacity var(--motion-base) var(--ease-standard);
   opacity: 0.88;
 }
 </style>

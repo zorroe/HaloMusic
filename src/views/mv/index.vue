@@ -1,74 +1,104 @@
 <template>
   <div class="flex flex-col items-center">
-    <div class="mv-player">
-      <video
-        v-if="src"
-        class="mv-video"
-        :src="src"
-        :poster="cover"
-        controls
-        loop
-        playsinline
-        preload="metadata"
-        @play="handlePlay"></video>
+    <!-- 加载骨架：播放器占位 + 详情行 -->
+    <template v-if="loading">
       <div
-        v-else
-        class="mv-placeholder">
-        <div
-          v-if="loading"
-          class="mv-spinner"></div>
-        <template v-else>
-          <div class="text-base font-bold">视频加载失败</div>
-          <div class="text-sm text-gray-400">
-            可能是版权限制或网络异常
-          </div>
-          <ea-button
-            type="primary"
-            @click="loadMv">
-            <div class="text-base font-bold">重新加载</div>
-          </ea-button>
-        </template>
+        class="mv-player"
+        aria-busy="true">
+        <ea-skeleton
+          variant="rect"
+          width="100%"
+          height="100%"
+          radius="8px" />
       </div>
-    </div>
-    <div class="w-full flex justify-center mt-4">
-      <div class="detail">
-        <div class="text-xl font-semibold">{{ mvData?.name }}</div>
-        <div class="flex items-center gap-2 mt-2">
-          <div class="flex">
-            <lmg
-              v-for="artist in mvData?.artists"
-              :key="artist.id"
-              :src="artist.img1v1Url"
-              :width="200"
-              :height="200"
-              class="w-12 h-12 rounded-full border-white border-2 cursor-pointer"
-              @click="routeTo(`/artist/${artist.id}`)"></lmg>
-          </div>
+      <div class="w-full flex justify-center mt-4">
+        <div class="detail flex flex-col gap-3">
+          <ea-skeleton
+            variant="rect"
+            width="18rem"
+            height="28px" />
           <div class="flex items-center gap-2">
-            <div
-              v-for="artist in mvData?.artists"
-              :key="`name-${artist.id}`"
-              class="text-gray-600 text-sm font-light ea-link"
-              @click="routeTo(`/artist/${artist.id}`)">
-              {{ artist.name }}
+            <ea-skeleton
+              variant="circle"
+              :width="48"
+              :height="48" />
+            <ea-skeleton
+              variant="circle"
+              :width="48"
+              :height="48" />
+            <ea-skeleton
+              variant="circle"
+              :width="48"
+              :height="48" />
+          </div>
+          <ea-skeleton
+            variant="text"
+            width="8rem" />
+        </div>
+      </div>
+    </template>
+    <ea-empty
+      v-else-if="loadFailed"
+      title="视频加载失败"
+      description="可能是版权限制或网络异常"
+      action-text="重新加载"
+      @action="loadMv" />
+    <template v-else>
+      <div class="mv-player">
+        <video
+          class="mv-video"
+          :src="src"
+          :poster="cover"
+          controls
+          loop
+          playsinline
+          preload="metadata"
+          @play="handlePlay"></video>
+      </div>
+      <div class="w-full flex justify-center mt-4">
+        <div class="detail">
+          <div class="text-xl font-semibold">{{ mvData?.name }}</div>
+          <div class="flex items-center gap-2 mt-2">
+            <div class="flex">
+              <lmg
+                v-for="artist in mvData?.artists"
+                :key="artist.id"
+                :src="artist.img1v1Url"
+                :width="200"
+                :height="200"
+                class="w-12 h-12 rounded-full border-white border-2 cursor-pointer"
+                @click="routeTo(`/artist/${artist.id}`)"></lmg>
+            </div>
+            <div class="flex items-center gap-2">
+              <div
+                v-for="artist in mvData?.artists"
+                :key="`name-${artist.id}`"
+                class="text-gray-600 text-sm font-light ea-link"
+                @click="routeTo(`/artist/${artist.id}`)">
+                {{ artist.name }}
+              </div>
+            </div>
+            <div class="flex flex-grow justify-end">
+              <icon-park
+                :icon="Share"
+                :size="18"
+                title="在浏览器中打开"
+                @click="handleShare"
+                class="cursor-pointer p-2 hover:bg-gray-200 transition-all duration-300 rounded-full"></icon-park>
             </div>
           </div>
-          <div class="flex flex-grow justify-end">
-            <icon-park
-              :icon="Share"
-              :size="18"
-              title="在浏览器中打开"
-              @click="handleShare"
-              class="cursor-pointer p-2 hover:bg-gray-200 transition-all duration-300 rounded-full"></icon-park>
+          <div
+            v-if="publishDate"
+            class="text-sm text-gray-500 mt-2">
+            {{ publishDate }}
           </div>
-        </div>
-        <div
-          v-if="publishDate"
-          class="text-sm text-gray-500 mt-2">
-          {{ publishDate }}
+          <ea-empty
+            v-if="!mvData"
+            compact
+            title="暂无视频信息" />
         </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -97,6 +127,8 @@ const src = ref<string>('')
 const quality = ref<number>(1080)
 const mvData = ref<MvData>()
 const loading = ref(true)
+/** 详情/播放地址请求失败或没有可播放地址时进入可重试错误态 */
+const loadFailed = ref(false)
 
 const publishDate = computed(() => {
   const time = mvData.value?.publishTime
@@ -105,8 +137,13 @@ const publishDate = computed(() => {
 })
 
 const loadMv = async () => {
-  if (!mvId.value) return
+  if (!mvId.value) {
+    loading.value = false
+    loadFailed.value = true
+    return
+  }
   loading.value = true
+  loadFailed.value = false
   src.value = ''
   const [detailResult, urlResult] = await Promise.allSettled([
     mvDetailApi({ mvid: mvId.value }),
@@ -129,6 +166,7 @@ const loadMv = async () => {
   }
 
   loading.value = false
+  loadFailed.value = !src.value
 }
 
 /** 视频开始播放时暂停正在播放的音频 */
@@ -162,32 +200,6 @@ onMounted(() => {
   height: 100%;
   object-fit: contain;
   background-color: #000000;
-}
-
-.mv-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  height: 100%;
-  color: #d1d5db;
-}
-
-.mv-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: mv-spin 0.8s linear infinite;
-}
-
-@keyframes mv-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .detail {

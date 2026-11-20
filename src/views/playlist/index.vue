@@ -1,21 +1,60 @@
 <template>
+  <!-- 加载骨架：头部信息区（封面 + 标题/作者/统计行）+ 与真实行高一致的 20 行 -->
   <div
     v-if="!loaded && !loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-    <div class="page-spinner"></div>
-    <div class="text-base">正在加载歌单…</div>
+    class="flex flex-col w-full px-4 gap-8"
+    aria-busy="true">
+    <div class="flex my-4 gap-4">
+      <div class="w-64 flex-none">
+        <ea-skeleton
+          variant="rect"
+          height="16rem"
+          radius="12px" />
+      </div>
+      <div class="flex flex-col gap-4 flex-1 min-w-0 py-2">
+        <ea-skeleton
+          variant="rect"
+          width="18rem"
+          height="32px" />
+        <ea-skeleton
+          variant="text"
+          width="12rem" />
+        <ea-skeleton
+          variant="text"
+          width="16rem" />
+        <ea-skeleton
+          variant="text"
+          width="60%" />
+        <ea-skeleton
+          variant="text"
+          width="48%" />
+        <div class="flex gap-4 mt-auto pb-2">
+          <ea-skeleton
+            variant="rect"
+            width="7rem"
+            height="40px"
+            radius="9999px" />
+          <ea-skeleton
+            variant="rect"
+            :width="40"
+            :height="40"
+            radius="9999px" />
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-col">
+      <ea-skeleton
+        v-for="index in 20"
+        :key="`skeleton-track-${index}`"
+        variant="row" />
+    </div>
   </div>
-  <div
+  <ea-empty
     v-else-if="loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40">
-    <div class="text-xl font-bold">歌单加载失败</div>
-    <div class="text-base text-gray-500">可能是网络异常或歌单不存在</div>
-    <ea-button
-      type="primary"
-      @click="loadAll">
-      <div class="text-base font-bold">重新加载</div>
-    </ea-button>
-  </div>
+    title="歌单加载失败"
+    description="可能是网络异常或歌单不存在"
+    action-text="重新加载"
+    @action="loadAll" />
   <div
     v-else
     class="flex flex-col w-full px-4 h-64 gap-8">
@@ -99,7 +138,13 @@
         </div>
       </div>
     </div>
-    <music-table :data="musicTableData"></music-table>
+    <music-table
+      v-if="musicTableData.length"
+      :data="musicTableData"></music-table>
+    <ea-empty
+      v-else
+      title="歌单里还没有歌曲"
+      description="去发现页看看别的歌单吧" />
   </div>
   <ea-modal
     id="delete-modal"
@@ -254,21 +299,6 @@ onMounted(loadAll)
 </script>
 
 <style scoped>
-.page-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: page-spin 0.8s linear infinite;
-}
-
-@keyframes page-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .playlist-name-input {
   min-width: 240px;
   padding: 4px 8px;

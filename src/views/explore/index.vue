@@ -48,30 +48,29 @@
     </Transition>
     <div
       v-if="loading && !playListList.length"
-      class="flex flex-col items-center justify-center gap-4 py-32 text-gray-400">
-      <div class="page-spinner"></div>
-      <div class="text-base">正在加载歌单…</div>
+      class="grid-cols-5 grid place-items-center gap-8 mx-16 mt-12"
+      aria-busy="true">
+      <ea-skeleton
+        v-for="index in 10"
+        :key="`skeleton-explore-${index}`"
+        variant="card"
+        width="12rem" />
     </div>
-    <div
+    <ea-empty
       v-else-if="loadFailed"
-      class="flex flex-col items-center justify-center gap-4 py-32">
-      <div class="text-xl font-bold">歌单加载失败</div>
-      <div class="text-base text-gray-500">请检查网络后重试</div>
-      <ea-button
-        type="primary"
-        @click="retry">
-        <div class="text-base font-bold">重新加载</div>
-      </ea-button>
-    </div>
+      title="歌单加载失败"
+      description="请检查网络后重试"
+      action-text="重新加载"
+      @action="retry" />
     <template v-else>
-      <div
+      <ea-empty
         v-if="!playListList.length"
-        class="flex items-center justify-center py-32 text-gray-400">
-        这个分类下暂时没有歌单
-      </div>
+        title="这个分类下暂时没有歌单"
+        description="换个分类看看吧" />
       <div
         v-else
-        class="grid-cols-5 grid place-items-center gap-8 mx-16 mt-12">
+        class="grid-cols-5 grid place-items-center gap-8 mx-16 mt-12"
+        :aria-busy="loading ? 'true' : 'false'">
         <play-list-cover
           v-for="item in playListList"
           :key="item.id"
@@ -260,21 +259,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: page-spin 0.8s linear infinite;
-}
-
-@keyframes page-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .cat-item-hidden {
   border-radius: 0.375rem;
   padding: 0.25rem 1rem;

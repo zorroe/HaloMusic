@@ -1,21 +1,32 @@
 <template>
+  <!-- 加载骨架：页头 + 与歌曲行高一致的列表 -->
   <div
     v-if="!loaded && !loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-    <div class="page-spinner"></div>
-    <div class="text-base">正在加载歌手歌曲…</div>
+    class="flex flex-col w-full gap-4"
+    aria-busy="true">
+    <div class="flex items-baseline justify-between gap-4">
+      <ea-skeleton
+        variant="rect"
+        width="12rem"
+        height="32px"
+        class="my-2" />
+      <ea-skeleton
+        variant="text"
+        width="4rem" />
+    </div>
+    <div class="flex flex-col">
+      <ea-skeleton
+        v-for="index in 10"
+        :key="`skeleton-track-${index}`"
+        variant="row" />
+    </div>
   </div>
-  <div
+  <ea-empty
     v-else-if="loadFailed"
-    class="flex flex-col items-center justify-center gap-4 py-40">
-    <div class="text-xl font-bold">歌曲列表加载失败</div>
-    <div class="text-base text-gray-500">请检查网络后重试</div>
-    <ea-button
-      type="primary"
-      @click="loadAll">
-      <div class="text-base font-bold">重新加载</div>
-    </ea-button>
-  </div>
+    title="歌曲列表加载失败"
+    description="请检查网络后重试"
+    action-text="重新加载"
+    @action="loadAll" />
   <div
     v-else
     class="flex flex-col w-full gap-4">
@@ -25,9 +36,17 @@
       </div>
       <div class="text-sm text-gray-500">共 {{ total }} 首</div>
     </div>
-    <music-table :data="tracks"></music-table>
+    <div :aria-busy="loadingPage ? 'true' : 'false'">
+      <music-table
+        v-if="tracks.length"
+        :data="tracks"></music-table>
+      <ea-empty
+        v-else
+        title="这位歌手还没有歌曲"
+        description="换个歌手听听吧" />
+    </div>
     <div
-      v-if="totalPage > 1"
+      v-if="totalPage > 1 && tracks.length"
       class="w-full inline-flex justify-center items-center gap-3 py-4">
       <button
         type="button"
@@ -165,21 +184,6 @@ onMounted(loadAll)
 </script>
 
 <style scoped>
-.page-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: page-spin 0.8s linear infinite;
-}
-
-@keyframes page-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .page-btn {
   display: inline-flex;
   align-items: center;
@@ -191,7 +195,9 @@ onMounted(loadAll)
   background-color: #ffffff;
   color: #111827;
   cursor: pointer;
-  transition: all 300ms;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
 }
 
 .page-btn:hover:not(.page-btn--disabled) {

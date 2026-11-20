@@ -1,21 +1,86 @@
 <template>
+  <!-- 加载骨架：尺寸与真实首页一一对应，避免内容就绪后大幅跳动 -->
   <div
     v-if="loading"
-    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-    <div class="home-spinner"></div>
-    <div class="text-base">正在加载首页…</div>
+    class="flex flex-col"
+    aria-busy="true">
+    <ea-skeleton
+      variant="rect"
+      width="7rem"
+      height="32px"
+      class="my-4" />
+    <div class="grid grid-cols-5 gap-8 mb-8">
+      <ea-skeleton
+        v-for="index in 10"
+        :key="`skeleton-playlist-${index}`"
+        variant="card"
+        width="12rem" />
+    </div>
+    <div class="flex gap-8 mb-8">
+      <div
+        v-for="index in 2"
+        :key="`skeleton-banner-${index}`"
+        class="w-1/2">
+        <ea-skeleton
+          variant="rect"
+          height="12rem"
+          radius="16px" />
+      </div>
+    </div>
+    <ea-skeleton
+      variant="rect"
+      width="7rem"
+      height="32px"
+      class="my-4" />
+    <div class="grid grid-cols-6 gap-3">
+      <div
+        v-for="index in 6"
+        :key="`skeleton-artist-${index}`"
+        class="flex flex-col items-center gap-2">
+        <ea-skeleton
+          variant="circle"
+          :width="160"
+          :height="160" />
+        <ea-skeleton
+          variant="text"
+          width="6rem" />
+      </div>
+    </div>
+    <ea-skeleton
+      variant="rect"
+      width="7rem"
+      height="32px"
+      class="my-4" />
+    <div class="grid grid-cols-5 gap-4">
+      <ea-skeleton
+        v-for="index in 10"
+        :key="`skeleton-album-${index}`"
+        variant="card"
+        width="12rem" />
+    </div>
+    <ea-skeleton
+      variant="rect"
+      width="7rem"
+      height="32px"
+      class="my-4" />
+    <div class="grid grid-cols-5 gap-4">
+      <ea-skeleton
+        v-for="index in 5"
+        :key="`skeleton-toplist-${index}`"
+        variant="card"
+        width="12rem" />
+    </div>
   </div>
-  <div
+  <ea-empty
     v-else-if="failedAll"
-    class="flex flex-col items-center justify-center gap-4 py-40">
-    <div class="text-xl font-bold">首页加载失败</div>
-    <div class="text-base text-gray-500">请检查网络后重试</div>
-    <ea-button
-      type="primary"
-      @click="loadAll">
-      <div class="text-base font-bold">重新加载</div>
-    </ea-button>
-  </div>
+    title="首页加载失败"
+    description="请检查网络后重试"
+    action-text="重新加载"
+    @action="loadAll" />
+  <ea-empty
+    v-else-if="nothingToShow"
+    title="暂时没有推荐内容"
+    description="稍后再来看看吧" />
   <div
     v-else
     class="flex flex-col">
@@ -76,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { PlayOne } from '@icon-park/vue-next'
 import { getNewAlbumApi } from '@/api/album'
 import { getrecommendArtistApi } from '@/api/artist'
@@ -112,6 +177,16 @@ const albumNewest = ref<AlbumBaseInfo[]>([])
 const topList = ref<PlayListBaseInfo[]>([])
 const recommendSongList = ref<MusicBaseInfo[]>([])
 const recommendBg = ref('')
+
+/** 所有模块都请求成功但内容为空时给一个明确空态，避免只剩标题的空白页 */
+const nothingToShow = computed(
+  () =>
+    !recommendPlayList.value.length &&
+    !recommendArtist.value.length &&
+    !albumNewest.value.length &&
+    !topList.value.length &&
+    !recommendSongList.value.length
+)
 
 const loadRecommendPlayList = async () => {
   const { recommend } = await getrecommendPlayListApi()
@@ -196,21 +271,6 @@ onMounted(loadAll)
 </script>
 
 <style scoped>
-.home-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: home-spin 0.8s linear infinite;
-}
-
-@keyframes home-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .recommend {
   position: absolute;
   top: 0;

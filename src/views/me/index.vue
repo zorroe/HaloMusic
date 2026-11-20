@@ -1,21 +1,78 @@
 <template>
-  <div
+  <ea-empty
     v-if="notLoggedIn"
-    class="flex flex-col items-center justify-center gap-4 py-40">
-    <div class="text-xl font-bold">还没有登录</div>
-    <div class="text-base text-gray-500">登录后即可查看你的音乐库</div>
-    <ea-button
-      type="primary"
-      @click="routeTo('/login')">
-      <div class="text-base font-bold">去登录</div>
-    </ea-button>
-  </div>
+    title="还没有登录"
+    description="登录后即可查看你的音乐库"
+    action-text="去登录"
+    @action="routeTo('/login')" />
+  <!-- 音乐库整体骨架：头像 + 标题 + 我喜欢卡片 + 最近喜欢小行 + tab 栏 + 卡片网格 -->
   <div
     v-else-if="!isLoaded"
-    class="flex flex-col items-center justify-center gap-4 py-40 text-gray-400">
-    <div class="me-spinner"></div>
-    <div class="text-base">正在加载音乐库…</div>
+    class="flex flex-col w-full gap-4"
+    aria-busy="true">
+    <div class="flex gap-4 items-center">
+      <ea-skeleton
+        variant="circle"
+        :width="40"
+        :height="40" />
+      <ea-skeleton
+        variant="rect"
+        width="18rem"
+        height="30px" />
+      <ea-skeleton
+        variant="circle"
+        :width="26"
+        :height="26" />
+    </div>
+    <div class="flex gap-4 items-start">
+      <ea-skeleton
+        variant="rect"
+        width="33%"
+        height="12rem"
+        radius="12px" />
+      <div class="grid grid-cols-3 gap-1 w-2/3">
+        <div
+          v-for="index in 12"
+          :key="`skeleton-like-${index}`"
+          class="flex items-center gap-2 py-1">
+          <ea-skeleton
+            variant="rect"
+            :width="32"
+            :height="32"
+            radius="4px" />
+          <div class="flex flex-col gap-1 flex-1 min-w-0">
+            <ea-skeleton
+              variant="text"
+              width="70%" />
+            <ea-skeleton
+              variant="text"
+              width="45%" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="me-tabs">
+      <ea-skeleton
+        v-for="index in 5"
+        :key="`skeleton-tab-${index}`"
+        variant="text"
+        width="5rem"
+        height="28px" />
+    </div>
+    <div class="grid-cols-5 grid gap-4">
+      <ea-skeleton
+        v-for="index in 10"
+        :key="`skeleton-card-${index}`"
+        variant="card"
+        width="12rem" />
+    </div>
   </div>
+  <ea-empty
+    v-else-if="loadFailed"
+    title="音乐库加载失败"
+    description="请检查网络后重试"
+    action-text="重新加载"
+    @action="retryLoad" />
   <div
     v-else
     class="flex flex-col w-full gap-4">
@@ -64,6 +121,7 @@
         </div>
       </div>
       <div
+        v-if="likeList.length"
         class="grid-cols-3 grid place-content-center w-2/3 h-48 rounded gap-1">
         <div
           v-for="item in likeList.slice(0, 12)"
@@ -92,6 +150,14 @@
           </div>
         </div>
       </div>
+      <div
+        v-else
+        class="w-2/3 h-48 flex items-center justify-center">
+        <ea-empty
+          compact
+          title="喜欢列表还是空的"
+          description="在歌曲上点红心，喜欢就会出现在这里" />
+      </div>
     </div>
     <div class="me-tabs">
       <button
@@ -106,41 +172,85 @@
     </div>
     <div
       v-if="tabLoading"
-      class="flex justify-center items-center py-12 text-gray-400">
-      <div class="me-spinner me-spinner--small"></div>
+      aria-busy="true">
+      <div
+        v-if="activeTab === '5'"
+        class="flex flex-col">
+        <ea-skeleton
+          v-for="index in 10"
+          :key="`skeleton-history-${index}`"
+          variant="row" />
+      </div>
+      <div
+        v-else
+        class="grid-cols-5 grid gap-4">
+        <ea-skeleton
+          v-for="index in 10"
+          :key="`skeleton-tab-card-${index}`"
+          variant="card"
+          width="12rem" />
+      </div>
     </div>
     <template v-else>
-      <div
-        v-show="activeTab === '1'"
-        class="grid-cols-5 grid gap-4">
-        <play-list-cover
-          v-for="item in myPlayList"
-          :key="item.id"
-          :data="item"></play-list-cover>
+      <div v-show="activeTab === '1'">
+        <div
+          v-if="myPlayList.length"
+          class="grid-cols-5 grid gap-4">
+          <play-list-cover
+            v-for="item in myPlayList"
+            :key="item.id"
+            :data="item"></play-list-cover>
+        </div>
+        <ea-empty
+          v-else
+          compact
+          title="还没有歌单"
+          description="去发现页收藏一些喜欢的歌单吧" />
       </div>
       <div v-show="activeTab === '2'">
-        <div class="grid-cols-5 grid place-items-center gap-4">
+        <div
+          v-if="albumSubList.length"
+          class="grid-cols-5 grid place-items-center gap-4">
           <album-cover
             v-for="item in albumSubList"
             :key="item.id"
             :data="item"></album-cover>
         </div>
+        <ea-empty
+          v-else
+          compact
+          title="还没有收藏的专辑"
+          description="在专辑页点亮收藏，就会出现在这里" />
       </div>
       <div v-show="activeTab === '3'">
-        <div class="grid-cols-6 grid place-items-center gap-3">
+        <div
+          v-if="artistSubList.length"
+          class="grid-cols-6 grid place-items-center gap-3">
           <artist-cover
             v-for="item in artistSubList"
             :key="item.id"
             :data="item"></artist-cover>
         </div>
+        <ea-empty
+          v-else
+          compact
+          title="还没有关注的艺人"
+          description="在歌手页点击关注，就会出现在这里" />
       </div>
       <div v-show="activeTab === '4'">
-        <div class="flex flex-wrap gap-4">
+        <div
+          v-if="mvSubList.length"
+          class="flex flex-wrap gap-4">
           <mv-cover
             v-for="item in mvSubList"
             :key="item.id"
             :data="item"></mv-cover>
         </div>
+        <ea-empty
+          v-else
+          compact
+          title="还没有收藏的 MV"
+          description="在 MV 页点亮收藏，就会出现在这里" />
       </div>
       <div v-show="activeTab === '5'">
         <div class="me-tabs">
@@ -154,7 +264,14 @@
             {{ tab.name }}
           </button>
         </div>
-        <div><music-table :data="musicHistoryData"></music-table></div>
+        <music-table
+          v-if="musicHistoryData.length"
+          :data="musicHistoryData"></music-table>
+        <ea-empty
+          v-else
+          compact
+          title="还没有听歌记录"
+          description="多听几首歌再来看看吧" />
       </div>
     </template>
   </div>
@@ -202,6 +319,8 @@ const userInfoStore = useUserInfoStore(pinia)
 
 const isLoaded = ref(false)
 const isRotate = ref(false)
+/** 首屏三个请求全部失败时进入整页错误态（可重试） */
+const loadFailed = ref(false)
 const historyType = ref('1')
 const musicHistoryData = ref<MusicBaseInfo[]>([])
 const activeTab = ref('1')
@@ -303,6 +422,7 @@ const loadRandomLyric = async () => {
 }
 
 const initData = async () => {
+  loadFailed.value = false
   const results = await Promise.allSettled([
     loadPlayLists(),
     loadLikeSongs(),
@@ -315,6 +435,13 @@ const initData = async () => {
     rejected.forEach(item => {
       console.error('[HaloMusic] load music library failed:', item.reason)
     })
+    if (rejected.length === results.length) {
+      // 全部失败（通常是断网）：给整页错误态，避免只剩一个空音乐库
+      isLoaded.value = true
+      loadFailed.value = true
+      notify({ message: '音乐库加载失败，请稍后重试', type: 'error' })
+      return
+    }
     notify({ message: '部分音乐库数据加载失败', type: 'warning' })
   }
   isLoaded.value = true
@@ -322,6 +449,13 @@ const initData = async () => {
   loadRandomLyric().catch((error: unknown) => {
     console.error('[HaloMusic] load random lyric failed:', error)
   })
+}
+
+/** 错误态「重新加载」：回到骨架并重跑一次首屏请求 */
+const retryLoad = () => {
+  if (!user.value.userId) return
+  isLoaded.value = false
+  void initData()
 }
 
 /** 加载一个 tab 的数据（重置后按接口分页拉全） */
@@ -469,23 +603,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.me-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top-color: var(--color-primary, #335eea);
-  border-radius: 50%;
-  animation: rotate360 0.8s linear infinite;
-}
-
-.me-spinner--small {
-  width: 24px;
-  height: 24px;
-  border-width: 2px;
-}
-
 .btn-play {
-  transition: all 300ms;
+  transition:
+    transform var(--motion-base) var(--ease-spring),
+    background-color var(--motion-fast) var(--ease-standard);
   background-color: rgb(51, 94, 234);
   border-radius: 9999px;
   padding: 0.5rem;
@@ -531,7 +652,9 @@ onBeforeUnmount(() => {
   border-bottom: 2px solid transparent;
   background: transparent;
   cursor: pointer;
-  transition: all 300ms;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
 }
 
 .me-tab-active {
@@ -549,7 +672,9 @@ onBeforeUnmount(() => {
   background: transparent;
   cursor: pointer;
   color: inherit;
-  transition: background-color 300ms;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
 }
 
 .refresh-btn:hover {
@@ -561,15 +686,6 @@ onBeforeUnmount(() => {
 }
 
 .rotating {
-  animation: rotate360 0.8s linear;
-}
-
-@keyframes rotate360 {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  animation: halo-spin var(--motion-slow) linear;
 }
 </style>
